@@ -42,10 +42,6 @@ get '/:index' => {index => 'index'} => 'index' => sub {
     }
 
     $c->stash(articles => \@articles, last_modified => $last_modified, config => \%config);
-
-    use Data::Dumper;
-    warn Dumper $c->stash;
-
 };
 
 get '/articles/:year/:month/:day/:alias' => 'article' => sub {
@@ -162,8 +158,6 @@ __DATA__
         <lastBuildDate><%= $last_modified %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
     </channel>
-% use Data::Dumper;
-% warn Dumper $articles;
 % foreach my $article (@$articles) {
 % my $link = $self->url_for('article', article => $article->{name}, format => 'html')->to_abs;
     <item>
