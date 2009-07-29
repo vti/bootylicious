@@ -10,7 +10,8 @@ my %config = (
     email => $ENV{BOOTYLICIOUS_EMAIL} || '',
     title => $ENV{BOOTYLICIOUS_TITLE} || 'I am too lazy to set the title',
     description => $ENV{BOOTYLICIOUS_DESCR} || 'I do not know if I need this',
-    articles_dir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles'
+    articles_dir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
+    require_css => -r 'public/bootylicious.css' ? 1 : 0
 );
 
 get '/:index' => {index => 'index'} => 'index' => sub {
@@ -180,12 +181,21 @@ __DATA__
 % my $self = shift;
 % my $config = $self->stash('config');
 <!html>
-    <head><title><%= $config->{title} %></title></head>
+    <head>
+        <title><%= $config->{title} %></title>
+% if ($self->stash('config')->{require_css}) {
+        <link rel="stylesheet" href="/bootylicious.css" type="text/css" />
+% }
+    </head>
     <body>
-        <div><a href="/">Articles</a> (<a href="<%= $self->url_for('index', format => 'rss') %>">rss</a>)</div>
+        <div id="body">
+        <div id="header"><a href="/">Articles</a> (<a href="<%= $self->url_for('index', format => 'rss') %>">rss</a>)</div>
 
+        <div id="content">
         <%= $self->render_inner %>
+        </div>
 
-        <div><small>Powered by Mojolicious::Lite & Pod::Simple::HTML</small></div>
+        <div id="footer"><small>Powered by Mojolicious::Lite & Pod::Simple::HTML</small></div>
+        </div>
     </body>
 </html>
