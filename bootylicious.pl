@@ -8,8 +8,8 @@ require Time::Local;
 my %config = (
     name  => $ENV{BOOTYLICIOUS_USER}  || 'whoami',
     email => $ENV{BOOTYLICIOUS_EMAIL} || '',
-    title => $ENV{BOOTYLICIOUS_TITLE} || 'I am so lazy to set the title',
-    description => $ENV{BOOTYLICIOUS_DESCR} || 'I do not know if i need this',
+    title => $ENV{BOOTYLICIOUS_TITLE} || 'I am too lazy to set the title',
+    description => $ENV{BOOTYLICIOUS_DESCR} || 'I do not know if I need this',
     articles_dir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles'
 );
 
