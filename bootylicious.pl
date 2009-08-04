@@ -19,7 +19,7 @@ get '/' => 'index' => sub {
     my $c = shift;
 
     my $article;
-    my @articles = _parse_articles($c);
+    my @articles = _parse_articles($c, limit => 10);
 
     if (@articles) {
         $article = $articles[0];
@@ -35,7 +35,7 @@ get '/articles' => 'articles' => sub {
 
     my $last_modified = Mojo::Date->new;
 
-    my @articles = _parse_articles($c);
+    my @articles = _parse_articles($c, limit => 0);
     if (@articles) {
         $last_modified = $articles[0]->{mtime};
 
@@ -80,8 +80,6 @@ sub makeup {
     foreach my $type (qw/css js/) {
         $config{$type} = [map {s/^$public_dir\///; $_} glob("$public_dir/*.$type")];
     }
-
-    #*Pod::Simple::HTML::_add_top_anchor = sub {}
 }
 
 sub _is_modified {
@@ -100,17 +98,20 @@ sub _is_modified {
 
 sub _parse_articles {
     my $c = shift;
+    my %params = @_;
+
+    my @files =
+      sort { $b cmp $a }
+      glob(app->home->rel_dir($config{articles_dir}) . '/*.pod');
+
+    @files = splice(@files, 0, $params{limit}) if $params{limit};
 
     my @articles;
-    foreach my $file (glob(app->home->rel_dir($config{articles_dir}) . '/*.pod')) {
+    foreach my $file (@files) {
         my $data = _parse_article($c, $file);
         next unless $data && %$data;
 
         push @articles, $data;
-    }
-
-    if (@articles) {
-        @articles = sort { $b->{name} cmp $a->{name} } @articles;
     }
 
     return @articles;
@@ -121,9 +122,10 @@ sub _parse_article {
     my $c = shift;
     my $path = shift;
 
+    return unless $path;
+
     return $_articles{$path} if $_articles{$path};
 
-    warn "path=$path";
     unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)-(.*?)\.pod$/) {
         $c->app->log->debug("Ignoring $path: unknown file");
         return;
@@ -187,6 +189,15 @@ __DATA__
     <h1><%= $article->{title} %></h1>
     <div class="created"><%= $article->{created} %></div>
     <div class="pod"><%= $article->{content} %></div>
+    <h2>Last articles</h2>
+    <ul>
+% foreach my $article (@{$self->stash('articles')}) {
+        <li>
+            <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
+            <%= $article->{created} %>
+        </li>
+% }
+    </ul>
 % }
 % else {
 Not much here yet :(
@@ -196,14 +207,22 @@ Not much here yet :(
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $articles = $self->stash('articles');
-<ul>
+% my $tmp;
+% my $new = 0;
 % foreach my $article (@$articles) {
+%     if (!$tmp || $article->{year} ne $tmp->{year}) {
+    <%= "</ul>" if $tmp %>
+    <b><%= $article->{year} %></b>
+<ul>
+%     }
+
     <li>
-        <a href="/articles/<%== join('/', $article->{year}, $article->{month}, $article->{day}, $article->{name}) %>.html"><%= $article->{title} %></a><br />
+        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
         <%= $article->{created} %>
     </li>
+
+%     $tmp = $article;
 % }
-</ul>
 
 @@ index.rss.eplite
 % my $self = shift;
