@@ -13,6 +13,7 @@ my %config = (
     description => $ENV{BOOTYLICIOUS_DESCR} || 'I do not know if I need this',
     articles_dir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
     public_dir => $ENV{BOOTYLICIOUS_PUBLICDIR} || 'public',
+    footer => $ENV{BOOTYLICIOUS_FOOTER} || 'Powered by Mojolicious::Lite & Pod::Simple::HTML'
 );
 
 get '/' => 'index' => sub {
@@ -217,7 +218,7 @@ Not much here yet :(
 %     }
 
     <li>
-        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
+        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
         <%= $article->{created} %>
     </li>
 
@@ -257,6 +258,9 @@ Not much here yet :(
 % my $article = $self->stash('article');
 <h1><%= $article->{title} %></h1>
 <div class="created"><%= $article->{created} %></div>
+% if ($article->{created} ne $article->{mtime}) {
+<div class="modified"><%= $article->{mtime} %></div>
+% }
 <div class="pod"><%= $article->{content} %></div>
 
 @@ layouts/wrapper.html.eplite
@@ -275,6 +279,7 @@ Not much here yet :(
             #menu {margin:1em 0em;text-align:right}
             #about {border-top:3px solid #ccc;border-bottom:3px solid #ddd;text-align:center;padding:1em 0em}
             .created {font-size:small;padding-bottom:1em}
+            .modified {font-size:small;padding-bottom:1em}
             .pod h1 {font-size: 110%}
             .pod h2 {font-size: 105%}
             .pod h3 {font-size: 100%}
@@ -299,7 +304,7 @@ Not much here yet :(
             <%= $self->render_inner %>
             </div>
 
-            <div id="footer"><small>Powered by Mojolicious::Lite & Pod::Simple::HTML</small></div>
+            <div id="footer"><small><%= $config->{footer} %></small></div>
         </div>
 % foreach my $file (@{$config->{js}}) {
         <script type="text/javascript" href="/<%= $file %>" />
@@ -352,11 +357,11 @@ L<Mojo> L<Mojolicious> L<Mojolicious::Lite>
 
 =head1 AUTHOR
 
-Viacheslav Tikhanovskii, C<vti@cpan.org>.
+Viacheslav Tykhanovskyi, C<vti@cpan.org>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2008-2009, Viacheslav Tikhanovskii.
+Copyright (C) 2008-2009, Viacheslav Tykhanovskyi.
 
 This program is free software, you can redistribute it and/or modify it under
 the same terms as Perl 5.10.
