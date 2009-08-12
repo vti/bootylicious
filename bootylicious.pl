@@ -12,11 +12,12 @@ my %config = (
     about => $ENV{BOOTYLICIOUS_ABOUT} || 'What?',
     description => $ENV{BOOTYLICIOUS_DESCR} || 'I do not know if I need this',
     articles_dir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
-    public_dir => $ENV{BOOTYLICIOUS_PUBLICDIR} || 'public',
-    footer => $ENV{BOOTYLICIOUS_FOOTER} || 'Powered by Mojolicious::Lite & Pod::Simple::HTML'
+    public_dir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
+    footer       => $ENV{BOOTYLICIOUS_FOOTER}
+      || 'Powered by Mojolicious::Lite & Pod::Simple::HTML'
 );
 
-get '/' => 'index' => sub {
+get '/' => sub {
     my $c = shift;
 
     my $article;
@@ -26,10 +27,14 @@ get '/' => 'index' => sub {
         $article = $articles[0];
     }
 
-    $c->stash(config => \%config, article => $article, articles => \@articles);
-};
+    $c->stash(
+        config   => \%config,
+        article  => $article,
+        articles => \@articles
+    );
+} => 'index';
 
-get '/articles' => 'articles' => sub {
+get '/articles' => sub {
     my $c = shift;
 
     my $root = $c->app->home;
@@ -45,10 +50,14 @@ get '/articles' => 'articles' => sub {
 
     $c->res->headers->header('Last-Modified' => $last_modified);
 
-    $c->stash(articles => \@articles, last_modified => $last_modified, config => \%config);
-};
+    $c->stash(
+        articles      => \@articles,
+        last_modified => $last_modified,
+        config        => \%config
+    );
+} => 'articles';
 
-get '/articles/:year/:month/:day/:alias' => 'article' => sub {
+get '/articles/:year/:month/:day/:alias' => sub {
     my $c = shift;
 
     my $root = $c->app->home->rel_dir($config{articles_dir});
@@ -64,22 +73,24 @@ get '/articles/:year/:month/:day/:alias' => 'article' => sub {
 
     my $last_modified = Mojo::Date->new((stat($path))[9]);
 
-    my $data; $data = _parse_article($c, $path)
-        or return $c->app->static->serve_404($c);
+    my $data;
+    $data = _parse_article($c, $path)
+      or return $c->app->static->serve_404($c);
 
     #return 1 unless _is_modified($c, $last_modified);
 
     $c->stash(article => $data, template => 'article', config => \%config);
 
-    #$c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
-};
+#$c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+} => 'article';
 
 sub makeup {
     my $public_dir = app->home->rel_dir($config{public_dir});
 
     # CSS, JS auto import
     foreach my $type (qw/css js/) {
-        $config{$type} = [map {s/^$public_dir\///; $_} glob("$public_dir/*.$type")];
+        $config{$type} =
+          [map { s/^$public_dir\///; $_ } glob("$public_dir/*.$type")];
     }
 }
 
@@ -98,7 +109,7 @@ sub _is_modified {
 }
 
 sub _parse_articles {
-    my $c = shift;
+    my $c      = shift;
     my %params = @_;
 
     my @files =
@@ -119,8 +130,9 @@ sub _parse_articles {
 }
 
 my %_articles;
+
 sub _parse_article {
-    my $c = shift;
+    my $c    = shift;
     my $path = shift;
 
     return unless $path;
@@ -134,7 +146,9 @@ sub _parse_article {
     my ($year, $month, $day, $name) = ($1, $2, $3, $4);
 
     my $epoch = 0;
-    eval { $epoch = Time::Local::timegm(0, 0, 0, $day, $month - 1, $year - 1900); };
+    eval {
+        $epoch = Time::Local::timegm(0, 0, 0, $day, $month - 1, $year - 1900);
+    };
     if ($@ || $epoch < 0) {
         $c->app->log->debug("Ignoring $path: wrong timestamp");
         return;
@@ -147,8 +161,8 @@ sub _parse_article {
     $parser->html_header_after_title('');
     $parser->html_footer('');
 
-    my $title = '';
-    my $content = '';;
+    my $title   = '';
+    my $content = '';
 
     $parser->output_string(\$content);
     eval { $parser->parse_file($path) };
@@ -183,7 +197,7 @@ shagadelic;
 
 __DATA__
 
-@@ index.html.eplite
+@@ index.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % if (my $article = $self->stash('article')) {
@@ -204,7 +218,7 @@ __DATA__
 Not much here yet :(
 % }
 
-@@ articles.html.eplite
+@@ articles.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $articles = $self->stash('articles');
@@ -225,7 +239,7 @@ Not much here yet :(
 %     $tmp = $article;
 % }
 
-@@ index.rss.eplite
+@@ index.rss.epl
 % my $self = shift;
 % my $articles = $self->stash('articles');
 % my $last_modified = $self->stash('last_modified');
@@ -252,7 +266,7 @@ Not much here yet :(
 % }
 </rss>
 
-@@ article.html.eplite
+@@ article.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $article = $self->stash('article');
@@ -263,7 +277,7 @@ Not much here yet :(
 % }
 <div class="pod"><%= $article->{content} %></div>
 
-@@ layouts/wrapper.html.eplite
+@@ layouts/wrapper.html.epl
 % my $self = shift;
 % my $config = $self->stash('config');
 <!html>
@@ -342,7 +356,7 @@ Embedded templates will work just fine, but when you want to have something more
 advanced just create a template in templates/ directory with the same name but
 with a different extension.
 
-For example there is index.html.eplite, thus templates/index.html.epl should be
+For example there is index.html.epl, thus templates/index.html.epl should be
 created with a new content.
 
 =head1 DEVELOPMENT
