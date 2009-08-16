@@ -81,7 +81,7 @@ get '/tags/:tag' => sub {
         last_modified => $last_modified
     );
 
-    if ($c->stash('format') eq 'rss') {
+    if ($c->stash('format') && $c->stash('format') eq 'rss') {
         $c->stash(template => 'articles');
     }
 } => 'tag';
