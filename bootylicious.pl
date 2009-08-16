@@ -61,6 +61,46 @@ get '/articles' => sub {
     );
 } => 'articles';
 
+get '/tags/:tag' => sub {
+    my $c = shift;
+
+    my $tag = $c->stash('tag');
+
+    my @articles = grep {
+        grep {/^$tag$/} @{$_->{tags}}
+    } _parse_articles($c, limit => 0);
+
+    my $last_modified = Mojo::Date->new;
+    if (@articles) {
+        $last_modified = $articles[0]->{mtime};
+    }
+
+    $c->stash(
+        config        => \%config,
+        articles      => \@articles,
+        last_modified => $last_modified
+    );
+
+    if ($c->stash('format') eq 'rss') {
+        $c->stash(template => 'articles');
+    }
+} => 'tag';
+
+get '/tags' => sub {
+    my $c = shift;
+
+    my $tags = {};
+
+    foreach my $article (_parse_articles($c, limit => 0)) {
+        foreach my $tag (@{$article->{tags}}) {
+            $tags->{$tag}->{count} ||= 0;
+            $tags->{$tag}->{count}++;
+        }
+    }
+
+    $c->stash(config => \%config, tags => $tags);
+} => 'tags';
+
 get '/articles/:year/:month/:day/:alias' => sub {
     my $c = shift;
 
@@ -182,11 +222,18 @@ sub _parse_article {
     # Hacking
     $content =~ s|<a name='___top' class='dummyTopAnchor'\s*></a>\n||g;
     $content =~ s/<a class='u'.*?name=".*?"\s*>(.*?)<\/a>/$1/sg;
-    $content =~ s|^\n<h1>NAME</h1>\s*<p>(.*?)</p>||sg;
+    $content =~ s{^\s*<h1>NAME</h1>\s*<p>(.*?)</p>}{}sg;
     $title = $1 || $name;
+
+    my $tags = [];
+    if ($content =~ s{^\s*<h1>TAGS</h1>\s*<p>(.*?)</p>}{}sg) {
+        my $list = $1; $list =~ s/(?:\r|\n)*//gs;
+        @$tags = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $list);
+    }
 
     return $_articles{$path} = {
         title   => $title,
+        tags    => $tags,
         content => $content,
         mtime   => Mojo::Date->new((stat($path))[9]),
         created => Mojo::Date->new($epoch),
@@ -247,7 +294,7 @@ Not much here yet :(
 %     $tmp = $article;
 % }
 
-@@ index.rss.epl
+@@ articles.rss.epl
 % my $self = shift;
 % my $articles = $self->stash('articles');
 % my $last_modified = $self->stash('last_modified');
@@ -268,11 +315,34 @@ Not much here yet :(
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
       <description><%== $article->{content} %></description>
+% foreach my $tag (@{$article->{tags}}) {
+      <category><%= $tag %></category>
+% }
       <pubDate><%= $article->{mtime} %></pubDate>
       <guid><%= $link %></guid>
     </item>
 % }
 </rss>
+
+@@ tags.html.epl
+% my $self = shift;
+% $self->stash(layout => 'wrapper');
+% my $tags = $self->stash('tags');
+% foreach my $tag (keys %$tags) {
+<a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %>(<%= $tags->{$tag}->{count} %>)</a>
+% }
+
+@@ tag.html.epl
+% my $self = shift;
+% $self->stash(layout => 'wrapper');
+% my $tag = $self->stash('tag');
+% my $articles = $self->stash('articles');
+<h1><%= $tag %></h1>
+% foreach my $article (@$articles) {
+        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
+        <%= $article->{created} %>
+    </li>
+% }
 
 @@ article.html.epl
 % my $self = shift;
@@ -282,6 +352,9 @@ Not much here yet :(
 <div class="created"><%= $article->{created} %></div>
 % if ($article->{created} ne $article->{mtime}) {
 <div class="modified"><%= $article->{mtime} %></div>
+% }
+% foreach my $tag (@{$article->{tags}}) {
+<a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
 % }
 <div class="pod"><%= $article->{content} %></div>
 
@@ -320,6 +393,7 @@ Not much here yet :(
             <div id="about"><%= $config->{about} %></div>
             <div id="menu">
                 <a href="<%= $self->url_for('index', format => '') %>">index</a>
+                <a href="<%= $self->url_for('tags') %>">tags</a>
                 <a href="<%= $self->url_for('articles') %>">archive</a>
             </div>
 
