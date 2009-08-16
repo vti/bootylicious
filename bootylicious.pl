@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+use utf8;
+
 use Mojolicious::Lite;
 use Mojo::Date;
 use Pod::Simple::HTML;
@@ -16,6 +18,9 @@ my %config = (
     footer       => $ENV{BOOTYLICIOUS_FOOTER}
       || 'Powered by Mojolicious::Lite & Pod::Simple::HTML'
 );
+
+$config{$_} = b($config{$_})->decode('utf8')->to_string
+  foreach keys %config;
 
 get '/' => sub {
     my $c = shift;
@@ -164,8 +169,12 @@ sub _parse_article {
     my $title   = '';
     my $content = '';
 
+    open FILE, "<:encoding(UTF-8)", $path;
+    my $string = join("\n", <FILE>);
+    close FILE;
+
     $parser->output_string(\$content);
-    eval { $parser->parse_file($path) };
+    eval { $parser->parse_string_document($string) };
     if ($@) {
         $c->app->log->debug("Ignoring $path: parser error");
         return;
@@ -280,6 +289,7 @@ Not much here yet :(
 @@ layouts/wrapper.html.epl
 % my $self = shift;
 % my $config = $self->stash('config');
+% $self->res->headers->content_type('text/html; charset=utf-8');
 <!html>
     <head>
         <title><%= $config->{title} %></title>
