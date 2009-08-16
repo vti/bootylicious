@@ -1,11 +1,10 @@
 #!/usr/bin/env perl
 
-use utf8;
-
 use Mojolicious::Lite;
 use Mojo::Date;
 use Pod::Simple::HTML;
 require Time::Local;
+use Mojo::ByteStream 'b';
 
 my %config = (
     name  => $ENV{BOOTYLICIOUS_USER}  || 'whoami',
