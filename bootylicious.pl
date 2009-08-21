@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-BEGIN { use FindBin; use lib "$FindBin/mojo/lib" }
+BEGIN { use FindBin; use lib "$FindBin::Bin/mojo/lib" }
 
 use Mojolicious::Lite;
 use Mojo::Date;
