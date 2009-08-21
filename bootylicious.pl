@@ -250,7 +250,7 @@ app->types->type(rss => 'application/rss+xml');
 
 makeup;
 
-shagadelic;
+shagadelic(@ARGV ? @ARGV : 'cgi');
 
 __DATA__
 
