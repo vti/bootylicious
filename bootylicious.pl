@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+BEGIN { use FindBin; use lib "$FindBin/mojo/lib" }
+
 use Mojolicious::Lite;
 use Mojo::Date;
 use Pod::Simple::HTML;
