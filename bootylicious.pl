@@ -161,6 +161,7 @@ sub _is_modified {
     return 1 unless Mojo::Date->new($date)->epoch == $last_modified->epoch;
 
     $c->res->code(304);
+    $c->stash(rendered => 1);
 
     return 0;
 }
