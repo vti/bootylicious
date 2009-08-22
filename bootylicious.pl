@@ -11,13 +11,13 @@ use Mojo::ByteStream 'b';
 my %config = (
     name  => $ENV{BOOTYLICIOUS_USER}  || 'whoami',
     email => $ENV{BOOTYLICIOUS_EMAIL} || '',
-    title => $ENV{BOOTYLICIOUS_TITLE} || 'I am too lazy to set the title',
-    about => $ENV{BOOTYLICIOUS_ABOUT} || 'What?',
+    title => $ENV{BOOTYLICIOUS_TITLE} || 'Just another blog',
+    about => $ENV{BOOTYLICIOUS_ABOUT} || 'Perl hacker',
     description => $ENV{BOOTYLICIOUS_DESCR} || 'I do not know if I need this',
     articles_dir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
     public_dir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
     footer       => $ENV{BOOTYLICIOUS_FOOTER}
-      || 'Powered by Mojolicious::Lite & Pod::Simple::HTML'
+      || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>'
 );
 
 $config{$_} = b($config{$_})->decode('utf8')->to_string
@@ -222,8 +222,8 @@ sub _parse_article {
     }
 
     # Hacking
-    $content =~ s|<a name='___top' class='dummyTopAnchor'\s*></a>\n||g;
-    $content =~ s/<a class='u'.*?name=".*?"\s*>(.*?)<\/a>/$1/sg;
+    $content =~ s{<a name='___top' class='dummyTopAnchor'\s*></a>\n}{}g;
+    $content =~ s{<a class='u'.*?name=".*?"\s*>(.*?)</a>}{$1}sg;
     $content =~ s{^\s*<h1>NAME</h1>\s*<p>(.*?)</p>}{}sg;
     $title = $1 || $name;
 
@@ -237,13 +237,23 @@ sub _parse_article {
         title   => $title,
         tags    => $tags,
         content => $content,
-        mtime   => Mojo::Date->new((stat($path))[9]),
-        created => Mojo::Date->new($epoch),
+        mtime   => _format_date(Mojo::Date->new((stat($path))[9])),
+        created => _format_date(Mojo::Date->new($epoch)),
         year    => $year,
         month   => $month,
         day     => $day,
         name    => $name
     };
+}
+
+sub _format_date {
+    my $date = shift;
+
+    $date = $date->to_string;
+
+    $date =~ s/ [^ ]*? GMT$//;
+
+    return $date;
 }
 
 app->types->type(rss => 'application/rss+xml');
@@ -258,18 +268,27 @@ __DATA__
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % if (my $article = $self->stash('article')) {
-    <h1><%= $article->{title} %></h1>
-    <div class="created"><%= $article->{created} %></div>
-    <div class="pod"><%= $article->{content} %></div>
+    <div class="text">
+        <h1 class="title"><%= $article->{title} %></h1>
+        <div class="created"><%= $article->{created} %></div>
+        <div class="tags">
+% foreach my $tag (@{$article->{tags}}) {
+        <a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
+% }
+        </div>
+        <%= $article->{content} %>
+    </div>
+    <div id="subfooter">
     <h2>Last articles</h2>
     <ul>
 % foreach my $article (@{$self->stash('articles')}) {
         <li>
             <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
-            <%= $article->{created} %>
+            <div class="created"><%= $article->{created} %></div>
         </li>
 % }
     </ul>
+    </div>
 % }
 % else {
 Not much here yet :(
@@ -281,6 +300,9 @@ Not much here yet :(
 % my $articles = $self->stash('articles');
 % my $tmp;
 % my $new = 0;
+<div class="text">
+<h1>Archive</h1>
+<br />
 % foreach my $article (@$articles) {
 %     if (!$tmp || $article->{year} ne $tmp->{year}) {
     <%= "</ul>" if $tmp %>
@@ -290,11 +312,12 @@ Not much here yet :(
 
     <li>
         <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
-        <%= $article->{created} %>
+        <div class="created"><%= $article->{created} %></div>
     </li>
 
 %     $tmp = $article;
 % }
+</div>
 
 @@ articles.rss.epl
 % my $self = shift;
@@ -330,35 +353,49 @@ Not much here yet :(
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $tags = $self->stash('tags');
+<div class="text">
+<h1>Tags</h1>
+<br />
+<div class="tags">
 % foreach my $tag (keys %$tags) {
-<a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %>(<%= $tags->{$tag}->{count} %>)</a>
+<a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a><sub>(<%= $tags->{$tag}->{count} %>)</sub>
 % }
+</div>
+</div>
 
 @@ tag.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $tag = $self->stash('tag');
 % my $articles = $self->stash('articles');
-<h1><%= $tag %></h1>
+<div class="text">
+<h1>Tag <%= $tag %></h1>
+<br />
 % foreach my $article (@$articles) {
         <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
-        <%= $article->{created} %>
+        <div class="created"><%= $article->{created} %></div>
     </li>
 % }
+</div>
 
 @@ article.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $article = $self->stash('article');
-<h1><%= $article->{title} %></h1>
-<div class="created"><%= $article->{created} %></div>
+<div class="text">
+<h1 class="title"><%= $article->{title} %></h1>
+<div class="created"><%= $article->{created} %>
 % if ($article->{created} ne $article->{mtime}) {
-<div class="modified"><%= $article->{mtime} %></div>
+, modified <span class="modified"><%= $article->{mtime} %></span>
 % }
+</div>
+<div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
 <a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
 % }
-<div class="pod"><%= $article->{content} %></div>
+</div>
+<%= $article->{content} %>
+</div>
 
 @@ layouts/wrapper.html.epl
 % my $self = shift;
@@ -372,31 +409,41 @@ Not much here yet :(
 % }
 % if (!@{$config->{css}}) {
         <style type="text/css">
+            body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
+            h1,h2,h3,h4,h5 {font-family: times, Times New Roman, times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
+            a,a:active {color:#555}
+            a:hover{color:#000}
+            a:visited{color:#000}
             #body {width:65%;margin:auto}
-            #header {margin:1em 0em}
-            #menu {margin:1em 0em;text-align:right}
-            #about {border-top:3px solid #ccc;border-bottom:3px solid #ddd;text-align:center;padding:1em 0em}
-            .created {font-size:small;padding-bottom:1em}
-            .modified {font-size:small;padding-bottom:1em}
-            .pod h1 {font-size: 110%}
-            .pod h2 {font-size: 105%}
-            .pod h3 {font-size: 100%}
-            .pod h4 {font-size: 95%}
-            .pod h5 {font-size: 90%}
-            .pod h6 {font-size: 85%}
-            #footer {}
+            #header {text-align:center;padding:2em;border-bottom: 1px solid #000}
+            h1#title{font-size:3em}
+            h2#descr{font-size:1.5em;color:#999}
+            span#name {font-weight:bold}
+            span#about {font-style:italic}
+            #menu {text-align:right}
+            #content {background:#FFFFFF}
+            .created, .modified {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
+            .modified {margin:0px}
+            .tags{margin-left:10px;text-transform:uppercase;}
+            .text {padding:2em;}
+            .text h1.title {font-size:2.5em}
+            #subfooter {padding:2em;border-top:#000000 1px solid}
+            #footer {text-align:center;padding:2em;border-top:#000000 1px solid}
         </style>
 % }
         <link rel="alternate" type="application/rss+xml" title="<%= $config->{title} %>" href="<%= $self->url_for('articles', format => 'rss') %>" />
     </head>
     <body>
         <div id="body">
-            <div id="header"><%= $config->{name} %>: <%= $config->{title} %></h1></div>
-            <div id="about"><%= $config->{about} %></div>
-            <div id="menu">
-                <a href="<%= $self->url_for('index', format => '') %>">index</a>
-                <a href="<%= $self->url_for('tags') %>">tags</a>
-                <a href="<%= $self->url_for('articles') %>">archive</a>
+            <div id="header">
+                <h1 id="title"><a href="<%= $self->url_for('index') %>"><%= $config->{title} %></a></h1>
+                <h2 id="descr"><%= $config->{description} %></h2>
+                <span id="name"><%= $config->{name} %></span>, <span id="about"><%= $config->{about} %></span>
+                <div id="menu">
+                    <a href="<%= $self->url_for('index', format => '') %>">index</a>
+                    <a href="<%= $self->url_for('tags') %>">tags</a>
+                    <a href="<%= $self->url_for('articles') %>">archive</a>
+                </div>
             </div>
 
             <div id="content">
