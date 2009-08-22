@@ -9,16 +9,31 @@ require Time::Local;
 use Mojo::ByteStream 'b';
 
 my %config = (
-    name  => $ENV{BOOTYLICIOUS_USER}  || 'whoami',
-    email => $ENV{BOOTYLICIOUS_EMAIL} || '',
-    title => $ENV{BOOTYLICIOUS_TITLE} || 'Just another blog',
-    about => $ENV{BOOTYLICIOUS_ABOUT} || 'Perl hacker',
-    description => $ENV{BOOTYLICIOUS_DESCR} || 'I do not know if I need this',
-    articles_dir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
-    public_dir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
-    footer       => $ENV{BOOTYLICIOUS_FOOTER}
+    author => $ENV{BOOTYLICIOUS_AUTHOR} || 'whoami',
+    email  => $ENV{BOOTYLICIOUS_EMAIL}  || '',
+    title  => $ENV{BOOTYLICIOUS_TITLE}  || 'Just another blog',
+    about  => $ENV{BOOTYLICIOUS_ABOUT}  || 'Perl hacker',
+    descr  => $ENV{BOOTYLICIOUS_DESCR}  || 'I do not know if I need this',
+    articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
+    publicdir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
+    footer      => $ENV{BOOTYLICIOUS_FOOTER}
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>'
 );
+
+my $conf_file = app->home->rel_file('bootylicious.conf');
+if (-e $conf_file) {
+    if (open FILE, "<", $conf_file) {
+        my @lines = <FILE>;
+        close FILE;
+
+        foreach my $line (@lines) {
+            chomp $line;
+            my ($key, $value) = split('=', $line);
+            $key =~ s/^BOOTYLICIOUS_//;
+            $config{lc $key} = $value;
+        }
+    }
+}
 
 $config{$_} = b($config{$_})->decode('utf8')->to_string
   foreach keys %config;
@@ -117,7 +132,7 @@ get '/tags' => sub {
 get '/articles/:year/:month/:day/:alias' => sub {
     my $c = shift;
 
-    my $root = $c->app->home->rel_dir($config{articles_dir});
+    my $root = $c->app->home->rel_dir($config{articlesdir});
     my $path = join('/',
         $root,
         $c->stash('year')
@@ -142,12 +157,12 @@ get '/articles/:year/:month/:day/:alias' => sub {
 } => 'article';
 
 sub makeup {
-    my $public_dir = app->home->rel_dir($config{public_dir});
+    my $publicdir = app->home->rel_dir($config{publicdir});
 
     # CSS, JS auto import
     foreach my $type (qw/css js/) {
         $config{$type} =
-          [map { s/^$public_dir\///; $_ } glob("$public_dir/*.$type")];
+          [map { s/^$publicdir\///; $_ } glob("$publicdir/*.$type")];
     }
 }
 
@@ -172,7 +187,7 @@ sub _parse_articles {
 
     my @files =
       sort { $b cmp $a }
-      glob(app->home->rel_dir($config{articles_dir}) . '/*.pod');
+      glob(app->home->rel_dir($config{articlesdir}) . '/*.pod');
 
     @files = splice(@files, 0, $params{limit}) if $params{limit};
 
@@ -346,7 +361,7 @@ Not much here yet :(
     <channel>
         <title><%= $self->stash('config')->{title} %></title>
         <link><%= $self->req->url->base %></link>
-        <description><%= $self->stash('config')->{description} %></description>
+        <descr><%= $self->stash('config')->{descr} %></descr>
         <pubDate><%= $last_modified %></pubDate>
         <lastBuildDate><%= $last_modified %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
@@ -356,7 +371,7 @@ Not much here yet :(
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
-      <description><%== $article->{content} %></description>
+      <descr><%== $article->{content} %></descr>
 % foreach my $tag (@{$article->{tags}}) {
       <category><%= $tag %></category>
 % }
@@ -451,7 +466,7 @@ rkJggg==" alt="RSS" /></a></sup>
             #header {text-align:center;padding:2em;border-bottom: 1px solid #000}
             h1#title{font-size:3em}
             h2#descr{font-size:1.5em;color:#999}
-            span#name {font-weight:bold}
+            span#author {font-weight:bold}
             span#about {font-style:italic}
             #menu {text-align:right}
             #content {background:#FFFFFF}
@@ -486,8 +501,8 @@ fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
 rkJggg==" alt="RSS" /></a></sup>
 
                 </h1>
-                <h2 id="descr"><%= $config->{description} %></h2>
-                <span id="name"><%= $config->{name} %></span>, <span id="about"><%= $config->{about} %></span>
+                <h2 id="descr"><%= $config->{descr} %></h2>
+                <span id="author"><%= $config->{author} %></span>, <span id="about"><%= $config->{about} %></span>
                 <div id="menu">
                     <a href="<%= $self->url_for('index', format => '') %>">index</a>
                     <a href="<%= $self->url_for('tags') %>">tags</a>
