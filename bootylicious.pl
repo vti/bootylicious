@@ -233,16 +233,21 @@ sub _parse_article {
         @$tags = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $list);
     }
 
+    my $mtime   = Mojo::Date->new((stat($path))[9]);
+    my $created = Mojo::Date->new($epoch);
+
     return $_articles{$path} = {
-        title   => $title,
-        tags    => $tags,
-        content => $content,
-        mtime   => _format_date(Mojo::Date->new((stat($path))[9])),
-        created => _format_date(Mojo::Date->new($epoch)),
-        year    => $year,
-        month   => $month,
-        day     => $day,
-        name    => $name
+        title          => $title,
+        tags           => $tags,
+        content        => $content,
+        mtime          => $mtime,
+        created        => $created,
+        mtime_format   => _format_date($mtime),
+        created_format => _format_date($created),
+        year           => $year,
+        month          => $month,
+        day            => $day,
+        name           => $name
     };
 }
 
@@ -270,7 +275,7 @@ __DATA__
 % if (my $article = $self->stash('article')) {
     <div class="text">
         <h1 class="title"><%= $article->{title} %></h1>
-        <div class="created"><%= $article->{created} %></div>
+        <div class="created"><%= $article->{created_format} %></div>
         <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
         <a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
@@ -284,7 +289,7 @@ __DATA__
 % foreach my $article (@{$self->stash('articles')}) {
         <li>
             <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
-            <div class="created"><%= $article->{created} %></div>
+            <div class="created"><%= $article->{created_format} %></div>
         </li>
 % }
     </ul>
@@ -312,7 +317,7 @@ Not much here yet :(
 
     <li>
         <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
-        <div class="created"><%= $article->{created} %></div>
+        <div class="created"><%= $article->{created_format} %></div>
     </li>
 
 %     $tmp = $article;
@@ -388,7 +393,7 @@ rkJggg==" alt="RSS" /></a></sup>
 <br />
 % foreach my $article (@$articles) {
         <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
-        <div class="created"><%= $article->{created} %></div>
+        <div class="created"><%= $article->{created_format} %></div>
     </li>
 % }
 </div>
@@ -399,9 +404,9 @@ rkJggg==" alt="RSS" /></a></sup>
 % my $article = $self->stash('article');
 <div class="text">
 <h1 class="title"><%= $article->{title} %></h1>
-<div class="created"><%= $article->{created} %>
+<div class="created"><%= $article->{created_format} %>
 % if ($article->{created} ne $article->{mtime}) {
-, modified <span class="modified"><%= $article->{mtime} %></span>
+, modified <span class="modified"><%= $article->{mtime_format} %></span>
 % }
 </div>
 <div class="tags">
