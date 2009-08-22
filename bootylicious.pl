@@ -29,8 +29,13 @@ get '/' => sub {
     my $article;
     my @articles = _parse_articles($c, limit => 10);
 
+    my $last_modified;
     if (@articles) {
         $article = $articles[0];
+
+        $last_modified = $article->{mtime};
+
+        return 1 unless _is_modified($c, $last_modified);
     }
 
     $c->stash(
@@ -38,6 +43,8 @@ get '/' => sub {
         article  => $article,
         articles => \@articles
     );
+
+    $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 } => 'index';
 
 get '/articles' => sub {
@@ -51,7 +58,7 @@ get '/articles' => sub {
     if (@articles) {
         $last_modified = $articles[0]->{mtime};
 
-        #return 1 unless _is_modified($c, $last_modified);
+        return 1 unless _is_modified($c, $last_modified);
     }
 
     $c->res->headers->header('Last-Modified' => $last_modified);
@@ -75,6 +82,8 @@ get '/tags/:tag' => sub {
     my $last_modified = Mojo::Date->new;
     if (@articles) {
         $last_modified = $articles[0]->{mtime};
+
+        return 1 unless _is_modified($c, $last_modified);
     }
 
     $c->stash(
@@ -82,6 +91,8 @@ get '/tags/:tag' => sub {
         articles      => \@articles,
         last_modified => $last_modified
     );
+
+    $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
     if ($c->stash('format') && $c->stash('format') eq 'rss') {
         $c->stash(template => 'articles');
@@ -123,11 +134,11 @@ get '/articles/:year/:month/:day/:alias' => sub {
     $data = _parse_article($c, $path)
       or return $c->app->static->serve_404($c);
 
-    #return 1 unless _is_modified($c, $last_modified);
+    return 1 unless _is_modified($c, $last_modified);
 
     $c->stash(article => $data, template => 'article', config => \%config);
 
-#$c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+    $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 } => 'article';
 
 sub makeup {
