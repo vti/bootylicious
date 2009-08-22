@@ -335,7 +335,7 @@ Not much here yet :(
         <generator>Mojolicious::Lite</generator>
     </channel>
 % foreach my $article (@$articles) {
-% my $link = $self->url_for('article', article => $article->{name}, format => 'html')->to_abs;
+% my $link = $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}, format => 'html')->to_abs;
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
