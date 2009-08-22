@@ -463,6 +463,7 @@ rkJggg==" alt="RSS" /></a></sup>
             a:hover{color:#000}
             a:visited{color:#000}
             img{border:0px}
+            pre{border:2px solid #ccc;background:#eee;padding:2em}
             #body {width:65%;margin:auto}
             #header {text-align:center;padding:2em;border-bottom: 1px solid #000}
             h1#title{font-size:3em}
