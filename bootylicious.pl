@@ -28,7 +28,8 @@ if (-e $conf_file) {
 
         foreach my $line (@lines) {
             chomp $line;
-            my ($key, $value) = split('=', $line);
+            $line =~ s/^([^=]+)=//;
+            my ($key, $value) = ($1, $line);
             $key =~ s/^BOOTYLICIOUS_//;
             $config{lc $key} = $value;
         }
