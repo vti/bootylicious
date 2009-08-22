@@ -372,7 +372,7 @@ Not much here yet :(
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
-      <descr><%== $article->{content} %></descr>
+      <description><%== $article->{content} %></description>
 % foreach my $tag (@{$article->{tags}}) {
       <category><%= $tag %></category>
 % }
