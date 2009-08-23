@@ -300,8 +300,8 @@ __DATA__
 @@ index.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
-% if (my $article = $self->stash('article')) {
     <div class="text">
+% if (my $article = $self->stash('article')) {
         <h1 class="title"><%= $article->{title} %></h1>
         <div class="created"><%= $article->{created_format} %></div>
         <div class="tags">
@@ -324,7 +324,9 @@ __DATA__
     </div>
 % }
 % else {
+<div class="text">
 Not much here yet :(
+</div>
 % }
 
 @@ articles.html.epl
