@@ -20,24 +20,10 @@ my %config = (
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>'
 );
 
-my $conf_file = app->home->rel_file('bootylicious.conf');
-if (-e $conf_file) {
-    if (open FILE, "<", $conf_file) {
-        my @lines = <FILE>;
-        close FILE;
+_read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
 
-        foreach my $line (@lines) {
-            chomp $line;
-            $line =~ s/^([^=]+)=//;
-            my ($key, $value) = ($1, $line);
-            $key =~ s/^BOOTYLICIOUS_//;
-            $config{lc $key} = $value;
-        }
-    }
-}
-
-$config{$_} = b($config{$_})->decode('utf8')->to_string
-  foreach keys %config;
+use Data::Dumper;
+warn Dumper \%config;
 
 get '/' => sub {
     my $c = shift;
@@ -165,6 +151,61 @@ sub makeup {
         $config{$type} =
           [map { s/^$publicdir\///; $_ } glob("$publicdir/*.$type")];
     }
+}
+
+sub _read_config_from_file {
+    my ($config, $conf_file) = @_;
+    if (-e $conf_file) {
+        if (open FILE, "<", $conf_file) {
+            my @lines = <FILE>;
+            close FILE;
+
+            foreach my $line (@lines) {
+                chomp $line;
+                next unless $line;
+                next if $line =~ m/^#/;
+                $line =~ s/^([^=]+)=//;
+                my ($key, $value) = ($1, $line);
+                $key =~ s/^BOOTYLICIOUS_//;
+                $key = lc $key;
+
+                if ($key eq 'menu') {
+                    my @links = split(',', $value);
+                    $config->{$key} = [];
+                    foreach my $link (@links) {
+                        $link =~ s/^([^:]+)://;
+                        push @{$config->{$key}}, ($1 => $link);
+                    }
+                }
+                else {
+                    $config->{$key} = $value;
+                }
+            }
+        }
+    }
+
+    _decode_config($config);
+}
+
+sub _decode_config {
+    my $config = shift;
+
+    foreach my $key (keys %config) {
+        if (ref $config->{$key}) {
+            _decode_config_arrayref($config->{$key});
+        }
+        else {
+            $config->{$key} = _decode_config_scalar($config->{$key});
+        }
+    }
+}
+
+sub _decode_config_scalar {
+    return b($_[0])->decode('utf8')->to_string
+}
+
+sub _decode_config_arrayref {
+    $_ = b($_)->decode('utf8')->to_string for @{$_[0]};
 }
 
 sub _is_modified {
@@ -511,6 +552,9 @@ rkJggg==" alt="RSS" /></a></sup>
                     <a href="<%= $self->url_for('index', format => '') %>">index</a>
                     <a href="<%= $self->url_for('tags') %>">tags</a>
                     <a href="<%= $self->url_for('articles') %>">archive</a>
+% for (my $i = 0; $i < @{$config->{menu}}; $i += 2) {
+                    <a href="<%= $config->{menu}->[$i + 1] %>"><%= $config->{menu}->[$i] %></a>
+% }
                 </div>
             </div>
 
