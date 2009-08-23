@@ -22,9 +22,6 @@ my %config = (
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
 
-use Data::Dumper;
-warn Dumper \%config;
-
 get '/' => sub {
     my $c = shift;
 
@@ -550,8 +547,8 @@ rkJggg==" alt="RSS" /></a></sup>
                 <span id="author"><%= $config->{author} %></span>, <span id="about"><%= $config->{about} %></span>
                 <div id="menu">
                     <a href="<%= $self->url_for('index', format => '') %>">index</a>
-                    <a href="<%= $self->url_for('tags') %>">tags</a>
-                    <a href="<%= $self->url_for('articles') %>">archive</a>
+                    <a href="<%= $self->url_for('tags', format => 'html') %>">tags</a>
+                    <a href="<%= $self->url_for('articles', format => 'html') %>">archive</a>
 % for (my $i = 0; $i < @{$config->{menu}}; $i += 2) {
                     <a href="<%= $config->{menu}->[$i + 1] %>"><%= $config->{menu}->[$i] %></a>
 % }
