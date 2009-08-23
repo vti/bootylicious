@@ -508,12 +508,12 @@ rkJggg==" alt="RSS" /></a></sup>
             img{border:0px}
             pre{border:2px solid #ccc;background:#eee;padding:2em}
             #body {width:65%;margin:auto}
-            #header {text-align:center;padding:2em;border-bottom: 1px solid #000}
+            #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
             h1#title{font-size:3em}
             h2#descr{font-size:1.5em;color:#999}
             span#author {font-weight:bold}
             span#about {font-style:italic}
-            #menu {text-align:right}
+            #menu {padding-top:1em;text-align:right}
             #content {background:#FFFFFF}
             .created, .modified {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
             .modified {margin:0px}
