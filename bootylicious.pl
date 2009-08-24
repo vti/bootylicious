@@ -19,7 +19,8 @@ my %config = (
     footer      => $ENV{BOOTYLICIOUS_FOOTER}
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>',
     menu => [],
-    theme => ''
+    theme => '',
+    cuttag => '[cut]'
 );
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
@@ -302,12 +303,22 @@ sub _parse_article {
         @$tags = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $list);
     }
 
+    my $cuttag = $config{cuttag};
+    my $preview;
+    my $preview_link;
+    if ($content =~ s{(.*?)<p>\Q$cuttag\E(?: (.*?))?\s*</p>}{$1}s) {
+        $preview = $1;
+        $preview_link = $2 || 'Keep reading';
+    }
+
     my $mtime   = Mojo::Date->new((stat($path))[9]);
     my $created = Mojo::Date->new($epoch);
 
     return $_articles{$path} = {
         title          => $title,
         tags           => $tags,
+        preview        => $preview,
+        preview_link   => $preview_link,
         content        => $content,
         mtime          => $mtime,
         created        => $created,
@@ -350,7 +361,13 @@ __DATA__
         <a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
 % }
         </div>
+% if ($article->{preview}) {
+        <%= $article->{preview} %>
+        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{preview_link} %></a></div>
+% }
+% else {
         <%= $article->{content} %>
+% }
     </div>
     <div id="subfooter">
     <h2>Last articles</h2>
@@ -415,7 +432,12 @@ Not much here yet :(
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
+% if ($article->{preview}) {
+      <description><%== $article->{preview} %></description>
+% }
+% else {
       <description><%== $article->{content} %></description>
+% }
 % foreach my $tag (@{$article->{tags}}) {
       <category><%= $tag %></category>
 % }
@@ -520,6 +542,7 @@ rkJggg==" alt="RSS" /></a></sup>
             .tags{margin-left:10px;text-transform:uppercase;}
             .text {padding:2em;}
             .text h1.title {font-size:2.5em}
+            .more {margin-left:10px}
             #subfooter {padding:2em;border-top:#000000 1px solid}
             #footer {text-align:center;padding:2em;border-top:#000000 1px solid}
         </style>
