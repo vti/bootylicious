@@ -122,7 +122,11 @@ get '/articles/:year/:month/:alias' => sub {
     my $root = $c->app->home->rel_dir($config{articlesdir});
 
     my @files =
-      glob($root . '/' . $c->stash('year') . $c->stash('month') . "*.pod");
+      glob( $root . '/'
+          . $c->stash('year')
+          . $c->stash('month') . '*-'
+          . $c->stash('alias')
+          . ".pod");
 
     if (@files > 1) {
         $c->app->log->warn('More then one articles is available '
