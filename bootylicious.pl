@@ -17,7 +17,8 @@ my %config = (
     articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
     publicdir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
     footer      => $ENV{BOOTYLICIOUS_FOOTER}
-      || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>'
+      || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>',
+    menu => []
 );
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
