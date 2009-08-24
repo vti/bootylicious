@@ -116,19 +116,21 @@ get '/tags' => sub {
     $c->stash(config => \%config, tags => $tags);
 } => 'tags';
 
-get '/articles/:year/:month/:day/:alias' => sub {
+get '/articles/:year/:month/:alias' => sub {
     my $c = shift;
 
     my $root = $c->app->home->rel_dir($config{articlesdir});
-    my $path = join('/',
-        $root,
-        $c->stash('year')
-          . $c->stash('month')
-          . $c->stash('day') . '-'
-          . $c->stash('alias')
-          . '.pod');
 
-    return $c->app->static->serve_404($c) unless -r $path;
+    my @files =
+      glob($root . '/' . $c->stash('year') . $c->stash('month') . "*.pod");
+
+    if (@files > 1) {
+        $c->app->log->warn('More then one articles is available '
+              . 'at the same year/month and name');
+    }
+    my $path = $files[0];
+
+    return $c->app->static->serve_404($c) unless $path && -r $path;
 
     my $last_modified = Mojo::Date->new((stat($path))[9]);
 
@@ -255,15 +257,23 @@ sub _parse_article {
 
     return $_articles{$path} if $_articles{$path};
 
-    unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)-(.*?)\.pod$/) {
+    unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-(.*?)\.pod$/) {
         $c->app->log->debug("Ignoring $path: unknown file");
         return;
     }
-    my ($year, $month, $day, $name) = ($1, $2, $3, $4);
+    my ($year, $month, $day, $hour, $minute, $second, $name) =
+      ($1, $2, $3, $4, $5, $6, $7);
 
     my $epoch = 0;
     eval {
-        $epoch = Time::Local::timegm(0, 0, 0, $day, $month - 1, $year - 1900);
+        $epoch = Time::Local::timegm(
+            $second || 0,
+            $minute || 0,
+            $hour   || 0,
+            $day,
+            $month - 1,
+            $year - 1900
+        );
     };
     if ($@ || $epoch < 0) {
         $c->app->log->debug("Ignoring $path: wrong timestamp");
@@ -363,7 +373,7 @@ __DATA__
         </div>
 % if ($article->{preview}) {
         <%= $article->{preview} %>
-        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{preview_link} %></a></div>
+        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>.html"><%= $article->{preview_link} %></a></div>
 % }
 % else {
         <%= $article->{content} %>
@@ -374,7 +384,7 @@ __DATA__
     <ul>
 % foreach my $article (@{$self->stash('articles')}) {
         <li>
-            <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
+            <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
             <div class="created"><%= $article->{created_format} %></div>
         </li>
 % }
@@ -404,7 +414,7 @@ Not much here yet :(
 %     }
 
     <li>
-        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
+        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
         <div class="created"><%= $article->{created_format} %></div>
     </li>
 
@@ -415,7 +425,6 @@ Not much here yet :(
 @@ articles.rss.epl
 % my $self = shift;
 % my $articles = $self->stash('articles');
-% my $last_modified = $self->stash('last_modified');
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xml:base="<%= $self->req->url->base %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -423,12 +432,12 @@ Not much here yet :(
         <title><%= $self->stash('config')->{title} %></title>
         <link><%= $self->req->url->base %></link>
         <descr><%= $self->stash('config')->{descr} %></descr>
-        <pubDate><%= $last_modified %></pubDate>
-        <lastBuildDate><%= $last_modified %></lastBuildDate>
+        <pubDate><%= $articles->[0]->{created} %></pubDate>
+        <lastBuildDate><%= $articles->[0]->{created} %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
     </channel>
 % foreach my $article (@$articles) {
-% my $link = $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}, format => 'html')->to_abs;
+% my $link = $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html')->to_abs;
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
@@ -441,7 +450,7 @@ Not much here yet :(
 % foreach my $tag (@{$article->{tags}}) {
       <category><%= $tag %></category>
 % }
-      <pubDate><%= $article->{mtime} %></pubDate>
+      <pubDate><%= $article->{created} %></pubDate>
       <guid><%= $link %></guid>
     </item>
 % }
@@ -485,7 +494,7 @@ rkJggg==" alt="RSS" /></a></sup>
 </h1>
 <br />
 % foreach my $article (@$articles) {
-        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, day => $article->{day}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
+        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
         <div class="created"><%= $article->{created_format} %></div>
     </li>
 % }
