@@ -18,7 +18,8 @@ my %config = (
     publicdir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
     footer      => $ENV{BOOTYLICIOUS_FOOTER}
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>',
-    menu => []
+    menu => [],
+    theme => ''
 );
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
@@ -141,13 +142,14 @@ get '/articles/:year/:month/:day/:alias' => sub {
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 } => 'article';
 
-sub makeup {
+sub theme {
     my $publicdir = app->home->rel_dir($config{publicdir});
 
     # CSS, JS auto import
     foreach my $type (qw/css js/) {
         $config{$type} =
-          [map { s/^$publicdir\///; $_ } glob("$publicdir/*.$type")];
+          [map { s/^$publicdir\///; $_ }
+              glob("$publicdir/bootylicious/themes/$config{theme}/*.$type")];
     }
 }
 
@@ -330,7 +332,7 @@ sub _format_date {
 
 app->types->type(rss => 'application/rss+xml');
 
-makeup;
+theme;
 
 shagadelic(@ARGV ? @ARGV : 'cgi');
 
