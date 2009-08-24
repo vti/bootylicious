@@ -362,9 +362,9 @@ __DATA__
 @@ index.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
+% foreach my $article (@{$self->stash('articles')}) {
     <div class="text">
-% if (my $article = $self->stash('article')) {
-        <h1 class="title"><%= $article->{title} %></h1>
+        <h1 class="title"><a href="<%= $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%= $article->{title} %></a></h1>
         <div class="created"><%= $article->{created_format} %></div>
         <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
@@ -379,22 +379,6 @@ __DATA__
         <%= $article->{content} %>
 % }
     </div>
-    <div id="subfooter">
-    <h2>Last articles</h2>
-    <ul>
-% foreach my $article (@{$self->stash('articles')}) {
-        <li>
-            <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>.html"><%= $article->{title} %></a><br />
-            <div class="created"><%= $article->{created_format} %></div>
-        </li>
-% }
-    </ul>
-    </div>
-% }
-% else {
-<div class="text">
-Not much here yet :(
-</div>
 % }
 
 @@ articles.html.epl
