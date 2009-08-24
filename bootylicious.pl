@@ -549,7 +549,7 @@ rkJggg==" alt="RSS" /></a></sup>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= $self->url_for('index') %>"><%= $config->{title} %></a>
+                <h1 id="title"><a href="<%= $self->url_for('index', format => '') %>"><%= $config->{title} %></a>
                 <sup><a href="<%= $self->url_for('articles',format=>'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
