@@ -59,6 +59,8 @@ sub index {
     );
 
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+
+    $c->stash(template => 'index');
 }
 
 get '/' => \&index => 'root';
