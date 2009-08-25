@@ -20,7 +20,8 @@ my %config = (
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>',
     menu => [],
     theme => '',
-    cuttag => '[cut]'
+    cuttag => '[cut]',
+    page_limit => 2
 );
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
@@ -28,37 +29,48 @@ _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
 get '/' => sub {
     my $c = shift;
 
+    my $max = $c->req->param('max') || 0;
+    my $min = $c->req->param('min') || 0;
+
     my $article;
-    my @articles = _parse_articles($c, limit => 10);
+    my ($articles, $pager) = _parse_articles(
+        $c,
+        limit => $config{page_limit},
+        max   => $max,
+        min   => $min
+    );
 
     my $last_modified;
-    if (@articles) {
-        $article = $articles[0];
+    if (@$articles) {
+        $article = $articles->[0];
 
         $last_modified = $article->{mtime};
 
         return 1 unless _is_modified($c, $last_modified);
     }
 
+    my $later = 0;
+
     $c->stash(
         config   => \%config,
         article  => $article,
-        articles => \@articles
+        articles => $articles,
+        pager    => $pager
     );
 
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 } => 'index';
 
-get '/articles' => sub {
+get '/archive' => sub {
     my $c = shift;
 
     my $root = $c->app->home;
 
     my $last_modified = Mojo::Date->new;
 
-    my @articles = _parse_articles($c, limit => 0);
-    if (@articles) {
-        $last_modified = $articles[0]->{mtime};
+    my ($articles) = _parse_articles($c, limit => 0);
+    if (@$articles) {
+        $last_modified = $articles->[0]->{mtime};
 
         return 1 unless _is_modified($c, $last_modified);
     }
@@ -66,31 +78,31 @@ get '/articles' => sub {
     $c->res->headers->header('Last-Modified' => $last_modified);
 
     $c->stash(
-        articles      => \@articles,
+        articles      => $articles,
         last_modified => $last_modified,
         config        => \%config
     );
-} => 'articles';
+} => 'archive';
 
 get '/tags/:tag' => sub {
     my $c = shift;
 
     my $tag = $c->stash('tag');
 
-    my @articles = grep {
+    my ($articles) = grep {
         grep {/^$tag$/} @{$_->{tags}}
     } _parse_articles($c, limit => 0);
 
     my $last_modified = Mojo::Date->new;
-    if (@articles) {
-        $last_modified = $articles[0]->{mtime};
+    if (@$articles) {
+        $last_modified = $articles->[0]->{mtime};
 
         return 1 unless _is_modified($c, $last_modified);
     }
 
     $c->stash(
         config        => \%config,
-        articles      => \@articles,
+        articles      => $articles,
         last_modified => $last_modified
     );
 
@@ -106,7 +118,9 @@ get '/tags' => sub {
 
     my $tags = {};
 
-    foreach my $article (_parse_articles($c, limit => 0)) {
+    my ($articles) = _parse_articles($c, limit => 0);
+
+    foreach my $article (@$articles) {
         foreach my $tag (@{$article->{tags}}) {
             $tags->{$tag}->{count} ||= 0;
             $tags->{$tag}->{count}++;
@@ -234,11 +248,41 @@ sub _parse_articles {
     my $c      = shift;
     my %params = @_;
 
-    my @files =
-      sort { $b cmp $a }
-      glob(app->home->rel_dir($config{articlesdir}) . '/*.pod');
+    my $root = app->home->rel_dir($config{articlesdir});
 
-    @files = splice(@files, 0, $params{limit}) if $params{limit};
+    my $pager = {};
+
+    my @all_files = sort { $b cmp $a } glob($root . '/*.pod');
+    my @files;
+    foreach my $file (@all_files) {
+        if ($params{max}) {
+            $file =~ m/\/([^\/]+)-/;
+
+            if ($1 lt $params{max}) {
+                push @files, $file;
+            }
+            else {
+                $pager->{min} = 1;
+            }
+        }
+        elsif ($params{min}) {
+            $file =~ m/\/([^\/]+)-/;
+
+            if ($1 gt $params{min}) {
+                push @files, $file;
+            }
+            else {
+                $pager->{max} = 1;
+            }
+        }
+        else {
+            push @files, $file;
+        }
+    }
+
+    if ($params{limit} && @files > $params{limit}) {
+        @files = splice(@files, 0, $params{limit});
+    }
 
     my @articles;
     foreach my $file (@files) {
@@ -248,7 +292,15 @@ sub _parse_articles {
         push @articles, $data;
     }
 
-    return @articles;
+    if ($pager->{max}) {
+        $pager->{max} = $articles[-1] ? $articles[-1]->{datetime} : undef;
+    }
+
+    if ($pager->{min}) {
+        $pager->{min} = $articles[0] ? $articles[0]->{datetime} : undef;
+    }
+
+    return (\@articles, $pager);
 }
 
 my %_articles;
@@ -267,6 +319,8 @@ sub _parse_article {
     }
     my ($year, $month, $day, $hour, $minute, $second, $name) =
       ($1, $2, $3, $4, $5, $6, $7);
+
+    my $datetime = "$1$2$3T$4:$5:$6";
 
     my $epoch = 0;
     eval {
@@ -336,6 +390,7 @@ sub _parse_article {
         content        => $content,
         mtime          => $mtime,
         created        => $created,
+        datetime       => $datetime,
         mtime_format   => _format_date($mtime),
         created_format => _format_date($created),
         year           => $year,
@@ -365,8 +420,10 @@ __DATA__
 
 @@ index.html.epl
 % my $self = shift;
+% my $articles = $self->stash('articles');
+% my $pager = $self->stash('pager');
 % $self->stash(layout => 'wrapper');
-% foreach my $article (@{$self->stash('articles')}) {
+% foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title"><a href="<%= $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%= $article->{title} %></a></h1>
         <div class="created"><%= $article->{created_format} %></div>
@@ -385,7 +442,27 @@ __DATA__
     </div>
 % }
 
-@@ articles.html.epl
+<div id="pager">
+% if ($pager->{min}) {
+    &larr; <a href="<%= $self->url_for('articles') %>?min=<%= $pager->{min} %>">Earlier</a>
+% }
+% else {
+<span class="notactive">
+&larr; Earlier
+</span>
+% }
+
+% if ($pager->{max}) {
+    <a href="<%= $self->url_for('articles') %>?max=<%= $pager->{max} %>">Later</a> &rarr;
+% }
+% else {
+<span class="notactive">
+Later &rarr;
+</span>
+% }
+</div>
+
+@@ archive.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $articles = $self->stash('articles');
@@ -540,6 +617,8 @@ rkJggg==" alt="RSS" /></a></sup>
             .text {padding:2em;}
             .text h1.title {font-size:2.5em}
             .more {margin-left:10px}
+            #pager {text-align:center;padding:2em}
+            #pager span.notactive {color:#ccc}
             #subfooter {padding:2em;border-top:#000000 1px solid}
             #footer {text-align:center;padding:2em;border-top:#000000 1px solid}
         </style>
