@@ -26,7 +26,7 @@ my %config = (
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
 
-get '/' => sub {
+sub index {
     my $c = shift;
 
     my $max = $c->req->param('max') || 0;
@@ -59,7 +59,10 @@ get '/' => sub {
     );
 
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
-} => 'index';
+}
+
+get '/' => \&index => 'root';
+get '/index' => \&index => 'index';
 
 get '/archive' => sub {
     my $c = shift;
@@ -89,9 +92,13 @@ get '/tags/:tag' => sub {
 
     my $tag = $c->stash('tag');
 
-    my ($articles) = grep {
-        grep {/^$tag$/} @{$_->{tags}}
-    } _parse_articles($c, limit => 0);
+    my ($articles) = _parse_articles($c, limit => 0);
+
+    $articles = [
+        grep {
+            grep {/^$tag$/} @{$_->{tags}}
+          } @$articles
+    ];
 
     my $last_modified = Mojo::Date->new;
     if (@$articles) {
@@ -444,7 +451,7 @@ __DATA__
 
 <div id="pager">
 % if ($pager->{min}) {
-    &larr; <a href="<%= $self->url_for('articles') %>?min=<%= $pager->{min} %>">Earlier</a>
+    &larr; <a href="<%= $self->url_for('index') %>?min=<%= $pager->{min} %>">Earlier</a>
 % }
 % else {
 <span class="notactive">
@@ -453,7 +460,7 @@ __DATA__
 % }
 
 % if ($pager->{max}) {
-    <a href="<%= $self->url_for('articles') %>?max=<%= $pager->{max} %>">Later</a> &rarr;
+    <a href="<%= $self->url_for('index') %>?max=<%= $pager->{max} %>">Later</a> &rarr;
 % }
 % else {
 <span class="notactive">
@@ -487,7 +494,7 @@ Later &rarr;
 % }
 </div>
 
-@@ articles.rss.epl
+@@ index.rss.epl
 % my $self = shift;
 % my $articles = $self->stash('articles');
 <?xml version="1.0" encoding="UTF-8"?>
@@ -623,13 +630,13 @@ rkJggg==" alt="RSS" /></a></sup>
             #footer {text-align:center;padding:2em;border-top:#000000 1px solid}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%= $config->{title} %>" href="<%= $self->url_for('articles', format => 'rss') %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%= $config->{title} %>" href="<%= $self->url_for('index', format => 'rss') %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
                 <h1 id="title"><a href="<%= $self->url_for('index', format => '') %>"><%= $config->{title} %></a>
-                <sup><a href="<%= $self->url_for('articles',format=>'rss') %>"><img src="data:image/png;base64,
+                <sup><a href="<%= $self->url_for('index', format=>'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
@@ -650,7 +657,7 @@ rkJggg==" alt="RSS" /></a></sup>
                 <div id="menu">
                     <a href="<%= $self->url_for('index', format => '') %>">index</a>
                     <a href="<%= $self->url_for('tags', format => 'html') %>">tags</a>
-                    <a href="<%= $self->url_for('articles', format => 'html') %>">archive</a>
+                    <a href="<%= $self->url_for('archive', format => 'html') %>">archive</a>
 % for (my $i = 0; $i < @{$config->{menu}}; $i += 2) {
                     <a href="<%= $config->{menu}->[$i + 1] %>"><%= $config->{menu}->[$i] %></a>
 % }
