@@ -18,10 +18,10 @@ my %config = (
     publicdir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
     footer      => $ENV{BOOTYLICIOUS_FOOTER}
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>',
-    menu => [],
-    theme => '',
-    cuttag => '[cut]',
-    page_limit => 2
+    menu       => [],
+    theme      => '',
+    cuttag     => '[cut]',
+    pagelimit => 10
 );
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
@@ -35,7 +35,7 @@ get '/' => sub {
     my $article;
     my ($articles, $pager) = _parse_articles(
         $c,
-        limit => $config{page_limit},
+        limit => $config{pagelimit},
         max   => $max,
         min   => $min
     );
