@@ -215,6 +215,8 @@ sub _read_config_from_file {
     }
 
     _decode_config($config);
+
+    $ENV{SCRIPT_NAME} = $config{base} if $config{base};
 }
 
 sub _decode_config {
