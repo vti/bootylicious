@@ -455,7 +455,7 @@ __DATA__
 
 <div id="pager">
 % if ($pager->{min}) {
-    &larr; <a href="<%= $self->url_for('index') %>?min=<%= $pager->{min} %>">Earlier</a>
+    &larr; <a href="<%= $self->url_for('index',format=>'html') %>?min=<%= $pager->{min} %>">Earlier</a>
 % }
 % else {
 <span class="notactive">
@@ -464,7 +464,7 @@ __DATA__
 % }
 
 % if ($pager->{max}) {
-    <a href="<%= $self->url_for('index') %>?max=<%= $pager->{max} %>">Later</a> &rarr;
+    <a href="<%= $self->url_for('index'),format=>'html' %>?max=<%= $pager->{max} %>">Later</a> &rarr;
 % }
 % else {
 <span class="notactive">
@@ -639,7 +639,7 @@ rkJggg==" alt="RSS" /></a></sup>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= $self->url_for('index', format => '') %>"><%= $config->{title} %></a>
+                <h1 id="title"><a href="<%= $self->url_for('root', format => '') %>"><%= $config->{title} %></a>
                 <sup><a href="<%= $self->url_for('index', format=>'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
@@ -659,7 +659,7 @@ rkJggg==" alt="RSS" /></a></sup>
                 <h2 id="descr"><%= $config->{descr} %></h2>
                 <span id="author"><%= $config->{author} %></span>, <span id="about"><%= $config->{about} %></span>
                 <div id="menu">
-                    <a href="<%= $self->url_for('index', format => '') %>">index</a>
+                    <a href="<%= $self->url_for('index', format => 'html') %>">index</a>
                     <a href="<%= $self->url_for('tags', format => 'html') %>">tags</a>
                     <a href="<%= $self->url_for('archive', format => 'html') %>">archive</a>
 % for (my $i = 0; $i < @{$config->{menu}}; $i += 2) {
