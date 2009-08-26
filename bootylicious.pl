@@ -543,7 +543,7 @@ Later &rarr;
 <br />
 <div class="tags">
 % foreach my $tag (keys %$tags) {
-<a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a><sub>(<%= $tags->{$tag}->{count} %>)</sub>
+<a href="<%= $self->url_for('tag', tag => $tag, format => 'html') %>"><%= $tag %></a><sub>(<%= $tags->{$tag}->{count} %>)</sub>
 % }
 </div>
 </div>
@@ -591,7 +591,7 @@ rkJggg==" alt="RSS" /></a></sup>
 </div>
 <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
-<a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
+<a href="<%= $self->url_for('tag', tag => $tag, format => 'html') %>"><%= $tag %></a>
 % }
 </div>
 <%= $article->{content} %>
