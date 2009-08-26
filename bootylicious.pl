@@ -385,7 +385,9 @@ sub _parse_article {
     my $cuttag = $config{cuttag};
     my $preview;
     my $preview_link;
-    if ($content =~ s{(.*?)<p>\Q$cuttag\E(?: (.*?))?\s*</p>}{$1}s) {
+    if ($content
+        =~ s{(.*?)<p>\Q$cuttag\E(?: (.*?))?\s*</p>}{$1<a name="cut"></a>}s)
+    {
         $preview = $1;
         $preview_link = $2 || 'Keep reading';
     }
@@ -445,7 +447,7 @@ __DATA__
         </div>
 % if ($article->{preview}) {
         <%= $article->{preview} %>
-        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>.html"><%= $article->{preview_link} %></a></div>
+        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>.html#cut"><%= $article->{preview_link} %></a></div>
 % }
 % else {
         <%= $article->{content} %>
