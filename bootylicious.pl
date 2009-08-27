@@ -512,8 +512,7 @@ Later &rarr;
 % my $articles = $self->stash('articles');
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xml:base="<%= $self->req->url->base %>"
-    xmlns:dc="http://purl.org/dc/elements/1.1/"
-    xmlns:atom="http://www.w3.org/2005/Atom">
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
         <title><%= $self->stash('config')->{title} %></title>
         <link><%= $self->req->url->base %></link>
@@ -539,7 +538,6 @@ Later &rarr;
       <guid><%= $link %></guid>
     </item>
 % }
-    <atom:link href="<%= $self->req->url->base %><%= $self->req->url %>" rel="self" type="application/rss+xml" />
     </channel>
 </rss>
 
