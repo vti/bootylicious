@@ -376,6 +376,11 @@ sub _parse_article {
     $content =~ s{^\s*<h1>NAME</h1>\s*<p>(.*?)</p>}{}sg;
     $title = $1 || $name;
 
+    my $link = '';
+    if ($content =~ s{^\s*<h1>LINK</h1>\s*<p>(.*?)</p>}{}sg) {
+        $link = $1;
+    }
+
     my $tags = [];
     if ($content =~ s{^\s*<h1>TAGS</h1>\s*<p>(.*?)</p>}{}sg) {
         my $list = $1; $list =~ s/(?:\r|\n)*//gs;
@@ -397,6 +402,7 @@ sub _parse_article {
 
     return $_articles{$path} = {
         title          => $title,
+        link           => $link,
         tags           => $tags,
         preview        => $preview,
         preview_link   => $preview_link,
@@ -438,7 +444,8 @@ __DATA__
 % $self->stash(layout => 'wrapper');
 % foreach my $article (@{$articles}) {
     <div class="text">
-        <h1 class="title"><a href="<%= $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%= $article->{title} %></a></h1>
+        <h1 class="title"><%= '&raquo;' if $article->{link} %> <a
+        href="<%= $article->{link} || $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%= $article->{title} %></a></h1>
         <div class="created"><%= $article->{created_format} %></div>
         <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
@@ -583,7 +590,13 @@ rkJggg==" alt="RSS" /></a></sup>
 % $self->stash(layout => 'wrapper');
 % my $article = $self->stash('article');
 <div class="text">
-<h1 class="title"><%= $article->{title} %></h1>
+<h1 class="title">
+% if ($article->{link}) {
+&raquo; <a href="<%= $article->{link} %>"><%= $article->{title} %></a>
+% } else {
+<%= $article->{title} %>
+% }
+</h1>
 <div class="created"><%= $article->{created_format} %>
 % if ($article->{created} ne $article->{mtime}) {
 , modified <span class="modified"><%= $article->{mtime_format} %></span>
