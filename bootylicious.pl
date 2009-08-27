@@ -516,7 +516,7 @@ Later &rarr;
     <channel>
         <title><%= $self->stash('config')->{title} %></title>
         <link><%= $self->req->url->base %></link>
-        <descr><%= $self->stash('config')->{descr} %></descr>
+        <description><%= $self->stash('config')->{descr} %></description>
         <pubDate><%= $articles->[0]->{created} %></pubDate>
         <lastBuildDate><%= $articles->[0]->{created} %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
