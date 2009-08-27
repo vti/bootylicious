@@ -539,8 +539,8 @@ Later &rarr;
       <guid><%= $link %></guid>
     </item>
 % }
-    </channel>
     <atom:link href="<%= $self->req->url->base %><%= $self->req->url %>" rel="self" type="application/rss+xml" />
+    </channel>
 </rss>
 
 @@ tags.html.epl
