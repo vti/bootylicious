@@ -17,7 +17,7 @@ my %config = (
     articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
     publicdir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
     footer      => $ENV{BOOTYLICIOUS_FOOTER}
-      || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> & <em>Pod::Simple::HTML</em>',
+      || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> &amp;&amp; <em>Pod::Simple::HTML</em>',
     menu       => [],
     theme      => '',
     cuttag     => '[cut]',
@@ -614,16 +614,20 @@ rkJggg==" alt="RSS" /></a></sup>
 % my $self = shift;
 % my $config = $self->stash('config');
 % $self->res->headers->content_type('text/html; charset=utf-8');
-<!html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
     <head>
         <title><%= $config->{title} %></title>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 % foreach my $file (@{$config->{css}}) {
         <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
 % }
 % if (!@{$config->{css}}) {
         <style type="text/css">
             body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
-            h1,h2,h3,h4,h5 {font-family: times, Times New Roman, times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
+            h1,h2,h3,h4,h5 {font-family: times, "Times New Roman", times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
             a,a:active {color:#555}
             a:hover{color:#000}
             a:visited{color:#000}
@@ -646,7 +650,7 @@ rkJggg==" alt="RSS" /></a></sup>
             #pager {text-align:center;padding:2em}
             #pager span.notactive {color:#ccc}
             #subfooter {padding:2em;border-top:#000000 1px solid}
-            #footer {text-align:center;padding:2em;border-top:#000000 1px solid}
+            #footer {font-size:80%;text-align:center;padding:2em;border-top:#000000 1px solid}
         </style>
 % }
         <link rel="alternate" type="application/rss+xml" title="<%= $config->{title} %>" href="<%= $self->url_for('index', format => 'rss') %>" />
@@ -687,7 +691,7 @@ rkJggg==" alt="RSS" /></a></sup>
             <%= $self->render_inner %>
             </div>
 
-            <div id="footer"><small><%= $config->{footer} %></small></div>
+            <div id="footer"><%= $config->{footer} %></div>
         </div>
 % foreach my $file (@{$config->{js}}) {
         <script type="text/javascript" href="/<%= $file %>" />
