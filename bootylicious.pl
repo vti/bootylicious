@@ -4,6 +4,8 @@ BEGIN { use FindBin; use lib "$FindBin::Bin/mojo/lib" }
 
 use Mojolicious::Lite;
 use Mojo::Date;
+use Mojo::ByteStream;
+use Mojo::Loader;
 use Pod::Simple::HTML;
 require Time::Local;
 use Mojo::ByteStream 'b';
@@ -24,7 +26,13 @@ my %config = (
     pagelimit => 10
 );
 
+my %hooks = (
+    finalize => []
+);
+
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
+
+_load_plugins($config{plugins});
 
 sub index {
     my $c = shift;
@@ -61,6 +69,10 @@ sub index {
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
     $c->stash(template => 'index');
+
+    $c->render;
+
+    _call_hook($c, 'finalize');
 }
 
 get '/' => \&index => 'root';
@@ -87,6 +99,10 @@ get '/archive' => sub {
         last_modified => $last_modified,
         config        => \%config
     );
+
+    $c->render;
+
+    _call_hook($c, 'finalize');
 } => 'archive';
 
 get '/tags/:tag' => sub {
@@ -120,6 +136,10 @@ get '/tags/:tag' => sub {
     if ($c->stash('format') && $c->stash('format') eq 'rss') {
         $c->stash(template => 'articles');
     }
+
+    $c->render;
+
+    _call_hook($c, 'finalize');
 } => 'tag';
 
 get '/tags' => sub {
@@ -137,6 +157,10 @@ get '/tags' => sub {
     }
 
     $c->stash(config => \%config, tags => $tags);
+
+    $c->render;
+
+    _call_hook($c, 'finalize');
 } => 'tags';
 
 get '/articles/:year/:month/:alias' => sub {
@@ -170,6 +194,10 @@ get '/articles/:year/:month/:alias' => sub {
     $c->stash(article => $data, template => 'article', config => \%config);
 
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+
+    $c->render;
+
+    _call_hook($c, 'finalize');
 } => 'article';
 
 sub theme {
@@ -238,6 +266,61 @@ sub _decode_config_scalar {
 
 sub _decode_config_arrayref {
     $_ = b($_)->decode('utf8')->to_string for @{$_[0]};
+}
+
+sub _load_plugins {
+    my $plugin_names = shift;
+
+    my @plugins = split(',', $plugin_names);
+    return unless @plugins;
+
+    my $lib_dir = app->home->rel_dir('lib');
+    push @INC, $lib_dir;
+
+    my $loader = Mojo::Loader->new;
+    foreach my $plugin (@plugins) {
+        my ($class, $args) = split(':', $plugin);
+        $class = Mojo::ByteStream->new($class)->camelize;
+        $class = "Bootylicious::Plugin::$class";
+
+        app->log->debug("Loading plugin '$class'");
+
+        if (my $e = $loader->load($class)) {
+            next unless ref $e;
+
+            app->log->error($e);
+            next;
+        }
+
+        unless ($class->can('new')) {
+            app->log->error(qq|Can't locate object method "new" via plugin '$class'|);
+            next;
+        }
+
+        my @args = split('=', $args);
+        my $instance = $class->new(@args);
+
+        no strict 'refs';
+
+        my $symtable = \%{"$class\::"};
+
+        foreach my $hook (keys %hooks) {
+            next unless exists $symtable->{"hook_$hook"};
+
+            app->log->debug("Registering hook '$class\::hook_$hook'");
+
+            my $sub = \&{"$class\::hook_$hook"};
+            push @{$hooks{$hook}}, $instance;
+        }
+    }
+}
+
+sub _call_hook {
+    my $c = shift;
+    my $hook = shift;
+
+    my $method = "hook_$hook";
+    $_->$method($c) foreach @{$hooks{$hook}};
 }
 
 sub _is_modified {
