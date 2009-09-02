@@ -270,6 +270,7 @@ sub _decode_config_arrayref {
 
 sub _load_plugins {
     my $plugin_names = shift;
+    return unless $plugin_names;
 
     my @plugins = split(',', $plugin_names);
     return unless @plugins;
