@@ -394,6 +394,7 @@ sub _parse_articles {
 }
 
 my %_articles;
+my %_parsers;
 
 sub _parse_article {
     my $c    = shift;
@@ -432,7 +433,7 @@ sub _parse_article {
         $c->app->log->error("Can't open file: $path: $!");
         return;
     }
-    my $string = join("\n", <FILE>);
+    my $string = join("", <FILE>);
     close FILE;
 
     my $mtime   = Mojo::Date->new((stat($path))[9]);
@@ -442,18 +443,29 @@ sub _parse_article {
     if ($ext ne 'pod') {
         my $parser_class =
           'Bootylicious::Parser::' . Mojo::ByteStream->new($ext)->camelize;
-        my $loader = Mojo::Loader->new;
-        if (my $e = $loader->load($parser_class)) {
-            if (ref $e) {
-                $c->app->log->error($e);
-            }
-            else {
-                $c->app->log->error("Unknown parser: $parser_class");
-            }
-            return;
-        }
 
-        $parser = $parser_class->new->parser_cb;
+        if ($_parsers{$parser_class}) {
+            $parser = $_parsers{$parser_class};
+        }
+        else {
+            eval "require $parser_class";
+            if ($@) {
+                $c->app->log->error($@);
+                return;
+            }
+            #my $loader = Mojo::Loader->new;
+            #if (my $e = $loader->load($parser_class)) {
+                #if (ref $e) {
+                    #$c->app->log->error($e);
+                #}
+                #else {
+                    #$c->app->log->error("Unknown parser: $parser_class");
+                #}
+                #return;
+            #}
+
+            $parser = $_parsers{$parser_class} = $parser_class->new->parser_cb;
+        }
     }
 
     my $cuttag = $config{cuttag};
