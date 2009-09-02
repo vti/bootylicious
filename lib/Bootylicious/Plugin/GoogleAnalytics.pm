@@ -17,8 +17,11 @@ sub hook_finalize {
 
     $c->stash(urchin => $self->urchin);
 
-    my $ga_script = $c->render_partial('template',
-        template_class => 'Bootylicious::Plugin::GoogleAnalytics');
+    my $ga_script = $c->render_partial(
+        'template',
+        format         => 'html',
+        template_class => __PACKAGE__
+    );
 
     $body =~ s{</body>}{$ga_script</body>};
     $c->res->body($body);
