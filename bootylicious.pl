@@ -301,16 +301,11 @@ sub _load_plugins {
         my @args = split('=', $args);
         my $instance = $class->new(@args);
 
-        no strict 'refs';
-
-        my $symtable = \%{"$class\::"};
-
         foreach my $hook (keys %hooks) {
-            next unless exists $symtable->{"hook_$hook"};
+            next unless $class->can("hook_$hook");
 
             app->log->debug("Registering hook '$class\::hook_$hook'");
 
-            my $sub = \&{"$class\::hook_$hook"};
             push @{$hooks{$hook}}, $instance;
         }
     }
