@@ -173,7 +173,7 @@ get '/articles/:year/:month/:alias' => sub {
           . $c->stash('year')
           . $c->stash('month') . '*-'
           . $c->stash('alias')
-          . ".pod");
+          . ".*");
 
     if (@files > 1) {
         $c->app->log->warn('More then one articles is available '
@@ -342,7 +342,7 @@ sub _parse_articles {
 
     my $pager = {};
 
-    my @all_files = sort { $b cmp $a } glob($root . '/*.pod');
+    my @all_files = sort { $b cmp $a } glob($root . '/*.*');
     my @files;
     foreach my $file (@all_files) {
         if ($params{max}) {
@@ -403,12 +403,12 @@ sub _parse_article {
 
     return $_articles{$path} if $_articles{$path};
 
-    unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-(.*?)\.pod$/) {
+    unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-(.*?)\.(.*)$/) {
         $c->app->log->debug("Ignoring $path: unknown file");
         return;
     }
-    my ($year, $month, $day, $hour, $minute, $second, $name) =
-      ($1, $2, $3, $4, $5, $6, $7);
+    my ($year, $month, $day, $hour, $minute, $second, $name, $ext) =
+      ($1, $2, $3, $4, $5, $6, $7, $8);
 
     my $datetime = "$1$2$3T$4:$5:$6";
 
@@ -428,64 +428,50 @@ sub _parse_article {
         return;
     }
 
-    my $parser = Pod::Simple::HTML->new;
-
-    $parser->force_title('');
-    $parser->html_header_before_title('');
-    $parser->html_header_after_title('');
-    $parser->html_footer('');
-
-    my $title   = '';
-    my $content = '';
-
-    open FILE, "<:encoding(UTF-8)", $path;
-    my $string = join("\n", <FILE>);
-    close FILE;
-
-    $parser->output_string(\$content);
-    eval { $parser->parse_string_document($string) };
-    if ($@) {
-        $c->app->log->debug("Ignoring $path: parser error");
+    unless (open FILE, "<:encoding(UTF-8)", $path) {
+        $c->app->log->error("Can't open file: $path: $!");
         return;
     }
-
-    # Hacking
-    $content =~ s{<a name='___top' class='dummyTopAnchor'\s*></a>\n}{}g;
-    $content =~ s{<a class='u'.*?name=".*?"\s*>(.*?)</a>}{$1}sg;
-    $content =~ s{^\s*<h1>NAME</h1>\s*<p>(.*?)</p>}{}sg;
-    $title = $1 || $name;
-
-    my $link = '';
-    if ($content =~ s{^\s*<h1>LINK</h1>\s*<p>(.*?)</p>}{}sg) {
-        $link = $1;
-    }
-
-    my $tags = [];
-    if ($content =~ s{^\s*<h1>TAGS</h1>\s*<p>(.*?)</p>}{}sg) {
-        my $list = $1; $list =~ s/(?:\r|\n)*//gs;
-        @$tags = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $list);
-    }
-
-    my $cuttag = $config{cuttag};
-    my $preview;
-    my $preview_link;
-    if ($content
-        =~ s{(.*?)<p>\Q$cuttag\E(?: (.*?))?\s*</p>}{$1<a name="cut"></a>}s)
-    {
-        $preview = $1;
-        $preview_link = $2 || 'Keep reading';
-    }
+    my $string = join("\n", <FILE>);
+    close FILE;
 
     my $mtime   = Mojo::Date->new((stat($path))[9]);
     my $created = Mojo::Date->new($epoch);
 
+    my $parser = \&_parse_article_pod;
+    if ($ext ne 'pod') {
+        my $parser_class =
+          'Bootylicious::Parser::' . Mojo::ByteStream->new($ext)->camelize;
+        my $loader = Mojo::Loader->new;
+        if (my $e = $loader->load($parser_class)) {
+            if (ref $e) {
+                $c->app->log->error($e);
+            }
+            else {
+                $c->app->log->error("Unknown parser: $parser_class");
+            }
+            return;
+        }
+
+        $parser = $parser_class->new->parser_cb;
+    }
+
+    my $cuttag = $config{cuttag};
+    my ($head, $tail) = ($string, '');
+    my $preview_link;
+    if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
+        $tail = "=pod\n$3";
+        $preview_link = $2 || 'Keep reading';
+    }
+
+    my $data = $parser->($head, $tail);
+    unless ($data) {
+        $c->app->log->debug("Ignoring $path: parser error");
+        return;
+    }
+
     return $_articles{$path} = {
-        title          => $title,
-        link           => $link,
-        tags           => $tags,
-        preview        => $preview,
-        preview_link   => $preview_link,
-        content        => $content,
+        name           => $name,
         mtime          => $mtime,
         created        => $created,
         datetime       => $datetime,
@@ -494,7 +480,74 @@ sub _parse_article {
         year           => $year,
         month          => $month,
         day            => $day,
-        name           => $name
+        title          => $data->{title} || $name,
+        link           => $data->{link} || '',
+        tags           => $data->{tags} || [],
+        preview        => $data->{head},
+        preview_link   => $preview_link,
+        content        => $data->{tail}
+        ? $data->{head} . '<a name="cut"></a>' . $data->{tail}
+        : $data->{head}
+    };
+}
+
+sub _parse_article_pod {
+    my ($head_string, $tail_string) = @_;
+
+    my $parser = Pod::Simple::HTML->new;
+
+    $parser->force_title('');
+    $parser->html_header_before_title('');
+    $parser->html_header_after_title('');
+    $parser->html_footer('');
+
+    my $title = '';
+    my $head  = '';
+    my $tail  = '';
+
+    $parser->output_string(\$head);
+    eval { $parser->parse_string_document($head_string) };
+    return if $@;
+
+    # Hacking
+    $head =~ s{<a name='___top' class='dummyTopAnchor'\s*></a>\n}{}g;
+    $head =~ s{<a class='u'.*?name=".*?"\s*>(.*?)</a>}{$1}sg;
+    $head =~ s{^\s*<h1>NAME</h1>\s*<p>(.*?)</p>}{}sg;
+    $title = $1;
+
+    if ($tail_string) {
+        my $parser = Pod::Simple::HTML->new;
+
+        $parser->force_title('');
+        $parser->html_header_before_title('');
+        $parser->html_header_after_title('');
+        $parser->html_footer('');
+
+        $parser->output_string(\$tail);
+        eval { $parser->parse_string_document($tail_string) };
+        return if $@;
+
+        $tail =~ s{<a name='___top' class='dummyTopAnchor'\s*></a>\n}{}g;
+        $tail =~ s{<a class='u'.*?name=".*?"\s*>(.*?)</a>}{$1}sg;
+    }
+
+    my $link = '';
+    if ($head =~ s{^\s*<h1>LINK</h1>\s*<p>(.*?)</p>}{}sg) {
+        $link = $1;
+    }
+
+    my $tags = [];
+    if ($head =~ s{^\s*<h1>TAGS</h1>\s*<p>(.*?)</p>}{}sg) {
+        my $list = $1; $list =~ s/(?:\r|\n)*//gs;
+        @$tags = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $list);
+    }
+
+    return {
+        title => $title,
+        link  => $link,
+        tags  => $tags,
+        head  => $head,
+        tail  => $tail
     };
 }
 
