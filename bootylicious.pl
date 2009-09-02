@@ -482,6 +482,12 @@ sub _parse_article {
         return;
     }
 
+    my $content =
+        $data->{tail}
+      ? $data->{head} . '<a name="cut"></a>' . $data->{tail}
+      : $data->{head};
+    my $preview = $data->{tail} ? $data->{head} : '';
+
     return $_articles{$path} = {
         name           => $name,
         mtime          => $mtime,
@@ -495,11 +501,9 @@ sub _parse_article {
         title          => $data->{title} || $name,
         link           => $data->{link} || '',
         tags           => $data->{tags} || [],
-        preview        => $data->{head},
+        preview        => $preview,
         preview_link   => $preview_link,
-        content        => $data->{tail}
-        ? $data->{head} . '<a name="cut"></a>' . $data->{tail}
-        : $data->{head}
+        content        => $content
     };
 }
 
