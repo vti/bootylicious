@@ -460,7 +460,7 @@ sub _parse_article {
     my ($head, $tail) = ($string, '');
     my $preview_link;
     if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
-        $tail = "=pod\n$3";
+        $tail = $3;
         $preview_link = $2 || 'Keep reading';
     }
 
@@ -516,6 +516,7 @@ sub _parse_article_pod {
     $title = $1;
 
     if ($tail_string) {
+        $tail_string = "=pod\n$tail_string";
         my $parser = Pod::Simple::HTML->new;
 
         $parser->force_title('');
