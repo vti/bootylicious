@@ -40,17 +40,7 @@ sub hook_finalize {
 
     my $article = $c->stash('article');
 
-    my $gallery_name = $article->{year} . $article->{month} . $article->{day};
-
-    if ($article->{hour} || $article->{minute} || $article->{second}) {
-        $gallery_name
-          .= 'T'
-          . $article->{hour} . ':'
-          . $article->{minute} . ':'
-          . $article->{second};
-    }
-
-    $gallery_name .= '-' . $c->stash('alias');
+    my $gallery_name = $article->{timestamp} . '-' . $c->stash('alias');
 
     my $gallerydir = $publicdir . '/' . $gallery_name;
 

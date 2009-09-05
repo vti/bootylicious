@@ -386,11 +386,11 @@ sub _parse_articles {
     }
 
     if ($pager->{max}) {
-        $pager->{max} = $articles[-1] ? $articles[-1]->{datetime} : undef;
+        $pager->{max} = $articles[-1] ? $articles[-1]->{timestamp} : undef;
     }
 
     if ($pager->{min}) {
-        $pager->{min} = $articles[0] ? $articles[0]->{datetime} : undef;
+        $pager->{min} = $articles[0] ? $articles[0]->{timestamp} : undef;
     }
 
     return (\@articles, $pager);
@@ -414,7 +414,7 @@ sub _parse_article {
     my ($year, $month, $day, $hour, $minute, $second, $name, $ext) =
       ($1, $2, $3, $4, $5, $6, $7, $8);
 
-    my $datetime = "$1$2$3T$4:$5:$6";
+    my $timestamp = "$1$2$3T$4:$5:$6";
 
     my $epoch = 0;
     eval {
@@ -495,7 +495,7 @@ sub _parse_article {
         name           => $name,
         mtime          => $mtime,
         created        => $created,
-        datetime       => $datetime,
+        timestamp      => $timestamp,
         mtime_format   => _format_date($mtime),
         created_format => _format_date($created),
         year           => $year,
