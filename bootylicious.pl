@@ -27,12 +27,16 @@ my %config = (
 );
 
 my %hooks = (
+    preinit  => [],
+    init     => [],
     finalize => []
 );
 
 _read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
 
 _load_plugins($config{plugins});
+
+_call_hook(app, 'preinit');
 
 sub index {
     my $c = shift;
@@ -585,6 +589,8 @@ sub _format_date {
 }
 
 app->types->type(rss => 'application/rss+xml');
+
+_call_hook(app, 'init');
 
 theme;
 
