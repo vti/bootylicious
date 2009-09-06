@@ -283,7 +283,7 @@ sub _load_plugins {
 
     my $loader = Mojo::Loader->new;
     foreach my $plugin (@plugins) {
-        my ($class, $args) = split(':', $plugin);
+        my ($class, @args) = split(':', $plugin);
         $class = Mojo::ByteStream->new($class)->camelize;
         $class = "Bootylicious::Plugin::$class";
 
@@ -301,7 +301,7 @@ sub _load_plugins {
             next;
         }
 
-        my @args = split('=', $args);
+        @args = map { split m/=/ } @args;
         my $instance = $class->new(@args);
 
         foreach my $hook (keys %hooks) {
