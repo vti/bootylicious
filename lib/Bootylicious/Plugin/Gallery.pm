@@ -33,7 +33,7 @@ sub hook_finalize {
     my $c    = shift;
     my $path = $c->req->url->path;
 
-    next unless $path =~ /^\/articles/;
+    return unless $path =~ /^\/articles/;
 
     $c->app->log->debug('imagetypes ' . $self->imagetypes);
     my $publicdir = $c->app->home->rel_dir($c->stash('config')->{publicdir});
