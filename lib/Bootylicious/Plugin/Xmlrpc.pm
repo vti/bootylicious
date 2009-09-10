@@ -92,12 +92,12 @@ sub _dispatcher {
                             $_ => {
                                 description => $_,
                                 htmlUrl     => $self->ctx->url_for(
-                                    'tags',
+                                    'tag',
                                     tag    => $_,
                                     format => 'html'
                                   )->to_abs,
                                 rssUrl => $self->ctx->url_for(
-                                    'tags',
+                                    'tag',
                                     tag    => $_,
                                     format => 'rss'
                                   )->to_abs,
