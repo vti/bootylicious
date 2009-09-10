@@ -9,6 +9,7 @@ use Protocol::XMLRPC::Dispatcher;
 use Protocol::XMLRPC::MethodResponse;
 
 __PACKAGE__->attr([qw/username password/]);
+__PACKAGE__->attr('ctx');
 
 sub new {
     my $class = shift;
@@ -34,11 +35,11 @@ sub hook_init {
         callback => sub {
             my $c = shift;
 
+            $self->ctx($c);
+
             $dispatcher->dispatch(
                 $c->req->body => sub {
                     my $method_response = shift;
-
-                    warn $c->req->body;
 
                     $c->stash(rendered => 1);
                     $c->res->code(200);
@@ -68,7 +69,7 @@ sub _dispatcher {
                     my $config = main::config();
 
                     return [
-                        {   url      => 'http://localhost:3000',
+                        {   url      => $self->ctx->req->url->host,
                             blogid   => 'bootylicious',
                             blogName => $config->{title} || ''
                         }
@@ -90,8 +91,16 @@ sub _dispatcher {
                         map {
                             $_ => {
                                 description => $_,
-                                htmlUrl     => '',
-                                rssUrl      => ''
+                                htmlUrl     => $self->ctx->url_for(
+                                    'tags',
+                                    tag    => $_,
+                                    format => 'html'
+                                  )->to_abs,
+                                rssUrl => $self->ctx->url_for(
+                                    'tags',
+                                    tag    => $_,
+                                    format => 'rss'
+                                  )->to_abs,
                               }
                           } keys %$tags
                     };
