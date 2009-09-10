@@ -8,6 +8,7 @@ use Mojo::ByteStream;
 use Mojo::Loader;
 use Pod::Simple::HTML;
 require Time::Local;
+require File::Basename;
 use Mojo::ByteStream 'b';
 
 my %config = (
@@ -367,13 +368,14 @@ sub get_articles {
         my $max = $min + $params{limit};
 
         if ($min > $params{limit} - 1 && $files[$min - $params{limit}]) {
-            $files[$min - $params{limit}] =~ m/\/([^\/]+)-/;
-            $pager->{prev} = $1;
+            $pager->{prev} = $1
+              if File::Basename::basename($files[$min - $params{limit}])
+                  =~ m/([^\/]+)-/;
         }
 
         if ($max < scalar(@files) && $files[$max]) {
-            $files[$max] =~ m/\/([^\/]+)-/;
-            $pager->{next} = $1;
+            $pager->{next} = $1
+              if File::Basename::basename($files[$max]) =~ m/([^\/]+)-/;
         }
 
         @files = splice(@files, $min, $params{limit});
