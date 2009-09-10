@@ -667,7 +667,7 @@ __DATA__
         </div>
 % if ($article->{preview}) {
         <%= $article->{preview} %>
-        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>.html#cut"><%= $article->{preview_link} %></a></div>
+        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>#cut"><%= $article->{preview_link} %></a></div>
 % }
 % else {
         <%= $article->{content} %>
@@ -686,7 +686,7 @@ __DATA__
 % }
 
 % if ($pager->{next}) {
-    <a href="<%= $self->url_for('index'),format=>'html' %>?timestamp=<%= $pager->{next} %>">Later</a> &rarr;
+    <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{next} %>">Later</a> &rarr;
 % }
 % else {
 <span class="notactive">
