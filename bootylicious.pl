@@ -145,7 +145,7 @@ get '/tags/:tag' => sub {
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
     if ($c->stash('format') && $c->stash('format') eq 'rss') {
-        $c->stash(template => 'articles');
+        $c->stash(template => 'index');
     }
 
     $c->render;
