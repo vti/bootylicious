@@ -354,7 +354,7 @@ sub get_articles {
         if ($params{timestamp}) {
             my $i = 0;
             foreach my $file (@files) {
-                $file =~ m/\/([^\/]+)-/;
+                File::Basename::basename($file) =~ m/([^\/]+)-/;
 
                 if ($1 le $params{timestamp}) {
                     $min = $i;
