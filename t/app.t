@@ -1,3 +1,8 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
 use Test::More tests => 5;
 
 use Mojo::Transaction::Single;
@@ -14,13 +19,13 @@ $client->process_app(app(), $tx);
 is($tx->res->code, 200);
 
 # Archive page
-my $tx = Mojo::Transaction::Single->new_get('/archive');
+$tx = Mojo::Transaction::Single->new_get('/archive');
 $client->process_app(app(), $tx);
 is($tx->res->code, 200);
 like($tx->res->body, qr/Archive/);
 
 # Tags page
-my $tx = Mojo::Transaction::Single->new_get('/tags');
+$tx = Mojo::Transaction::Single->new_get('/tags');
 $client->process_app(app(), $tx);
 is($tx->res->code, 200);
 like($tx->res->body, qr/Tags/);
