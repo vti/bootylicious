@@ -49,15 +49,11 @@ sub config {
 sub index {
     my $c = shift;
 
-    my $max = $c->req->param('max') || 0;
-    my $min = $c->req->param('min') || 0;
+    my $timestamp = $c->req->param('timestamp') || 0;
 
     my $article;
-    my ($articles, $pager) = get_articles(
-        limit => $config{pagelimit},
-        max   => $max,
-        min   => $min
-    );
+    my ($articles, $pager) =
+      get_articles(limit => $config{pagelimit}, timestamp => $timestamp);
 
     my $last_modified;
     if (@$articles) {
@@ -340,6 +336,7 @@ sub get_tags {
 
 sub get_articles {
     my %params = @_;
+    $params{limit} ||= 0;
 
     my $root =
       ($config{articlesdir} =~ m/^\//)
@@ -348,36 +345,38 @@ sub get_articles {
 
     my $pager = {};
 
-    my @all_files = sort { $b cmp $a } glob($root . '/*.*');
-    my @files;
-    foreach my $file (@all_files) {
-        if ($params{max}) {
-            $file =~ m/\/([^\/]+)-/;
+    my @files = sort { $b cmp $a } glob($root . '/*.*');
 
-            if ($1 lt $params{max}) {
-                push @files, $file;
-            }
-            else {
-                $pager->{min} = 1;
+    if ($params{limit}) {
+        my $min = 0;
+
+        if ($params{timestamp}) {
+            my $i = 0;
+            foreach my $file (@files) {
+                $file =~ m/\/([^\/]+)-/;
+
+                if ($1 le $params{timestamp}) {
+                    $min = $i;
+                    last;
+                }
+
+                $i++;
             }
         }
-        elsif ($params{min}) {
-            $file =~ m/\/([^\/]+)-/;
 
-            if ($1 gt $params{min}) {
-                push @files, $file;
-            }
-            else {
-                $pager->{max} = 1;
-            }
-        }
-        else {
-            push @files, $file;
-        }
-    }
+        my $max = $min + $params{limit};
 
-    if ($params{limit} && scalar(@files) > $params{limit}) {
-        @files = splice(@files, 0, $params{limit});
+        if ($min > $params{limit} - 1 && $files[$min - $params{limit}]) {
+            $files[$min - $params{limit}] =~ m/\/([^\/]+)-/;
+            $pager->{prev} = $1;
+        }
+
+        if ($max < scalar(@files) && $files[$max]) {
+            $files[$max] =~ m/\/([^\/]+)-/;
+            $pager->{next} = $1;
+        }
+
+        @files = splice(@files, $min, $params{limit});
     }
 
     my @articles;
@@ -386,14 +385,6 @@ sub get_articles {
         next unless $data && %$data;
 
         push @articles, $data;
-    }
-
-    if ($pager->{max}) {
-        $pager->{max} = $articles[-1] ? $articles[-1]->{timestamp} : undef;
-    }
-
-    if ($pager->{min}) {
-        $pager->{min} = $articles[0] ? $articles[0]->{timestamp} : undef;
     }
 
     return (\@articles, $pager);
@@ -683,8 +674,8 @@ __DATA__
 % }
 
 <div id="pager">
-% if ($pager->{min}) {
-    &larr; <a href="<%= $self->url_for('index',format=>'html') %>?min=<%= $pager->{min} %>">Earlier</a>
+% if ($pager->{prev}) {
+    &larr; <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{prev} %>">Earlier</a>
 % }
 % else {
 <span class="notactive">
@@ -692,8 +683,8 @@ __DATA__
 </span>
 % }
 
-% if ($pager->{max}) {
-    <a href="<%= $self->url_for('index'),format=>'html' %>?max=<%= $pager->{max} %>">Later</a> &rarr;
+% if ($pager->{next}) {
+    <a href="<%= $self->url_for('index'),format=>'html' %>?timestamp=<%= $pager->{next} %>">Later</a> &rarr;
 % }
 % else {
 <span class="notactive">
