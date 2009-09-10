@@ -354,7 +354,7 @@ sub get_articles {
         if ($params{timestamp}) {
             my $i = 0;
             foreach my $file (@files) {
-                File::Basename::basename($file) =~ m/([^\/]+)-/;
+                File::Basename::basename($file) =~ m/^([^\-]+)-/;
 
                 if ($1 le $params{timestamp}) {
                     $min = $i;
@@ -370,12 +370,12 @@ sub get_articles {
         if ($min > $params{limit} - 1 && $files[$min - $params{limit}]) {
             $pager->{prev} = $1
               if File::Basename::basename($files[$min - $params{limit}])
-                  =~ m/([^\/]+)-/;
+                  =~ m/^([^\-]+)-/;
         }
 
         if ($max < scalar(@files) && $files[$max]) {
             $pager->{next} = $1
-              if File::Basename::basename($files[$max]) =~ m/([^\/]+)-/;
+              if File::Basename::basename($files[$max]) =~ m/^([^\-]+)-/;
         }
 
         @files = splice(@files, $min, $params{limit});
