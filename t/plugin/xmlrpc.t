@@ -53,7 +53,6 @@ $r = _call('unknownMethod');
 ok($r->fault);
 
 $r = _call('blogger.getUsersBlogs', 'some api key', 'foo', 'bar');
-warn $r;
 ok($r->param);
 is($r->param->data->[0]->value->{blogid}, 'bootylicious');
 is($r->param->data->[0]->value->{blogName}, 'Foobar blog');
@@ -99,8 +98,16 @@ $r = _call('metaWeblog.getCategories', 'bootylicious', 'foo', 'bar');
 ok($r->param);
 is_deeply(
     $r->param->value,
-    {   three => {description => 'three', htmlUrl => '', rssUrl => ''},
-        four  => {description => 'four',  htmlUrl => '', rssUrl => ''}
+    {   three => {
+            description => 'three',
+            htmlUrl     => '/tags/three.html',
+            rssUrl      => '/tags/three.rss'
+        },
+        four => {
+            description => 'four',
+            htmlUrl     => '/tags/four.html',
+            rssUrl      => '/tags/four.rss'
+        }
     }
 );
 

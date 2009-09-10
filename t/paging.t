@@ -59,6 +59,9 @@ is(@$articles, 1);
 is ($articles->[0]->{title}, 'one');
 is_deeply($pager, {prev => '20090904T10:10:10'});
 
+unlink $_ for glob("$articlesdir/*");
+rmdir $articlesdir;
+
 sub _write_article {
     my ($path, $content) = @_;
 
