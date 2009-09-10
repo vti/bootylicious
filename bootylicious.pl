@@ -38,6 +38,14 @@ _load_plugins($config{plugins});
 
 _call_hook(app, 'preinit');
 
+sub config {
+    if (@_) {
+        %config = (%config, @_);
+    }
+
+    return \%config;
+}
+
 sub index {
     my $c = shift;
 
@@ -45,8 +53,7 @@ sub index {
     my $min = $c->req->param('min') || 0;
 
     my $article;
-    my ($articles, $pager) = _parse_articles(
-        $c,
+    my ($articles, $pager) = get_articles(
         limit => $config{pagelimit},
         max   => $max,
         min   => $min
@@ -89,7 +96,7 @@ get '/archive' => sub {
 
     my $last_modified = Mojo::Date->new;
 
-    my ($articles) = _parse_articles($c, limit => 0);
+    my ($articles) = get_articles(limit => 0);
     if (@$articles) {
         $last_modified = $articles->[0]->{mtime};
 
@@ -114,7 +121,7 @@ get '/tags/:tag' => sub {
 
     my $tag = $c->stash('tag');
 
-    my ($articles) = _parse_articles($c, limit => 0);
+    my ($articles) = get_articles(limit => 0);
 
     $articles = [
         grep {
@@ -149,16 +156,7 @@ get '/tags/:tag' => sub {
 get '/tags' => sub {
     my $c = shift;
 
-    my $tags = {};
-
-    my ($articles) = _parse_articles($c, limit => 0);
-
-    foreach my $article (@$articles) {
-        foreach my $tag (@{$article->{tags}}) {
-            $tags->{$tag}->{count} ||= 0;
-            $tags->{$tag}->{count}++;
-        }
-    }
+    my $tags = get_tags();
 
     $c->stash(config => \%config, tags => $tags);
 
@@ -170,34 +168,18 @@ get '/tags' => sub {
 get '/articles/:year/:month/:alias' => sub {
     my $c = shift;
 
-    my $root = $c->app->home->rel_dir($config{articlesdir});
+    my $articleid =
+      $c->stash('year') . '/' . $c->stash('month') . '/' . $c->stash('alias');
 
-    my @files =
-      glob( $root . '/'
-          . $c->stash('year')
-          . $c->stash('month') . '*-'
-          . $c->stash('alias')
-          . ".*");
+    my $article = get_article($articleid);
+    return $c->app->static->serve_404($c) unless $article;
 
-    if (@files > 1) {
-        $c->app->log->warn('More then one articles is available '
-              . 'at the same year/month and name');
-    }
-    my $path = $files[0];
+    return 1 unless _is_modified($c, $article->{mtime});
 
-    return $c->app->static->serve_404($c) unless $path && -r $path;
+    $c->stash(article => $article, template => 'article', config => \%config);
 
-    my $last_modified = Mojo::Date->new((stat($path))[9]);
-
-    my $data;
-    $data = _parse_article($c, $path)
-      or return $c->app->static->serve_404($c);
-
-    return 1 unless _is_modified($c, $last_modified);
-
-    $c->stash(article => $data, template => 'article', config => \%config);
-
-    $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+    $c->res->headers->header(
+        'Last-Modified' => Mojo::Date->new($article->{mtime}));
 
     $c->render;
 
@@ -341,11 +323,28 @@ sub _is_modified {
     return 0;
 }
 
-sub _parse_articles {
-    my $c      = shift;
+sub get_tags {
+    my $tags = {};
+
+    my ($articles) = get_articles(limit => 0);
+
+    foreach my $article (@$articles) {
+        foreach my $tag (@{$article->{tags}}) {
+            $tags->{$tag}->{count} ||= 0;
+            $tags->{$tag}->{count}++;
+        }
+    }
+
+    return $tags;
+}
+
+sub get_articles {
     my %params = @_;
 
-    my $root = app->home->rel_dir($config{articlesdir});
+    my $root =
+      ($config{articlesdir} =~ m/^\//)
+      ? $config{articlesdir}
+      : app->home->rel_dir($config{articlesdir});
 
     my $pager = {};
 
@@ -377,13 +376,13 @@ sub _parse_articles {
         }
     }
 
-    if ($params{limit} && @files > $params{limit}) {
+    if ($params{limit} && scalar(@files) > $params{limit}) {
         @files = splice(@files, 0, $params{limit});
     }
 
     my @articles;
     foreach my $file (@files) {
-        my $data = _parse_article($c, $file);
+        my $data = _parse_article($file);
         next unless $data && %$data;
 
         push @articles, $data;
@@ -400,19 +399,51 @@ sub _parse_articles {
     return (\@articles, $pager);
 }
 
+sub get_article {
+    my $articleid = shift;
+    return unless $articleid;
+
+    my ($year, $month, $alias) = split('/', $articleid);
+    return unless $year && $month && $alias;
+
+    my $root =
+      ($config{articlesdir} =~ m/^\//)
+      ? $config{articlesdir}
+      : app->home->rel_dir($config{articlesdir});
+
+    my ($format) = ($articleid =~ s/\.([^\.]+)$//);
+    $format ||= 'pod';
+
+    my @files =
+      glob( $root . '/'
+          . $year
+          . $month . '*-'
+          . $alias
+          . ".$format");
+
+    if (@files > 1) {
+        app->log->warn('More then one articles is available '
+              . 'at the same year/month and name');
+    }
+    my $path = $files[0];
+    return unless $path && -r $path;
+
+    return _parse_article($path);
+}
+
 my %_articles;
 my %_parsers;
 
 sub _parse_article {
-    my $c    = shift;
     my $path = shift;
 
     return unless $path;
+    my $mtime   = Mojo::Date->new((stat($path))[9]);
 
-    return $_articles{$path} if $_articles{$path};
+    #return $_articles{$path} if $_articles{$path};
 
     unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-(.*?)\.(.*)$/) {
-        $c->app->log->debug("Ignoring $path: unknown file");
+        app->log->debug("Ignoring $path: unknown file");
         return;
     }
     my ($year, $month, $day, $hour, $minute, $second, $name, $ext) =
@@ -432,18 +463,17 @@ sub _parse_article {
         );
     };
     if ($@ || $epoch < 0) {
-        $c->app->log->debug("Ignoring $path: wrong timestamp");
+        app->log->debug("Ignoring $path: wrong timestamp");
         return;
     }
 
     unless (open FILE, "<:encoding(UTF-8)", $path) {
-        $c->app->log->error("Can't open file: $path: $!");
+        app->log->error("Can't open file: $path: $!");
         return;
     }
     my $string = join("", <FILE>);
     close FILE;
 
-    my $mtime   = Mojo::Date->new((stat($path))[9]);
     my $created = Mojo::Date->new($epoch);
 
     my $parser = \&_parse_article_pod;
@@ -457,7 +487,7 @@ sub _parse_article {
         else {
             eval "require $parser_class";
             if ($@) {
-                $c->app->log->error($@);
+                app->log->error($@);
                 return;
             }
             #my $loader = Mojo::Loader->new;
@@ -475,9 +505,11 @@ sub _parse_article {
         }
     }
 
+    my $metadata = _parse_metadata(\$string);
+
     my $cuttag = $config{cuttag};
     my ($head, $tail) = ($string, '');
-    my $preview_link;
+    my $preview_link = '';
     if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
         $tail = $3;
         $preview_link = $2 || 'Keep reading';
@@ -485,7 +517,7 @@ sub _parse_article {
 
     my $data = $parser->($head, $tail);
     unless ($data) {
-        $c->app->log->debug("Ignoring $path: parser error");
+        app->log->debug("Ignoring $path: parser error");
         return;
     }
 
@@ -496,6 +528,7 @@ sub _parse_article {
     my $preview = $data->{tail} ? $data->{head} : '';
 
     return $_articles{$path} = {
+        path           => $path,
         name           => $name,
         mtime          => $mtime,
         created        => $created,
@@ -508,13 +541,38 @@ sub _parse_article {
         hour           => $hour,
         minute         => $minute,
         second         => $second,
-        title          => $data->{title} || $name,
-        link           => $data->{link} || '',
-        tags           => $data->{tags} || [],
+        title          => $metadata->{title} || $name,
+        link           => $metadata->{link} || '',
+        tags           => $metadata->{tags} || [],
         preview        => $preview,
         preview_link   => $preview_link,
         content        => $content
     };
+}
+
+sub _parse_metadata {
+    my $string = shift;
+
+    $$string =~ s/^(.*?)(?:\n\n|\n\r\n\r|\r\r)//s;
+    return {} unless $1;
+
+    my $data = $1;
+
+    my $metadata = {};
+    while ($data =~ s/^(.*?):\s*(.*?)(?:\n|\n\r|\r|$)//s) {
+        my $key = lc $1;
+        my $value = $2;
+
+        if ($key eq 'tags') {
+            my $tmp = $value || '';
+            $value = [];
+            @$value = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $tmp);
+        }
+
+        $metadata->{$key} = $value;
+    }
+
+    return $metadata;
 }
 
 sub _parse_article_pod {
@@ -532,6 +590,7 @@ sub _parse_article_pod {
     my $tail  = '';
 
     $parser->output_string(\$head);
+    $head_string = "=pod\n\n$head_string";
     eval { $parser->parse_string_document($head_string) };
     return if $@;
 
