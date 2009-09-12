@@ -648,7 +648,7 @@ app->types->type(rss => 'application/rss+xml');
 
 _call_hook(app, 'init');
 
-theme;
+theme if $config{'theme'};
 
 shagadelic(@ARGV ? @ARGV : 'cgi');
 
