@@ -24,7 +24,7 @@ my %config = (
     menu       => [],
     theme      => '',
     cuttag     => '[cut]',
-    pagelimit => 10
+    pagelimit => 10,
 );
 
 my %hooks = (
