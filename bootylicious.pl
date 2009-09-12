@@ -218,6 +218,10 @@ sub _read_config_from_file {
                         push @{$config->{$key}}, ($1 => $link);
                     }
                 }
+                elsif ($key eq 'css' or $key eq 'js') {
+                    $config->{$key} = [];
+                    push @{$config->{$key}}, split(',', $value);
+                }
                 elsif ($key eq 'perl5lib') {
                     unshift @INC, $_ for split(',', $value);
                 }
