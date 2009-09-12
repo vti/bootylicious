@@ -435,14 +435,14 @@ sub _parse_article {
 
     #return $_articles{$path} if $_articles{$path};
 
-    unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-(.*?)\.(.*)$/) {
+    unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-(.*?)\.([^.]+)$/) {
         app->log->debug("Ignoring $path: unknown file");
         return;
     }
     my ($year, $month, $day, $hour, $minute, $second, $name, $ext) =
-      ($1, $2, $3, $4, $5, $6, $7, $8);
+      ($1, $2, $3, ($4 || '00'), ($5 || '00'), ($6 || '00'), $7, $8);
 
-    my $timestamp = "$1$2$3T$4:$5:$6";
+    my $timestamp = "$year$month$day" . "T$hour:$minute:$second";
 
     my $epoch = 0;
     eval {
