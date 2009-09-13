@@ -1012,6 +1012,10 @@ BOOTYLICIOUS_TEMPLATESDIR environment variable. Default value is "templates".
 
 =item * cuttag - set the cuttag for parsing the articles. Default is "cut".
 
+=item * perl5lib - set any additional lib folders the script should look 
+into before trying to load Perl 5 modules (ideal for integrating with 
+L<< local::lib >> and use inside shared hosting environments)
+
 =back
 
 =head1 FILESYSTEM
