@@ -960,6 +960,10 @@ Default value is "articles".
 like images, css/js files, etc. Can also be set via the BOOTYLICIOUS_PUBLICDIR 
 environment variable. Default value is "public".
 
+=item * templatesdir - set the dir where bootylicious looks for template files, 
+in case you want to override the default ones. Can also be set via the 
+BOOTYLICIOUS_TEMPLATESDIR environment variable. Default value is "templates".
+
 =item * cuttag - set the cuttag for parsing the articles. Default is "cut".
 
 =back
@@ -1033,7 +1037,8 @@ advanced just create a template in templates/ directory with the same name but
 optionally with a different extension.
 
 For example there is index.html.epl, thus templates/index.html.epl should be
-created with a new content.
+created with a new content. If you want to use a different base directory for the 
+templates, set the C<templatesdir> config option as explained above.
 
 =head1 DEVELOPMENT
 
