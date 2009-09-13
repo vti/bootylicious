@@ -947,26 +947,7 @@ directory as bootylicious.pl file and is called bootylicious.conf.
   menu=item1:link1,item2:link2, ...
 
 Configuration is set with the format "key=attribute". The key is case-insensitive, 
-but no spaces are allowed between the "=" character. The following values can be 
-set to change the way bootylicious behaves:
-
-=over 4
-
-=item * articlesdir - set the dir where articles should be fetched from. 
-Can also be set via the BOOTYLICIOUS_ARTICLESDIR environment variable. 
-Default value is "articles".
-
-=item * publicdir - set the dir where bootylicious looks for static objects, 
-like images, css/js files, etc. Can also be set via the BOOTYLICIOUS_PUBLICDIR 
-environment variable. Default value is "public".
-
-=item * templatesdir - set the dir where bootylicious looks for template files, 
-in case you want to override the default ones. Can also be set via the 
-BOOTYLICIOUS_TEMPLATESDIR environment variable. Default value is "templates".
-
-=item * cuttag - set the cuttag for parsing the articles. Default is "cut".
-
-=back
+but no spaces are allowed between the "=" character. 
 
 If you are using Bootylicious' default templates, there are a number of 
 configuration options you can set to customize them without ever having to 
@@ -994,14 +975,15 @@ know if I need this".
 =item * menu - set the blog's menu content. Value should follow the format: 
 I<< item1,link1,item2,link2,item3,link3,... >>.
 
-=item * css - loads given css filename from PUBLIC_DIR/ and uses it instead 
-of standard bootylicious css. To load more than one css file, in the same 
-given order, just separate each file with a comma 
-(e.g.: "css=foo.css,bar.css,baz.css").
+=item * css - loads given css filename from BOOTYLICIOUS_PUBLIC_DIR/ 
+(see below) and uses it instead of standard bootylicious css. To load 
+more than one css file, in the same given order, just separate each file 
+with a comma (e.g.: "css=foo.css,bar.css,baz.css").
 
-=item * js - loads given javascript filename from PUBLIC_DIR/ and uses it 
- on the templates. To load more than one js file, in the same given order, 
-just separate each file with a comma (e.g.: "js=foo.js,bar.js,baz.js").
+=item * js - loads given javascript filename from BOOTYLICIOUS_PUBLIC_DIR/ 
+(see below) and uses it on the templates. To load more than one js file, in 
+the same given order, just separate each file with a comma 
+(e.g.: "js=foo.js,bar.js,baz.js").
 
 =item * theme - bootylicious can automatically import css and js files via 
 themes. Just put those files under PUBLIC_DIR/themes/my-theme/ and set this 
@@ -1009,6 +991,26 @@ option to "my-theme". Files are loaded in the same order as the filesystem
 gives them, usually alphabetic.
 
 =item * footer - sets each page's footer text, to appear in every page.
+
+=back
+
+Also, the following options can be set to change the way bootylicious behaves:
+
+=over 4
+
+=item * articlesdir - set the dir where articles should be fetched from. 
+Can also be set via the BOOTYLICIOUS_ARTICLESDIR environment variable. 
+Default value is "articles".
+
+=item * publicdir - set the dir where bootylicious looks for static objects, 
+like images, css/js files, etc. Can also be set via the BOOTYLICIOUS_PUBLICDIR 
+environment variable. Default value is "public".
+
+=item * templatesdir - set the dir where bootylicious looks for template files, 
+in case you want to override the default ones. Can also be set via the 
+BOOTYLICIOUS_TEMPLATESDIR environment variable. Default value is "templates".
+
+=item * cuttag - set the cuttag for parsing the articles. Default is "cut".
 
 =back
 
