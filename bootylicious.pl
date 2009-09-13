@@ -17,9 +17,10 @@ my %config = (
     title  => $ENV{BOOTYLICIOUS_TITLE}  || 'Just another blog',
     about  => $ENV{BOOTYLICIOUS_ABOUT}  || 'Perl hacker',
     descr  => $ENV{BOOTYLICIOUS_DESCR}  || 'I do not know if I need this',
-    articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
-    publicdir   => $ENV{BOOTYLICIOUS_PUBLICDIR}   || 'public',
-    footer      => $ENV{BOOTYLICIOUS_FOOTER}
+    articlesdir  => $ENV{BOOTYLICIOUS_ARTICLESDIR}  || 'articles',
+    publicdir    => $ENV{BOOTYLICIOUS_PUBLICDIR}    || 'public',
+    templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR} || undef, # defaults to 'templates'
+    footer       => $ENV{BOOTYLICIOUS_FOOTER}
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> &amp;&amp; <em>Pod::Simple::HTML</em>',
     menu       => [],
     theme      => '',
@@ -235,6 +236,9 @@ sub _read_config_from_file {
     _decode_config($config);
 
     $ENV{SCRIPT_NAME} = $config{base} if $config{base};
+
+    app->renderer->root(app->home->rel_dir($config{templatesdir})) 
+        if $config{templatesdir};
 }
 
 sub _decode_config {
