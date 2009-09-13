@@ -1022,7 +1022,6 @@ The Pod filename format must comply with either of the following:
 
 The title may contain dots (".") or dashes ("-") freely.
 
-
 =head1 TEMPLATES
 
 Embedded templates will work just fine, but when you want to have something more
@@ -1041,6 +1040,12 @@ created with a new content.
 =head1 SEE ALSO
 
 L<Mojo> L<Mojolicious> L<Mojolicious::Lite>
+
+=head1 CREDITS
+
+Breno G. de Oliveira
+
+Konstantin Kapitanov
 
 =head1 AUTHOR
 
