@@ -18,7 +18,7 @@ my %config = (
     about  => $ENV{BOOTYLICIOUS_ABOUT}  || 'Perl hacker',
     descr  => $ENV{BOOTYLICIOUS_DESCR}  || 'I do not know if I need this',
     articlesdir  => $ENV{BOOTYLICIOUS_ARTICLESDIR}  || 'articles',
-    publicdir    => $ENV{BOOTYLICIOUS_PUBLICDIR}    || 'public',
+    publicdir    => $ENV{BOOTYLICIOUS_PUBLICDIR}    || undef, # defaults to 'public',
     templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR} || undef, # defaults to 'templates'
     footer       => $ENV{BOOTYLICIOUS_FOOTER}
       || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> &amp;&amp; <em>Pod::Simple::HTML</em>',
@@ -237,8 +237,13 @@ sub _read_config_from_file {
 
     $ENV{SCRIPT_NAME} = $config{base} if $config{base};
 
+    # set proper templates base dir, if defined
     app->renderer->root(app->home->rel_dir($config{templatesdir})) 
-        if $config{templatesdir};
+        if defined $config{templatesdir};
+
+    # set proper public base dir, if defined
+    app->static->root(app->home->rel_dir($config{publicdir}))
+        if defined $config{publicdir};
 }
 
 sub _decode_config {
