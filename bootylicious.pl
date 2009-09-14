@@ -852,6 +852,7 @@ rkJggg==" alt="RSS" /></a></sup>
 % }
 % if (!@{$config->{css}}) {
         <style type="text/css">
+            html, body {height: 100%;margin:0}
             body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
             h1,h2,h3,h4,h5 {font-family: times, "Times New Roman", times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
             a,a:active {color:#555}
@@ -859,7 +860,7 @@ rkJggg==" alt="RSS" /></a></sup>
             a:visited{color:#000}
             img{border:0px}
             pre{border:2px solid #ccc;background:#eee;padding:2em}
-            #body {width:65%;margin:auto}
+            #body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
             #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
             h1#title{font-size:3em}
             h2#descr{font-size:1.5em;color:#999}
@@ -876,7 +877,8 @@ rkJggg==" alt="RSS" /></a></sup>
             #pager {text-align:center;padding:2em}
             #pager span.notactive {color:#ccc}
             #subfooter {padding:2em;border-top:#000000 1px solid}
-            #footer {font-size:80%;text-align:center;padding:2em;border-top:#000000 1px solid}
+            #footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
+            .push {height:6em}
         </style>
 % }
         <link rel="alternate" type="application/rss+xml" title="<%= $config->{title} %>" href="<%= $self->url_for('index', format => 'rss') %>" />
@@ -912,13 +914,12 @@ rkJggg==" alt="RSS" /></a></sup>
 % }
                 </div>
             </div>
-
             <div id="content">
             <%= $self->render_inner %>
             </div>
-
-            <div id="footer"><%= $config->{footer} %></div>
+            <div class="push"></div>
         </div>
+        <div id="footer"><%= $config->{footer} %></div>
 % foreach my $file (@{$config->{js}}) {
         <script type="text/javascript" href="/<%= $file %>" />
 % }
