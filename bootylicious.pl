@@ -21,7 +21,7 @@ my %config = (
     publicdir    => $ENV{BOOTYLICIOUS_PUBLICDIR}    || undef, # defaults to 'public',
     templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR} || undef, # defaults to 'templates'
     footer       => $ENV{BOOTYLICIOUS_FOOTER}
-      || '<h1>bootylicious</h1> is powered by <em>Mojolicious::Lite</em> &amp;&amp; <em>Pod::Simple::HTML</em>',
+      || 'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
     menu       => [],
     theme      => '',
     cuttag     => '[cut]',
