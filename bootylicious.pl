@@ -807,7 +807,6 @@ rkJggg==" alt="RSS" /></a></sup>
 % foreach my $article (@$articles) {
         <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
         <div class="created"><%= $article->{created_format} %></div>
-    </li>
 % }
 </div>
 
