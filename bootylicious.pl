@@ -17,14 +17,20 @@ my %config = (
     title  => $ENV{BOOTYLICIOUS_TITLE}  || 'Just another blog',
     about  => $ENV{BOOTYLICIOUS_ABOUT}  || 'Perl hacker',
     descr  => $ENV{BOOTYLICIOUS_DESCR}  || 'I do not know if I need this',
-    articlesdir  => $ENV{BOOTYLICIOUS_ARTICLESDIR}  || 'articles',
-    publicdir    => $ENV{BOOTYLICIOUS_PUBLICDIR}    || undef, # defaults to 'public',
-    templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR} || undef, # defaults to 'templates'
-    footer       => $ENV{BOOTYLICIOUS_FOOTER}
+    articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
+    publicdir => $ENV{BOOTYLICIOUS_PUBLICDIR}
+      || undef,    # defaults to 'public',
+    templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR}
+      || undef,    # defaults to 'templates'
+    footer => $ENV{BOOTYLICIOUS_FOOTER}
       || 'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
-    menu       => [],
-    theme      => '',
-    cuttag     => '[cut]',
+    menu => [
+        index   => '/index.html',
+        tags    => '/tags.html',
+        archive => 'archive.html'
+    ],
+    theme     => '',
+    cuttag    => '[cut]',
     pagelimit => 10,
 );
 
@@ -906,9 +912,6 @@ rkJggg==" alt="RSS" /></a></sup>
                 <h2 id="descr"><%= $config->{descr} %></h2>
                 <span id="author"><%= $config->{author} %></span>, <span id="about"><%= $config->{about} %></span>
                 <div id="menu">
-                    <a href="<%= $self->url_for('index', format => 'html') %>">index</a>
-                    <a href="<%= $self->url_for('tags', format => 'html') %>">tags</a>
-                    <a href="<%= $self->url_for('archive', format => 'html') %>">archive</a>
 % for (my $i = 0; $i < @{$config->{menu}}; $i += 2) {
                     <a href="<%= $config->{menu}->[$i + 1] %>"><%= $config->{menu}->[$i] %></a>
 % }
