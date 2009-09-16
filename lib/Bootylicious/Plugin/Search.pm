@@ -31,12 +31,12 @@ sub _search {
 
     my $results = [];
 
-    if (length($q) < $self->min_length) {
+    if (defined $q && length($q) < $self->min_length) {
         $c->stash(error => 'Has to be '
               . $self->min_length
               . ' characters minimal');
     }
-    elsif (length($q) > $self->max_length) {
+    elsif (defined $q && length($q) > $self->max_length) {
         $c->stash(error => 'Has to be '
               . $self->max_length
               . ' characters maximal');
