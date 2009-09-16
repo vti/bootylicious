@@ -170,7 +170,11 @@ get '/articles/:year/:month/:alias' => sub {
       $c->stash('year') . '/' . $c->stash('month') . '/' . $c->stash('alias');
 
     my $article = get_article($articleid);
-    return $c->app->static->serve_404($c) unless $article;
+    unless ($article) {
+        $c->stash(rendered => 1);
+        $c->app->static->serve_404($c);
+        return 1;
+    }
 
     return 1 unless _is_modified($c, $article->{mtime});
 
@@ -417,18 +421,15 @@ sub get_article {
       ? $config{articlesdir}
       : app->home->rel_dir($config{articlesdir});
 
-    my ($format) = ($articleid =~ s/\.([^\.]+)$//);
-    $format ||= 'pod';
-
     my @files =
       glob( $root . '/'
           . $year
           . $month . '*-'
           . $alias
-          . ".$format");
+          . ".*");
 
     if (@files > 1) {
-        app->log->warn('More then one articles is available '
+        app->log->warn('More then one article is available '
               . 'at the same year/month and name');
     }
     my $path = $files[0];
