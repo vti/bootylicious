@@ -49,27 +49,28 @@ sub _search {
             my $after_context  = $self->after_context;
 
             foreach my $article (@$articles) {
+                my $found = 0;
                 if ($article->{title}
                     =~ s/(\Q$q\E)/<font color="red">$1<\/font>/isg)
                 {
-                    push @$results, $article;
+                    $found = 1;
                 }
 
                 $article->{parts} = [];
-
                 while ($article->{content}
                     =~ s/((?:.{$before_context})?\Q$q\E(?:.{$after_context})?)//is
                   )
                 {
                     my $part = $1;
-                    $part =~ s/<.*?>//isg;
-                    $part =~ s/^[^\s]+//;
-                    $part =~ s/[^\s]+$//;
                     $part =
                       Mojo::ByteStream->new($part)->html_escape->to_string;
                     $part =~ s/(\Q$q\E)/<font color="red">$1<\/font>/isg;
                     push @{$article->{parts}}, $part;
+
+                    $found = 1;
                 }
+
+                push @$results, $article if $found;
             }
         }
     }
