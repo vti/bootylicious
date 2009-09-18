@@ -224,7 +224,13 @@ Bootylicious::Plugin::Gallery - Gallery plugin for Bootylicious
 Register gallery plugin in a configuration file (bootylicious.conf), add line
 like this:
 
-    plugins=gallery:thumb_width=144:thumb_height=144:bgcolor=white
+    "plugins" : [
+        "gallery" : {
+            "thumb_width" : 144,
+            "thumb_height" : 144,
+            "bgcolor" : "white"
+        }
+    ]
 
 Create article (e.g., 20090903-my-super-gallery.pod):
 
@@ -245,7 +251,7 @@ Create article (e.g., 20090903-my-super-gallery.pod):
     foto, life
 
 Create directory with photos in publicdir (see in bootylicious.conf
-publicdir=...), e.g., 20090903-my-super-gallery (same as the article).
+"publicdir" : "..."), e.g., 20090903-my-super-gallery (same as the article).
 
 =head1 DESCRIPTION
 

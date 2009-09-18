@@ -73,7 +73,10 @@ The TOC plugin dynamically builds a table of contents from the headings in a doc
 Register TocJquery and AjaxLibLoader plugins in a configuration file (bootylicious.conf), add line
 like this:
 
-    plugins=ajax_lib_Loader:jquery=on,toc_jquery:toc_tag=%TOC%     
+    "plugins" : [
+        "ajax_lib_loader" : { "jquery" : "on" },
+        "toc_jquery" : { "toc_tag" : "%TOC%" }
+    ]
 
  Insert into your post tag %TOC%, e.g.:
 
@@ -105,8 +108,7 @@ like this:
 
     futurama, bender
 
- =head1 ATTRIBUTES
-
+=head1 ATTRIBUTES
 
 =head2 C<toc_tag>
 
@@ -135,7 +137,6 @@ Konstantin Kapitanov, C<< <perlovik at gmail.com> >>
 L<http://code.google.com/p/samaxesjs/wiki/TableOfContentsPlugin> - TOC (Table of Contents) jQuery plugin
 
 L<http://getbootylicious.org> L<Mojo> L<Mojolicious> L<Mojolicious::Lite>
-
 
 =head1 COPYRIGHT & LICENSE
 
