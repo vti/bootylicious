@@ -923,52 +923,62 @@ when you add new templates, css files etc.
 
 =head1 CONFIGURATION
 
-Bootylicious can be configured through config file that is placed in the same 
-directory as bootylicious.pl file and is called bootylicious.conf.
+Bootylicious can be configured through config file that is placed in the same
+directory as bootylicious.pl file and is called bootylicious.conf. It is in JSON
+format.
 
-  title=my blog title
-  descr=my blog description
-  author=myname
-  menu=item1:link1,item2:link2, ...
+    {
+        "title" : "my blog title",
+        "descr" : "my blog description",
+        "author" : "myname",
+        "menu" : [
+            "item1", "link1",
+            "item2", "link2",
+            ...
+        ],
+        ...
+    }
 
-Configuration is set with the format "key=attribute". The key is case-insensitive, 
-but no spaces are allowed between the "=" character. 
-
-If you are using Bootylicious' default templates, there are a number of 
-configuration options you can set to customize them without ever having to 
+If you are using Bootylicious' default templates, there are a number of
+configuration options you can set to customize them without ever having to
 touch html or template files:
 
 =over 4
 
-=item * author - set the blog author's name. Can also be set via the 
+=item * author - set the blog author's name. Can also be set via the
 BOOTYLICIOUS_AUTHOR environment variable. Default value is "whoami".
 
-=item * about - set the blog author's short description. Can also be set 
-via the BOOTYLICIOUS_ABOUT environment valiable. Default value is 
+=item * about - set the blog author's short description. Can also be set
+via the BOOTYLICIOUS_ABOUT environment valiable. Default value is
 "Perl hacker".
 
-=item * email - set the blog author's email. Can also be set via the 
+=item * email - set the blog author's email. Can also be set via the
 BOOTYLICIOUS_EMAIL environment variable. Default value is "" (empty).
 
-=item * title - set the blog title. Can also be set via the BOOTYLICIOUS_TITLE 
+=item * title - set the blog title. Can also be set via the BOOTYLICIOUS_TITLE
 environment variable. Default value is "Just another blog".
 
-=item * descr - set the blog's short description (subtitle). Can also be set 
-via the BOOTYLICIOUS_DESCR environment variable. Default value is "I do not 
+=item * descr - set the blog's short description (subtitle). Can also be set
+via the BOOTYLICIOUS_DESCR environment variable. Default value is "I do not
 know if I need this".
 
-=item * menu - set the blog's menu content. Value should follow the format: 
-I<< item1,link1,item2,link2,item3,link3,... >>.
+=item * menu - set the blog's menu content. Value should be an array, because
+the order matters
 
-=item * css - loads given css filename from BOOTYLICIOUS_PUBLICDIR/
-(see below) and uses it instead of standard bootylicious css. To load 
-more than one css file, in the same given order, just separate each file 
-with a comma (e.g.: "css=foo.css,bar.css,baz.css").
+        "menu" : [
+            "item1", "link1",
+            "item2", "link2",
+            ...
+        ],
 
-=item * js - loads given javascript filename from BOOTYLICIOUS_PUBLICDIR/
-(see below) and uses it on the templates. To load more than one js file, in 
-the same given order, just separate each file with a comma 
-(e.g.: "js=foo.js,bar.js,baz.js").
+=item * css - loads given css filename from BOOTYLICIOUS_PUBLICDIR/ (see below)
+and uses it instead of standard bootylicious css. To load more than one css
+file, in the same given order, just pass an array (e.g.:
+"css" : [ "foo.css", "bar.css", "baz.css" ]).
+
+=item * js - loads given javascript filename from BOOTYLICIOUS_PUBLICDIR/ (see
+below) and uses it on the templates. To load more than one js file, in the same
+given order, just pass an array (e.g.: "js" : [ "foo.js", "bar.js", "baz.js" ]).
 
 =item * theme - bootylicious can automatically import css and js files via
 themes. Just put those files under PUBLICDIR/themes/my-theme/ and set this
