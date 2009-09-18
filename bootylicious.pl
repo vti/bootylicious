@@ -10,7 +10,7 @@ use Mojo::JSON;
 use Pod::Simple::HTML;
 require Time::Local;
 require File::Basename;
-use Mojo::ByteStream 'b';
+use Mojo::ByteStream;
 
 my %config = (
     author => $ENV{BOOTYLICIOUS_AUTHOR} || 'whoami',
@@ -637,8 +637,6 @@ sub _format_date {
     return $date;
 }
 
-app->types->type(rss => 'application/rss+xml');
-
 _call_hook(app, 'init');
 
 theme if $config{'theme'};
@@ -1060,6 +1058,8 @@ L<Mojo> L<Mojolicious> L<Mojolicious::Lite>
 Breno G. de Oliveira
 
 Konstantin Kapitanov
+
+Sebastian Riedel
 
 =head1 AUTHOR
 
