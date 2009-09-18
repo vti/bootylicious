@@ -6,6 +6,7 @@ use Mojolicious::Lite;
 use Mojo::Date;
 use Mojo::ByteStream;
 use Mojo::Loader;
+use Mojo::JSON;
 use Pod::Simple::HTML;
 require Time::Local;
 require File::Basename;
@@ -40,7 +41,7 @@ my %hooks = (
     finalize => []
 );
 
-_read_config_from_file(\%config, app->home->rel_file('bootylicious.conf'));
+_read_config_from_file(app->home->rel_file('bootylicious.conf'));
 
 _load_plugins($config{plugins});
 
@@ -206,44 +207,22 @@ sub theme {
 }
 
 sub _read_config_from_file {
-    my ($config, $conf_file) = @_;
+    my ($conf_file) = @_;
+
     if (-e $conf_file) {
         if (open FILE, "<", $conf_file) {
             my @lines = <FILE>;
             close FILE;
 
-            foreach my $line (@lines) {
-                chomp $line;
-                next unless $line;
-                next if $line =~ m/^#/;
-                $line =~ s/^([^=]+)=//;
-                my ($key, $value) = ($1, $line);
-                $key =~ s/^BOOTYLICIOUS_//;
-                $key = lc $key;
+            %config = (%config, %{Mojo::JSON->new->decode(join('', @lines))});
 
-                if ($key eq 'menu') {
-                    my @links = split(',', $value);
-                    $config->{$key} = [];
-                    foreach my $link (@links) {
-                        $link =~ s/^([^:]+)://;
-                        push @{$config->{$key}}, ($1 => $link);
-                    }
-                }
-                elsif ($key eq 'css' or $key eq 'js') {
-                    $config->{$key} = [];
-                    push @{$config->{$key}}, split(',', $value);
-                }
-                elsif ($key eq 'perl5lib') {
-                    unshift @INC, $_ for split(',', $value);
-                }
-                else {
-                    $config->{$key} = $value;
-                }
-            }
+            unshift @INC, $_
+              for (
+                ref $config{perl5lib} eq 'ARRAY'
+                ? @{$config{perl5lib}}
+                : $config{perl5lib});
         }
     }
-
-    _decode_config($config);
 
     $ENV{SCRIPT_NAME} = $config{base} if $config{base};
 
@@ -256,67 +235,59 @@ sub _read_config_from_file {
         if defined $config{publicdir};
 }
 
-sub _decode_config {
-    my $config = shift;
-
-    foreach my $key (keys %config) {
-        if (ref $config->{$key}) {
-            _decode_config_arrayref($config->{$key});
-        }
-        else {
-            $config->{$key} = _decode_config_scalar($config->{$key});
-        }
-    }
-}
-
-sub _decode_config_scalar {
-    return b($_[0])->decode('utf8')->to_string
-}
-
-sub _decode_config_arrayref {
-    $_ = b($_)->decode('utf8')->to_string for @{$_[0]};
-}
-
 sub _load_plugins {
-    my $plugin_names = shift;
-    return unless $plugin_names;
-
-    my @plugins = split(',', $plugin_names);
-    return unless @plugins;
+    my $plugins_arrayref = shift;
 
     my $lib_dir = app->home->rel_dir('lib');
     push @INC, $lib_dir;
 
+    my $prev;
+    while (my $plugin = shift @$plugins_arrayref) {
+        if (ref $plugin eq 'HASH') {
+            _load_plugin($prev => $plugin);
+        }
+        elsif ($prev || !@$plugins_arrayref) {
+            _load_plugin($plugin);
+        }
+        $prev = $plugin;
+    }
+}
+
+sub _load_plugin {
+    my ($class, $args) = @_;
+
     my $loader = Mojo::Loader->new;
-    foreach my $plugin (@plugins) {
-        my ($class, @args) = split(':', $plugin);
-        $class = Mojo::ByteStream->new($class)->camelize;
-        $class = "Bootylicious::Plugin::$class";
 
-        app->log->debug("Loading plugin '$class'");
+    $class = Mojo::ByteStream->new($class)->camelize;
+    $class = "Bootylicious::Plugin::$class";
 
-        if (my $e = $loader->load($class)) {
-            next unless ref $e;
+    app->log->debug("Loading plugin '$class'");
 
+    if (my $e = $loader->load($class)) {
+        if (ref $e) {
             app->log->error($e);
-            next;
+        }
+        else {
+            app->log->error("Plugin not found: $class");
         }
 
-        unless ($class->can('new')) {
-            app->log->error(qq|Can't locate object method "new" via plugin '$class'|);
-            next;
-        }
+        return;
+    }
 
-        @args = map { split m/=/ } @args;
-        my $instance = $class->new(@args);
+    unless ($class->can('new')) {
+        app->log->error(qq|Can't locate object method "new" via plugin '$class'|);
+        return;
+    }
 
-        foreach my $hook (keys %hooks) {
-            next unless $class->can("hook_$hook");
+    $args ||= {};
+    my $instance = $class->new(%$args);
 
-            app->log->debug("Registering hook '$class\::hook_$hook'");
+    foreach my $hook (keys %hooks) {
+        next unless $class->can("hook_$hook");
 
-            push @{$hooks{$hook}}, $instance;
-        }
+        app->log->debug("Registering hook '$class\::hook_$hook'");
+
+        push @{$hooks{$hook}}, $instance;
     }
 }
 
