@@ -214,7 +214,12 @@ sub _read_config_from_file {
             my @lines = <FILE>;
             close FILE;
 
-            %config = (%config, %{Mojo::JSON->new->decode(join('', @lines))});
+            my $line = '';
+            foreach my $l (@lines) {
+                next if $l =~ m/^#/;
+                $line .= $l;
+            }
+            %config = (%config, %{Mojo::JSON->new->decode($line)});
 
             unshift @INC, $_
               for (
