@@ -4,6 +4,7 @@ BEGIN { use FindBin; use lib "$FindBin::Bin/mojo/lib" }
 
 use Mojolicious::Lite;
 use Mojo::Date;
+use Mojo::Template;
 use Mojo::ByteStream;
 use Mojo::Loader;
 use Mojo::JSON;
@@ -19,6 +20,7 @@ my %config = (
     about  => $ENV{BOOTYLICIOUS_ABOUT}  || 'Perl hacker',
     descr  => $ENV{BOOTYLICIOUS_DESCR}  || 'I do not know if I need this',
     articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
+    pagesdir => $ENV{BOOTYLICIOUS_PAGESDIR} || 'pages',
     publicdir => $ENV{BOOTYLICIOUS_PUBLICDIR}
       || undef,    # defaults to 'public',
     templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR}
@@ -195,6 +197,30 @@ get '/articles/:year/:month/:alias' => sub {
 
     _call_hook($c, 'finalize');
 } => 'article';
+
+get '/pages/:pageid' => sub {
+    my $c = shift;
+
+    my $pageid = $c->stash('pageid');
+
+    my $page = get_page($pageid);
+    unless ($page) {
+        $c->stash(rendered => 1);
+        $c->app->static->serve_404($c);
+        return 1;
+    }
+
+    #return 1 unless _is_modified($c, $page->{mtime});
+
+    $c->stash(page => $page, config => \%config);
+
+    $c->res->headers->header(
+        'Last-Modified' => Mojo::Date->new($page->{mtime}));
+
+    $c->render;
+
+    _call_hook($c, 'finalize');
+} => 'page';
 
 sub theme {
     my $publicdir = app->home->rel_dir($config{publicdir});
@@ -421,8 +447,28 @@ sub get_article {
     return _parse_article($path);
 }
 
+sub get_page {
+    my $pageid = shift;
+    return unless $pageid;
+
+    my $root =
+      ($config{pagesdir} =~ m/^\//)
+      ? $config{pagesdir}
+      : app->home->rel_dir($config{pagesdir});
+
+    my @files = glob($root . '/' . $pageid . ".*");
+
+    if (@files > 1) {
+        app->log->warn('More then one page is available '
+              . 'with the same extension');
+    }
+    my $path = $files[0];
+    return unless $path && -r $path;
+
+    return _parse_page($path);
+}
+
 my %_articles;
-my %_parsers;
 
 sub _parse_article {
     my $path = shift;
@@ -466,34 +512,8 @@ sub _parse_article {
 
     my $created = Mojo::Date->new($epoch);
 
-    my $parser = \&_parse_article_pod;
-    if ($ext ne 'pod') {
-        my $parser_class =
-          'Bootylicious::Parser::' . Mojo::ByteStream->new($ext)->camelize;
-
-        if ($_parsers{$parser_class}) {
-            $parser = $_parsers{$parser_class};
-        }
-        else {
-            eval "require $parser_class";
-            if ($@) {
-                app->log->error($@);
-                return;
-            }
-            #my $loader = Mojo::Loader->new;
-            #if (my $e = $loader->load($parser_class)) {
-                #if (ref $e) {
-                    #$c->app->log->error($e);
-                #}
-                #else {
-                    #$c->app->log->error("Unknown parser: $parser_class");
-                #}
-                #return;
-            #}
-
-            $parser = $_parsers{$parser_class} = $parser_class->new->parser_cb;
-        }
-    }
+    my $parser = _get_parser($ext);
+    return unless $parser;
 
     my $metadata = _parse_metadata(\$string);
 
@@ -538,6 +558,101 @@ sub _parse_article {
         preview_link   => $preview_link,
         content        => $content
     };
+}
+
+sub _parse_page {
+    my $path = shift;
+    return unless $path;
+
+    my $mtime = Mojo::Date->new((stat($path))[9]);
+
+    unless (open FILE, "<:encoding(UTF-8)", $path) {
+        app->log->error("Can't open file: $path: $!");
+        return;
+    }
+    my $string = join("", <FILE>);
+    close FILE;
+
+    my ($name, $ext) = ($path =~ m/([^\/]+)\.([^.]+)$/);
+
+    my $parser = _get_parser($ext);
+    return unless $parser;
+
+    my $metadata = _parse_metadata(\$string);
+
+    my $data = $parser->($string);
+    unless ($data) {
+        app->log->debug("Ignoring $path: parser error");
+        return;
+    }
+
+    return $_articles{$path} = {
+        path           => $path,
+        name           => $name,
+        mtime          => $mtime,
+        mtime_format   => _format_date($mtime),
+        title          => $metadata->{title} || $name,
+        link           => $metadata->{link} || '',
+        tags           => $metadata->{tags} || [],
+        content        => $data->{head}
+    };
+}
+
+my %_parsers;
+sub _get_parser {
+    my $ext = shift;
+
+    my $parser = \&_parse_article_pod;
+    if ($ext eq 'epl') {
+        $parser = sub {
+            my ($head_string, $tail_string) = @_;
+
+            my $head  = '';
+            my $tail  = '';
+
+            my $mt = Mojo::Template->new;
+
+            $head = $mt->render($head_string);
+
+            if ($tail_string) {
+                $tail = $mt->render($tail_string);
+            }
+
+            return {
+                head  => $head,
+                tail  => $tail
+            };
+          }
+    }
+    elsif ($ext ne 'pod') {
+        my $parser_class =
+          'Bootylicious::Parser::' . Mojo::ByteStream->new($ext)->camelize;
+
+        if ($_parsers{$parser_class}) {
+            $parser = $_parsers{$parser_class};
+        }
+        else {
+            eval "require $parser_class";
+            if ($@) {
+                app->log->error($@);
+                return;
+            }
+            #my $loader = Mojo::Loader->new;
+            #if (my $e = $loader->load($parser_class)) {
+                #if (ref $e) {
+                    #$c->app->log->error($e);
+                #}
+                #else {
+                    #$c->app->log->error("Unknown parser: $parser_class");
+                #}
+                #return;
+            #}
+
+            $parser = $_parsers{$parser_class} = $parser_class->new->parser_cb;
+        }
+    }
+
+    return $parser;
 }
 
 sub _parse_metadata {
@@ -815,6 +930,17 @@ rkJggg==" alt="RSS" /></a></sup>
 % }
 </div>
 <%= $article->{content} %>
+</div>
+
+@@ page.html.epl
+% my $self = shift;
+% $self->stash(layout => 'wrapper');
+% my $page = $self->stash('page');
+<div class="text">
+<h1 class="title">
+<%= $page->{title} %>
+</h1>
+<%= $page->{content} %>
 </div>
 
 @@ layouts/wrapper.html.epl
