@@ -33,6 +33,7 @@ my %config = (
     theme     => '',
     cuttag    => '[cut]',
     pagelimit => 10,
+    meta      => [],
 );
 
 my %hooks = (
@@ -829,6 +830,9 @@ rkJggg==" alt="RSS" /></a></sup>
     <head>
         <title><%= $config->{title} %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+% foreach my $meta (@{$config->{meta}}) {
+        <meta <%= "$_=\"$meta->{$_}\" " for keys %$meta %>/>
+% }
 % foreach my $file (@{$config->{css}}) {
         <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
 % }
