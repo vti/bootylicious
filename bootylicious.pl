@@ -829,6 +829,7 @@ Later &rarr;
 @@ archive.html.epl
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
+% $self->stash(title => 'Archive');
 % my $articles = $self->stash('articles');
 % my $tmp;
 % my $new = 0;
@@ -889,6 +890,7 @@ Later &rarr;
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $tags = $self->stash('tags');
+% $self->stash(title => 'Tags');
 <div class="text">
 <h1>Tags</h1>
 <br />
@@ -903,6 +905,7 @@ Later &rarr;
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $tag = $self->stash('tag');
+% $self->stash(title => $tag);
 % my $articles = $self->stash('articles');
 <div class="text">
 <h1>Tag <%= $tag %>
@@ -932,6 +935,7 @@ rkJggg==" alt="RSS" /></a></sup>
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $article = $self->stash('article');
+% $self->stash(title => $article->{title});
 <div class="text">
 <h1 class="title">
 % if ($article->{link}) {
@@ -957,6 +961,7 @@ rkJggg==" alt="RSS" /></a></sup>
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $page = $self->stash('page');
+% $self->stash(title => $page->{title});
 <div class="text">
 <h1 class="title">
 <%= $page->{title} %>
@@ -968,6 +973,7 @@ rkJggg==" alt="RSS" /></a></sup>
 % my $self = shift;
 % $self->stash(layout => 'wrapper');
 % my $draft = $self->stash('draft');
+% $self->stash(title => $draft->{title});
 <div class="text">
 <h1 class="title">
 <%= $draft->{title} %>
@@ -984,7 +990,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
     <head>
-        <title><%= $config->{title} %></title>
+        <title><%= $self->stash('title') . ' / ' if $self->stash('title') %><%= $config->{title} %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 % foreach my $meta (@{$config->{meta}}) {
         <meta <%= "$_=\"$meta->{$_}\" " for keys %$meta %>/>
