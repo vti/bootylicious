@@ -225,9 +225,6 @@ sub _write_article {
         $metadata .= 'Title: ' . $title . "\n";
     }
 
-    #if (my $title = $struct->value->{title}) {
-    #$metadata . = 'Title: ' . $title;
-    #}
     if (my @categories = @{$struct->value->{categories} || []}) {
         $metadata .= 'Tags: ';
         $metadata .= "$_, " for @categories;

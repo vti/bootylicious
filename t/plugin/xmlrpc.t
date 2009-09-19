@@ -81,6 +81,8 @@ is($r->param->value->{title}, 'foo');
 like($r->param->value->{description}, qr/bar/);
 is_deeply($r->param->value->{categories}, [qw/one two/]);
 
+diag('Expiring cache');
+sleep(1);
 $r =
   _call('metaWeblog.editPost', $postid, 'foo', 'bar',
     {title => 'bar', description => 'foo', categories => [qw/three four/]},
