@@ -1083,7 +1083,7 @@ Bootylicious -- one-file blog on Mojo steroids!
 
 Bootylicious is a minimalistic blogging application built on
 L<Mojolicious::Lite>. You start with just one file, but it is easily extendable
-when you add new templates, css files etc.
+when you add new plugins, templates, css files etc.
 
 =head1 CONFIGURATION
 
@@ -1127,13 +1127,13 @@ via the BOOTYLICIOUS_DESCR environment variable. Default value is "I do not
 know if I need this".
 
 =item * menu - set the blog's menu content. Value should be an array, because
-the order matters
+the order matters:
 
-        "menu" : [
-            "item1", "link1",
-            "item2", "link2",
-            ...
-        ],
+    "menu" : [
+        "item1", "link1",
+        "item2", "link2",
+        ...
+    ],
 
 =item * css - loads given css filename from BOOTYLICIOUS_PUBLICDIR/ (see below)
 and uses it instead of standard bootylicious css. To load more than one css
@@ -1166,34 +1166,198 @@ like images, css/js files, etc. Can also be set via the BOOTYLICIOUS_PUBLICDIR
 environment variable. Default value is "public".
 
 =item * templatesdir - set the dir where bootylicious looks for template files,
-in case you want to override the default ones. Can also be set via the 
+in case you want to override the default ones. Can also be set via the
 BOOTYLICIOUS_TEMPLATESDIR environment variable. Default value is "templates".
+
+=item * pagesdir - set the dir where bootylicious looks for static pages.
+Default is 'pages'.
+
+=item * draftsdir - set the dir where bootylicious looks for draft pages.
+Default is 'drafts'.
 
 =item * cuttag - set the cuttag for parsing the articles. Default is "cut".
 
-=item * perl5lib - set any additional lib folders the script should look 
-into before trying to load Perl 5 modules (ideal for integrating with 
+=item * perl5lib - set any additional lib folders the script should look
+into before trying to load Perl 5 modules (ideal for integrating with
 L<< local::lib >> and use inside shared hosting environments)
+
+=item *pagelimit - how many articles to show on index page. Default is 10.
 
 =back
 
 =head1 FILESYSTEM
 
-All the articles must be stored in BOOTYLICIOUS_ARTICLESDIR directory 
-("articles", by default) with a name like 20090730-my-new-article.pod. 
-They are parsed with L<< Pod::Simple::HTML >>.
+=head2 ARTICLES
 
-The Pod filename format must comply with either of the following:
+All the articles must be placed under the articlesdir with a name like
+20090730-my-new-article.EXTENSION. Based on EXTENSION they are parsed by
+different parsers. See parsers section for more information.
+
+The filename format must comply with either of the following:
 
 =over 4
 
-=item * YYYYMMDD-title.pod
+=item * YYYYMMDD-title.EXTENSION
 
-=item * YYYYMMDDTHH:MM:SS-title.pod
+=item * YYYYMMDDTHH:MM:SS-title.EXTENSION
 
 =back
 
 The title may contain dots (".") or dashes ("-") freely.
+
+=head2 PAGES
+
+These are static pages that don't appear on articles page and can be used to
+show some static information like documentation, download are, author info etc.
+
+=head2 DRAFTS
+
+These are future articles that you are working on. Just place your drafts under
+the draftsdir and keep working. You can look at the preview by pointing your
+browser to the draft url. Noone is going to see it, because only you know the
+article's title.
+
+=head1 PARSERS
+
+Based on your article's extension (.pod, .epl, .md etc) it is parsed by one of
+the bootylicious parsers. By default you can use Mojo::Template or POD formats.
+But more parsers are available as third party modules.
+
+You can use any parser at a time. You can have articles written in POD,
+Markdown, Wiki etc.
+
+=head2 CONFIGURATION
+
+No configuration is required. That was easy, yeah?
+
+=head2 INTERFACE
+
+    package Bootylicious::Parser::MyNewParser;
+
+    use strict;
+    use warnings;
+
+    use base 'Mojo::Base';
+
+    sub parser_cb {
+        my $self = shift;
+
+        return sub {
+            my ($head_string, $tail_string) = @_;
+
+            my $head  = '';
+            my $tail  = '';
+
+            $head = my_new_parser($head_string);
+
+            if ($tail_string) {
+                $tail = my_new_parser($tail_string);
+            }
+
+            return {
+                head  => $head,
+                tail  => $tail
+            };
+          }
+    }
+
+    1;
+
+$head_string is everything before the cuttag and $tail_string is everything after
+the cuttag.
+
+You must return hashref with parsed head and tail. See Bootylicious::Parser::Md
+for a complete example.
+
+=head1 PLUGINS
+
+Bootylicious can be extended by third party plugins.
+
+=head2 CONFIGURATION
+
+Configuration is done in bootylicious config file. Parameters are passed to the
+plugins constructors.
+
+    # Without params (or with default ones)
+    "plugins" : [
+        "search",
+        "gallery"
+    ]
+
+    # With params
+    "plugins" : [
+        "search" : {
+            "before_context" : 10
+        },
+        "gallery" : {
+            "columns" : 3
+        }
+    ]
+
+=head2 HOOKS
+
+There are several hooks where you can hook your plugin to. This includes:
+
+=over
+
+=item * preinit
+
+    Called before any bootylicious setup is made. This can be used if you want
+    to modify bootylicious heavily.
+
+=item * init
+
+    Called after all bootylicous setup is made. This can be used if you want to
+    add additional links (see Bootylicious::Plugin::Search).
+
+=item * finalize
+
+    Called after any page is rendered. This can be used if you want to
+    substitute any part of the page after it is processed by the parser.
+
+If you need more hooks in different places feel free to contact me.
+
+=head2 INTERFACE
+
+    package Bootylicious::Plugin::MyNewPlugin;
+
+    use strict;
+    use warnings;
+
+    use base 'Mojo::Base';
+
+    # Any parameters that are passed from the configuration file
+    __PACKAGE__->attr('before_context' => 20);
+
+    # Hook you want to use
+    sub hook_init {
+        my $self = shift;
+        my $app  = shift;
+
+        my $r = $app->routes;
+
+        $r->route('/search')->to(
+            callback => sub {
+                my $c = shift;
+
+                $c->stash(
+                    config         => main::config(),
+                    format         => 'html',
+                    template_class => __PACKAGE__,
+                );
+            }
+        )->name('search');
+    }
+
+    1;
+
+    @@ search.html.epl
+    % my $self = shift;
+        ...
+    Anything you can do with Mojo::Template goes here
+        ...
+
+=back
 
 =head1 TEMPLATES
 
@@ -1225,7 +1389,7 @@ Sebastian Riedel
 
 =head1 AUTHOR
 
-Viacheslav Tykhanovskyi, C<vti@cpan.org>.
+Viacheslav Tykhanovskyi, C<viacheslav.t@gmail.com>.
 
 =head1 COPYRIGHT
 
