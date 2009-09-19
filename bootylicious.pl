@@ -21,6 +21,7 @@ my %config = (
     descr  => $ENV{BOOTYLICIOUS_DESCR}  || 'I do not know if I need this',
     articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
     pagesdir => $ENV{BOOTYLICIOUS_PAGESDIR} || 'pages',
+    draftsdir => $ENV{BOOTYLICIOUS_DRAFTSDIR} || 'drafts',
     publicdir => $ENV{BOOTYLICIOUS_PUBLICDIR}
       || undef,    # defaults to 'public',
     templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR}
@@ -221,6 +222,30 @@ get '/pages/:pageid' => sub {
 
     _call_hook($c, 'finalize');
 } => 'page';
+
+get '/drafts/:draftid' => sub {
+    my $c = shift;
+
+    my $draftid = $c->stash('draftid');
+
+    my $draft = get_draft($draftid);
+    unless ($draft) {
+        $c->stash(rendered => 1);
+        $c->app->static->serve_404($c);
+        return 1;
+    }
+
+    #return 1 unless _is_modified($c, $page->{mtime});
+
+    $c->stash(draft => $draft, config => \%config);
+
+    $c->res->headers->header(
+        'Last-Modified' => Mojo::Date->new($draft->{mtime}));
+
+    $c->render;
+
+    _call_hook($c, 'finalize');
+} => 'draft';
 
 sub theme {
     my $publicdir = app->home->rel_dir($config{publicdir});
@@ -447,6 +472,27 @@ sub get_article {
     return _parse_article($path);
 }
 
+sub get_draft {
+    my $alias = shift;
+    return unless $alias;
+
+    my $root =
+      ($config{draftsdir} =~ m/^\//)
+      ? $config{draftsdir}
+      : app->home->rel_dir($config{draftsdir});
+
+    my @files = glob($root . '/' . '*' . $alias . ".*");
+
+    if (@files > 1) {
+        app->log->warn('More then one draft is available '
+              . 'with the same alias');
+    }
+    my $path = $files[0];
+    return unless $path && -r $path;
+
+    return _parse_article($path);
+}
+
 sub get_page {
     my $pageid = shift;
     return unless $pageid;
@@ -465,38 +511,51 @@ sub get_page {
     my $path = $files[0];
     return unless $path && -r $path;
 
-    return _parse_page($path);
+    return _parse_article($path);
 }
 
 my %_articles;
 
 sub _parse_article {
     my $path = shift;
-
     return unless $path;
-    my $mtime   = Mojo::Date->new((stat($path))[9]);
+
+    my $mtime = Mojo::Date->new((stat($path))[9]);
 
     #return $_articles{$path} if $_articles{$path};
 
-    unless ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-(.*?)\.([^.]+)$/) {
-        app->log->debug("Ignoring $path: unknown file");
-        return;
-    }
-    my ($year, $month, $day, $hour, $minute, $second, $name, $ext) =
-      ($1, $2, $3, ($4 || '00'), ($5 || '00'), ($6 || '00'), $7, $8);
+    my ($year, $month, $day, $hour, $minute, $second);
+    if ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-/) {
+        ($year, $month, $day, $hour, $minute, $second) =
+          ($1, $2, $3, ($4 || '00'), ($5 || '00'), ($6 || '00'));
 
-    my $timestamp = "$year$month$day" . "T$hour:$minute:$second";
+        $second ||= 0;
+        $minute ||= 0;
+        $hour   ||= 0;
+    }
+    else {
+        ($second, $minute, $hour, $day, $month, $year) =
+          gmtime($mtime->epoch);
+
+        $year += 1900;
+        $month += 1;
+    }
+
+    my ($name, $ext) = ($path =~ m/(.*?)\.([^.]+)$/);
+
+    my $timestamp =
+        $year
+      . sprintf('%02d', $month)
+      . sprintf('%02d', $day) . 'T'
+      . sprintf('%02d', $hour) . ':'
+      . sprintf('%02d', $minute) . ':'
+      . sprintf('%02d', $second);
 
     my $epoch = 0;
     eval {
-        $epoch = Time::Local::timegm(
-            $second || 0,
-            $minute || 0,
-            $hour   || 0,
-            $day,
-            $month - 1,
-            $year - 1900
-        );
+        $epoch =
+          Time::Local::timegm($second, $minute, $hour, $day, $month - 1,
+            $year - 1900);
     };
     if ($@ || $epoch < 0) {
         app->log->debug("Ignoring $path: wrong timestamp");
@@ -557,44 +616,6 @@ sub _parse_article {
         preview        => $preview,
         preview_link   => $preview_link,
         content        => $content
-    };
-}
-
-sub _parse_page {
-    my $path = shift;
-    return unless $path;
-
-    my $mtime = Mojo::Date->new((stat($path))[9]);
-
-    unless (open FILE, "<:encoding(UTF-8)", $path) {
-        app->log->error("Can't open file: $path: $!");
-        return;
-    }
-    my $string = join("", <FILE>);
-    close FILE;
-
-    my ($name, $ext) = ($path =~ m/([^\/]+)\.([^.]+)$/);
-
-    my $parser = _get_parser($ext);
-    return unless $parser;
-
-    my $metadata = _parse_metadata(\$string);
-
-    my $data = $parser->($string);
-    unless ($data) {
-        app->log->debug("Ignoring $path: parser error");
-        return;
-    }
-
-    return $_articles{$path} = {
-        path           => $path,
-        name           => $name,
-        mtime          => $mtime,
-        mtime_format   => _format_date($mtime),
-        title          => $metadata->{title} || $name,
-        link           => $metadata->{link} || '',
-        tags           => $metadata->{tags} || [],
-        content        => $data->{head}
     };
 }
 
@@ -941,6 +962,17 @@ rkJggg==" alt="RSS" /></a></sup>
 <%= $page->{title} %>
 </h1>
 <%= $page->{content} %>
+</div>
+
+@@ draft.html.epl
+% my $self = shift;
+% $self->stash(layout => 'wrapper');
+% my $draft = $self->stash('draft');
+<div class="text">
+<h1 class="title">
+<%= $draft->{title} %>
+</h1>
+<%= $draft->{content} %>
 </div>
 
 @@ layouts/wrapper.html.epl
