@@ -72,7 +72,7 @@ sub index {
     if (@$articles) {
         $article = $articles->[0];
 
-        $last_modified = $article->{mtime};
+        $last_modified = $article->{modified};
 
         return 1 unless _is_modified($c, $last_modified);
     }
@@ -107,7 +107,7 @@ get '/archive' => sub {
 
     my ($articles) = get_articles(limit => 0);
     if (@$articles) {
-        $last_modified = $articles->[0]->{mtime};
+        $last_modified = $articles->[0]->{modified};
 
         return 1 unless _is_modified($c, $last_modified);
     }
@@ -140,7 +140,7 @@ get '/tags/:tag' => sub {
 
     my $last_modified = Mojo::Date->new;
     if (@$articles) {
-        $last_modified = $articles->[0]->{mtime};
+        $last_modified = $articles->[0]->{modified};
 
         return 1 unless _is_modified($c, $last_modified);
     }
@@ -187,12 +187,12 @@ get '/articles/:year/:month/:alias' => sub {
         return 1;
     }
 
-    return 1 unless _is_modified($c, $article->{mtime});
+    return 1 unless _is_modified($c, $article->{modified});
 
     $c->stash(article => $article, template => 'article', config => \%config);
 
     $c->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($article->{mtime}));
+        'Last-Modified' => Mojo::Date->new($article->{modified}));
 
     $c->render;
 
@@ -211,12 +211,12 @@ get '/pages/:pageid' => sub {
         return 1;
     }
 
-    #return 1 unless _is_modified($c, $page->{mtime});
+    #return 1 unless _is_modified($c, $page->{modified});
 
     $c->stash(page => $page, config => \%config);
 
     $c->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($page->{mtime}));
+        'Last-Modified' => Mojo::Date->new($page->{modified}));
 
     $c->render;
 
@@ -235,12 +235,12 @@ get '/drafts/:draftid' => sub {
         return 1;
     }
 
-    #return 1 unless _is_modified($c, $page->{mtime});
+    #return 1 unless _is_modified($c, $page->{modified});
 
     $c->stash(draft => $draft, config => \%config);
 
     $c->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($draft->{mtime}));
+        'Last-Modified' => Mojo::Date->new($draft->{modified}));
 
     $c->render;
 
@@ -515,17 +515,19 @@ sub get_page {
 }
 
 my %_articles;
-
 sub _parse_article {
     my $path = shift;
     return unless $path;
 
-    my $mtime = Mojo::Date->new((stat($path))[9]);
+    my $modified = (stat($path))[9];
 
-    #return $_articles{$path} if $_articles{$path};
+    return $_articles{$path}
+      if $_articles{$path} && $_articles{$path}->{modified} == $modified;
+
+    my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
 
     my ($year, $month, $day, $hour, $minute, $second);
-    if ($path =~ m/\/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-/) {
+    if ($name =~ s/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-//) {
         ($year, $month, $day, $hour, $minute, $second) =
           ($1, $2, $3, ($4 || '00'), ($5 || '00'), ($6 || '00'));
 
@@ -535,13 +537,11 @@ sub _parse_article {
     }
     else {
         ($second, $minute, $hour, $day, $month, $year) =
-          gmtime($mtime->epoch);
+          gmtime($modified);
 
         $year += 1900;
         $month += 1;
     }
-
-    my ($name, $ext) = ($path =~ m/(.*?)\.([^.]+)$/);
 
     my $timestamp =
         $year
@@ -551,13 +551,13 @@ sub _parse_article {
       . sprintf('%02d', $minute) . ':'
       . sprintf('%02d', $second);
 
-    my $epoch = 0;
+    my $created = 0;
     eval {
-        $epoch =
+        $created =
           Time::Local::timegm($second, $minute, $hour, $day, $month - 1,
             $year - 1900);
     };
-    if ($@ || $epoch < 0) {
+    if ($@ || $created < 0) {
         app->log->debug("Ignoring $path: wrong timestamp");
         return;
     }
@@ -568,8 +568,6 @@ sub _parse_article {
     }
     my $string = join("", <FILE>);
     close FILE;
-
-    my $created = Mojo::Date->new($epoch);
 
     my $parser = _get_parser($ext);
     return unless $parser;
@@ -597,25 +595,25 @@ sub _parse_article {
     my $preview = $data->{tail} ? $data->{head} : '';
 
     return $_articles{$path} = {
-        path           => $path,
-        name           => $name,
-        mtime          => $mtime,
-        created        => $created,
-        timestamp      => $timestamp,
-        mtime_format   => _format_date($mtime),
-        created_format => _format_date($created),
-        year           => $year,
-        month          => $month,
-        day            => $day,
-        hour           => $hour,
-        minute         => $minute,
-        second         => $second,
-        title          => $metadata->{title} || $name,
-        link           => $metadata->{link} || '',
-        tags           => $metadata->{tags} || [],
-        preview        => $preview,
-        preview_link   => $preview_link,
-        content        => $content
+        path            => $path,
+        name            => $name,
+        created         => $created,
+        modified        => $modified,
+        modified_format => _format_date($modified),
+        created_format  => _format_date($created),
+        timestamp       => $timestamp,
+        year            => $year,
+        month           => $month,
+        day             => $day,
+        hour            => $hour,
+        minute          => $minute,
+        second          => $second,
+        title           => $metadata->{title} || $name,
+        link            => $metadata->{link} || '',
+        tags            => $metadata->{tags} || [],
+        preview         => $preview,
+        preview_link    => $preview_link,
+        content         => $content
     };
 }
 
@@ -766,7 +764,7 @@ sub _parse_article_pod {
 sub _format_date {
     my $date = shift;
 
-    $date = $date->to_string;
+    $date = Mojo::Date->new($date)->to_string;
 
     $date =~ s/ [^ ]*? GMT$//;
 
@@ -945,8 +943,8 @@ rkJggg==" alt="RSS" /></a></sup>
 % }
 </h1>
 <div class="created"><%= $article->{created_format} %>
-% if ($article->{created} ne $article->{mtime}) {
-, modified <span class="modified"><%= $article->{mtime_format} %></span>
+% if ($article->{created} != $article->{modified}) {
+, modified <span class="modified"><%= $article->{modified_format} %></span>
 % }
 </div>
 <div class="tags">
