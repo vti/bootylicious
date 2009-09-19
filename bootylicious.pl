@@ -1085,6 +1085,22 @@ Bootylicious is a minimalistic blogging application built on
 L<Mojolicious::Lite>. You start with just one file, but it is easily extendable
 when you add new plugins, templates, css files etc.
 
+=head1 FEATURES
+
+=over
+
+    * filesystem
+    * tags
+    * RSS
+    * paging
+    * static pages
+    * drafts
+    * themes
+    * multi-parser support
+    * plugins
+
+=back
+
 =head1 CONFIGURATION
 
 Bootylicious can be configured through config file that is placed in the same
