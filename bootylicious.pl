@@ -1197,7 +1197,7 @@ Default is 'drafts'.
 into before trying to load Perl 5 modules (ideal for integrating with
 L<< local::lib >> and use inside shared hosting environments)
 
-=item *pagelimit - how many articles to show on index page. Default is 10.
+=item * pagelimit - how many articles to show on index page. Default is 10.
 
 =back
 
@@ -1331,6 +1331,8 @@ There are several hooks where you can hook your plugin to. This includes:
     Called after any page is rendered. This can be used if you want to
     substitute any part of the page after it is processed by the parser.
 
+=back
+
 If you need more hooks in different places feel free to contact me.
 
 =head2 INTERFACE
@@ -1372,8 +1374,6 @@ If you need more hooks in different places feel free to contact me.
         ...
     Anything you can do with Mojo::Template goes here
         ...
-
-=back
 
 =head1 TEMPLATES
 
