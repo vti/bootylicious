@@ -787,11 +787,11 @@ __DATA__
 % foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title"><%= '&raquo;' if $article->{link} %> <a
-        href="<%= $article->{link} || $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%= $article->{title} %></a></h1>
+        href="<%= $article->{link} || $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%== $article->{title} %></a></h1>
         <div class="created"><%= $article->{created_format} %></div>
         <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
-        <a href="<%= $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
+        <a href="<%== $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
 % }
         </div>
 % if ($article->{preview}) {
@@ -842,7 +842,7 @@ Earlier &rarr;
 %     }
 
     <li>
-        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
+        <a href="<%= $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%== $article->{title} %></a><br />
         <div class="created"><%= $article->{created_format} %></div>
     </li>
 
@@ -857,9 +857,9 @@ Earlier &rarr;
 <rss version="2.0" xml:base="<%= $self->req->url->base %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
-        <title><%= $self->stash('config')->{title} %></title>
+        <title><%== $self->stash('config')->{title} %></title>
         <link><%= $self->req->url->base %></link>
-        <description><%= $self->stash('config')->{descr} %></description>
+        <description><%== $self->stash('config')->{descr} %></description>
         <pubDate><%= $articles->[0]->{created} %></pubDate>
         <lastBuildDate><%= $articles->[0]->{created} %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
@@ -875,7 +875,7 @@ Earlier &rarr;
       <description><%== $article->{content} %></description>
 % }
 % foreach my $tag (@{$article->{tags}}) {
-      <category><%= $tag %></category>
+      <category><%== $tag %></category>
 % }
       <pubDate><%= $article->{created} %></pubDate>
       <guid><%= $link %></guid>
@@ -894,7 +894,7 @@ Earlier &rarr;
 <br />
 <div class="tags">
 % foreach my $tag (keys %$tags) {
-<a href="<%= $self->url_for('tag', tag => $tag, format => 'html') %>"><%= $tag %></a><sub>(<%= $tags->{$tag}->{count} %>)</sub>
+<a href="<%= $self->url_for('tag', tag => $tag, format => 'html') %>"><%== $tag %></a><sub>(<%= $tags->{$tag}->{count} %>)</sub>
 % }
 </div>
 </div>
@@ -924,7 +924,7 @@ rkJggg==" alt="RSS" /></a></sup>
 </h1>
 <br />
 % foreach my $article (@$articles) {
-        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%= $article->{title} %></a><br />
+        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%== $article->{title} %></a><br />
         <div class="created"><%= $article->{created_format} %></div>
 % }
 </div>
@@ -937,9 +937,9 @@ rkJggg==" alt="RSS" /></a></sup>
 <div class="text">
 <h1 class="title">
 % if ($article->{link}) {
-&raquo; <a href="<%= $article->{link} %>"><%= $article->{title} %></a>
+&raquo; <a href="<%= $article->{link} %>"><%== $article->{title} %></a>
 % } else {
-<%= $article->{title} %>
+<%== $article->{title} %>
 % }
 </h1>
 <div class="created"><%= $article->{created_format} %>
@@ -962,7 +962,7 @@ rkJggg==" alt="RSS" /></a></sup>
 % $self->stash(title => $page->{title});
 <div class="text">
 <h1 class="title">
-<%= $page->{title} %>
+<%== $page->{title} %>
 </h1>
 <%= $page->{content} %>
 </div>
@@ -974,7 +974,7 @@ rkJggg==" alt="RSS" /></a></sup>
 % $self->stash(title => $draft->{title});
 <div class="text">
 <h1 class="title">
-<%= $draft->{title} %>
+<%== $draft->{title} %>
 </h1>
 <%= $draft->{content} %>
 </div>
@@ -988,7 +988,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
     <head>
-        <title><%= $self->stash('title') . ' / ' if $self->stash('title') %><%= $config->{title} %></title>
+        <title><%= $self->stash('title') . ' / ' if $self->stash('title') %><%== $config->{title} %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 % foreach my $meta (@{$config->{meta}}) {
         <meta <%= "$_=\"$meta->{$_}\" " for keys %$meta %>/>
@@ -1027,12 +1027,12 @@ rkJggg==" alt="RSS" /></a></sup>
             .push {height:6em}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%= $config->{title} %>" href="<%= $self->url_for('index', format => 'rss') %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%== $config->{title} %>" href="<%= $self->url_for('index', format => 'rss') %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= $self->url_for('root', format => '') %>"><%= $config->{title} %></a>
+                <h1 id="title"><a href="<%= $self->url_for('root', format => '') %>"><%== $config->{title} %></a>
                 <sup><a href="<%= $self->url_for('index', format=>'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
