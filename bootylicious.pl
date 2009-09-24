@@ -806,20 +806,20 @@ __DATA__
 
 <div id="pager">
 % if ($pager->{prev}) {
-    &larr; <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{prev} %>">Earlier</a>
+    &larr; <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{prev} %>">Later</a>
 % }
 % else {
 <span class="notactive">
-&larr; Earlier
+&larr; Later
 </span>
 % }
 
 % if ($pager->{next}) {
-    <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{next} %>">Later</a> &rarr;
+    <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{next} %>">Earlier</a> &rarr;
 % }
 % else {
 <span class="notactive">
-Later &rarr;
+Earlier &rarr;
 </span>
 % }
 </div>
