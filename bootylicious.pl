@@ -363,7 +363,7 @@ sub _is_modified {
     my $date = $c->req->headers->header('If-Modified-Since');
     return 1 unless $date;
 
-    return 1 unless Mojo::Date->new($date)->epoch == $last_modified->epoch;
+    return 1 unless Mojo::Date->new($date)->epoch == $last_modified;
 
     $c->res->code(304);
     $c->stash(rendered => 1);
