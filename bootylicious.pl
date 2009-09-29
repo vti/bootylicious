@@ -271,7 +271,12 @@ sub _read_config_from_file {
                 next if $l =~ m/^#/;
                 $line .= $l;
             }
-            %config = (%config, %{Mojo::JSON->new->decode($line)});
+
+            my $json = Mojo::JSON->new;
+            my $json_config = $json->decode($line);
+            die $json->error unless $json_config;
+
+            %config = (%config, %$json_config);
 
             unshift @INC, $_
               for (
