@@ -14,6 +14,7 @@ require File::Basename;
 use Mojo::ByteStream;
 
 my %config = (
+    server => 'cgi',
     author => $ENV{BOOTYLICIOUS_AUTHOR} || 'whoami',
     email  => $ENV{BOOTYLICIOUS_EMAIL}  || '',
     title  => $ENV{BOOTYLICIOUS_TITLE}  || 'Just another blog',
@@ -780,7 +781,7 @@ _call_hook(app, 'init');
 
 theme if $config{'theme'};
 
-shagadelic(@ARGV ? @ARGV : 'cgi');
+shagadelic(@ARGV ? @ARGV : $config{'server'});
 
 __DATA__
 
