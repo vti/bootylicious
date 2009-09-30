@@ -67,7 +67,7 @@ $r =
   _call('metaWeblog.newPost', 'bootylicious', 'foo', 'bar',
     {title => 'foo', description => 'bar', categories => [qw/one two/]}, 'true');
 my @time = localtime(time);
-my $postid = ($time[5] + 1900) . '/' . sprintf("%02d", $time[4]) . '/' . 'foo';
+my $postid = ($time[5] + 1900) . '/' . sprintf("%02d", $time[4] + 1) . '/' . 'foo';
 ok($r->param);
 is($r->param->value, $postid);
 
