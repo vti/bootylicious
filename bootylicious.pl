@@ -309,8 +309,11 @@ sub _load_plugins {
         if ($prev && ref $plugin eq 'HASH') {
             _load_plugin($prev => $plugin);
         }
-        elsif (($prev && ref($prev) ne 'HASH') || !@$plugins_arrayref) {
+        elsif ($prev && ref($prev) ne 'HASH') {
             _load_plugin($prev);
+        }
+        elsif (!@$plugins_arrayref) {
+            _load_plugin($plugin);
         }
 
         $prev = $plugin;
