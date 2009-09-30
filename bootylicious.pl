@@ -306,10 +306,10 @@ sub _load_plugins {
 
     my $prev;
     while (my $plugin = shift @$plugins_arrayref) {
-        if (ref $plugin eq 'HASH') {
+        if ($prev && ref $plugin eq 'HASH') {
             _load_plugin($prev => $plugin);
         }
-        elsif ($prev || !@$plugins_arrayref) {
+        elsif (($prev && ref($prev) ne 'HASH') || !@$plugins_arrayref) {
             _load_plugin($prev);
         }
 
