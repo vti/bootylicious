@@ -310,8 +310,9 @@ sub _load_plugins {
             _load_plugin($prev => $plugin);
         }
         elsif ($prev || !@$plugins_arrayref) {
-            _load_plugin($plugin);
+            _load_plugin($prev);
         }
+
         $prev = $plugin;
     }
 }
