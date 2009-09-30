@@ -3,15 +3,18 @@
 BEGIN { use FindBin; use lib "$FindBin::Bin/mojo/lib" }
 
 use Mojolicious::Lite;
+
 use Mojo::Date;
 use Mojo::Template;
 use Mojo::ByteStream;
 use Mojo::Loader;
 use Mojo::JSON;
+use Mojo::Command;
+use Mojo::ByteStream;
+
 use Pod::Simple::HTML;
 require Time::Local;
 require File::Basename;
-use Mojo::ByteStream;
 
 my %config = (
     server => 'cgi',
@@ -45,6 +48,31 @@ my %hooks = (
     init     => [],
     finalize => []
 );
+
+if ($ARGV[0] && $ARGV[0] eq 'inflate') {
+    my $command = Mojo::Command->new;
+    $command->create_rel_dir('templates');
+
+    foreach my $template (
+        qw|index.html
+        archive.html
+        index.rss
+        tags.html
+        tag.html
+        article.html
+        page.html
+        draft.html
+        layouts/wrapper.html
+        |
+      )
+    {
+        my $data = $command->get_data("$template.epl", 'main');
+
+        $command->write_rel_file("templates/$template.epl", $data);
+    }
+
+    exit(0);
+}
 
 _read_config_from_file(app->home->rel_file('bootylicious.conf'));
 
