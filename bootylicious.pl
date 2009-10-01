@@ -356,7 +356,7 @@ sub _load_plugins {
         elsif ($prev && ref($prev) ne 'HASH') {
             _load_plugin($prev);
         }
-        elsif (!@$plugins_arrayref) {
+        if (!@$plugins_arrayref) {
             _load_plugin($plugin);
         }
 
