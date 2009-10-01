@@ -18,15 +18,23 @@ require File::Basename;
 
 my %config = (
     loglevel => 'debug',
-    server => 'cgi',
-    author => $ENV{BOOTYLICIOUS_AUTHOR} || 'whoami',
-    email  => $ENV{BOOTYLICIOUS_EMAIL}  || '',
-    title  => $ENV{BOOTYLICIOUS_TITLE}  || 'Just another blog',
-    about  => $ENV{BOOTYLICIOUS_ABOUT}  || 'Perl hacker',
-    descr  => $ENV{BOOTYLICIOUS_DESCR}  || 'I do not know if I need this',
-    articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR} || 'articles',
-    pagesdir => $ENV{BOOTYLICIOUS_PAGESDIR} || 'pages',
-    draftsdir => $ENV{BOOTYLICIOUS_DRAFTSDIR} || 'drafts',
+    server   => 'cgi',
+    author   => $ENV{BOOTYLICIOUS_AUTHOR}
+      || 'whoami',
+    email => $ENV{BOOTYLICIOUS_EMAIL}
+      || '',
+    title => $ENV{BOOTYLICIOUS_TITLE}
+      || 'Just another blog',
+    about => $ENV{BOOTYLICIOUS_ABOUT}
+      || 'Perl hacker',
+    descr => $ENV{BOOTYLICIOUS_DESCR}
+      || 'I do not know if I need this',
+    articlesdir => $ENV{BOOTYLICIOUS_ARTICLESDIR}
+      || 'articles',
+    pagesdir => $ENV{BOOTYLICIOUS_PAGESDIR}
+      || 'pages',
+    draftsdir => $ENV{BOOTYLICIOUS_DRAFTSDIR}
+      || 'drafts',
     publicdir => $ENV{BOOTYLICIOUS_PUBLICDIR}
       || undef,    # defaults to 'public',
     templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR}
@@ -36,7 +44,7 @@ my %config = (
     menu => [
         index   => '/index.html',
         tags    => '/tags.html',
-        archive => 'archive.html'
+        archive => '/archive.html'
     ],
     theme     => '',
     cuttag    => '[cut]',
