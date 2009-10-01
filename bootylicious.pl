@@ -898,8 +898,8 @@ Earlier &rarr;
         <title><%== $self->stash('config')->{title} %></title>
         <link><%= $self->req->url->base %></link>
         <description><%== $self->stash('config')->{descr} %></description>
-        <pubDate><%= $articles->[0]->{created} %></pubDate>
-        <lastBuildDate><%= $articles->[0]->{created} %></lastBuildDate>
+        <pubDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></pubDate>
+        <lastBuildDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
 % my $link = $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html')->to_abs;
@@ -915,7 +915,7 @@ Earlier &rarr;
 % foreach my $tag (@{$article->{tags}}) {
       <category><%== $tag %></category>
 % }
-      <pubDate><%= $article->{created} %></pubDate>
+      <pubDate><%= Mojo::Date->new($article->{created})->to_string %></pubDate>
       <guid><%= $link %></guid>
     </item>
 % }
