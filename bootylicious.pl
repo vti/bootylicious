@@ -873,20 +873,20 @@ __DATA__
     <div class="text">
         <h1 class="title">
             <%= '&raquo;' if $article->{link} %> 
-            <a href="<%= $article->{link} || url($c, article => $article) %>">
+            <a href="<%= $article->{link} || main::url($c, article => $article) %>">
                 <%== $article->{title} %>
             </a>
         </h1>
         <div class="created"><%= $article->{created_format} %></div>
         <div class="tags">
 %   foreach my $tag (@{$article->{tags}}) {
-            <a href="<%= url($c, tag => $tag) %>"><%= $tag %></a>
+            <a href="<%= main::url($c, tag => $tag) %>"><%= $tag %></a>
 %   }
         </div>
 %   if ($article->{preview}) {
         <%= $article->{preview} %>
         <div class="more"> &rarr;
-            <a href="<%= url($c, article => $article) %>#cut">
+            <a href="<%= main::url($c, article => $article) %>#cut">
                 <%= $article->{preview_link} %>
             </a>
         </div>
@@ -898,13 +898,13 @@ __DATA__
 % }
     <div id="pager">
 % if ($pager->{prev}) {
-        &larr; <a href="<%= url($c, pager => $pager->{prev}) %>">Later</a>
+        &larr; <a href="<%= main::url($c, pager => $pager->{prev}) %>">Later</a>
 % }
 % else {
         <span class="notactive">&larr; Later</span>
 % }
 % if ($pager->{next}) {
-        <a href="<%= url($c, pager => $pager->{next}) %>">Earlier</a> &rarr;
+        <a href="<%= main::url($c, pager => $pager->{next}) %>">Earlier</a> &rarr;
 % }
 % else {
         <span class="notactive">Earlier &rarr;</span>
@@ -929,7 +929,7 @@ __DATA__
     <ul>
 %     }
     <li>
-        <a href="<%= url($c, article => $article) %>">
+        <a href="<%= main::url($c, article => $article) %>">
             <%== $article->{title} %>
         </a>
         <br />
@@ -948,14 +948,14 @@ __DATA__
 <rss version="2.0" xml:base="<%= $c->req->url->base %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
-        <title><%== config('title') %></title>
+        <title><%== main::config('title') %></title>
         <link><%= $c->req->url->base %></link>
-        <description><%== config('descr') %></description>
+        <description><%== main::config('descr') %></description>
         <pubDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></pubDate>
         <lastBuildDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
-% my $link = url($c, article => $article)->to_abs;
+% my $link = main::url($c, article => $article)->to_abs;
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
@@ -981,7 +981,7 @@ __DATA__
     <br />
     <div class="tags">
 % foreach my $tag (keys %$tags) {
-        <a href="<%= url($c, tag => $tag) %>"><%== $tag %></a>
+        <a href="<%= main::url($c, tag => $tag) %>"><%== $tag %></a>
         <sub>(<%= $tags->{$tag}->{count} %>)</sub>
 % }
     </div>
@@ -995,7 +995,7 @@ __DATA__
 % my $articles = $c->stash('articles');
 <div class="text">
 <h1>Tag <%= $tag %>
-<sup><a href="<%= url($c, tag => $tag, format => 'rss') %>"><img src="data:image/png;base64,
+<sup><a href="<%= main::url($c, tag => $tag, format => 'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
@@ -1012,7 +1012,7 @@ rkJggg==" alt="RSS" /></a></sup>
 </h1>
 <br />
 % foreach my $article (@$articles) {
-        <a href="<%= url($c, article => $article) %>">
+        <a href="<%= main::url($c, article => $article) %>">
             <%== $article->{title} %>
         </a>
         <br />
@@ -1040,7 +1040,7 @@ rkJggg==" alt="RSS" /></a></sup>
 </div>
 <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
-    <a href="<%= url($c, tag => $tag) %>"><%= $tag %></a>
+    <a href="<%= main::url($c, tag => $tag) %>"><%= $tag %></a>
 % }
 </div>
 <%= $article->{content} %>
@@ -1079,15 +1079,15 @@ rkJggg==" alt="RSS" /></a></sup>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
     <head>
-        <title><%= $c->stash('title') . ' / ' if $c->stash('title') %><%== config('title') %></title>
+        <title><%= $c->stash('title') . ' / ' if $c->stash('title') %><%== main::config('title') %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-% foreach my $meta (@{config('meta')}) {
+% foreach my $meta (@{main::config('meta')}) {
         <meta <%= "$_=\"$meta->{$_}\" " for keys %$meta %>/>
 % }
-% foreach my $file (@{config('css')}) {
+% foreach my $file (@{main::config('css')}) {
         <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
 % }
-% if (!@{config('css')}) {
+% if (!@{main::config('css')}) {
         <style type="text/css">
             html, body {height: 100%;margin:0}
             body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
@@ -1118,13 +1118,13 @@ rkJggg==" alt="RSS" /></a></sup>
             .push {height:6em}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%== config('title') %>" href="<%= url($c, 'index') %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%== main::config('title') %>" href="<%= main::url($c, 'index') %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= url($c, 'root') %>"><%== config('title') %></a>
-                <sup><a href="<%= url($c, 'index', format => 'rss') %>"><img src="data:image/png;base64,
+                <h1 id="title"><a href="<%= main::url($c, 'root') %>"><%== main::config('title') %></a>
+                <sup><a href="<%= main::url($c, 'index', format => 'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
@@ -1140,11 +1140,11 @@ fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
 rkJggg==" alt="RSS" /></a></sup>
 
                 </h1>
-                <h2 id="descr"><%= config('descr') %></h2>
-                <span id="author"><%= config('author') %></span>, <span id="about"><%= config('about') %></span>
+                <h2 id="descr"><%= main::config('descr') %></h2>
+                <span id="author"><%= main::config('author') %></span>, <span id="about"><%= main::config('about') %></span>
                 <div id="menu">
-% for (my $i = 0; $i < @{config('menu')}; $i += 2) {
-                    <a href="<%= config('menu')->[$i + 1] %>"><%= config('menu')->[$i] %></a>
+% for (my $i = 0; $i < @{main::config('menu')}; $i += 2) {
+                    <a href="<%= main::config('menu')->[$i + 1] %>"><%= main::config('menu')->[$i] %></a>
 % }
                 </div>
             </div>
@@ -1153,8 +1153,8 @@ rkJggg==" alt="RSS" /></a></sup>
             </div>
             <div class="push"></div>
         </div>
-        <div id="footer"><%= config('footer') %></div>
-% foreach my $file (@{config('js')}) {
+        <div id="footer"><%= main::config('footer') %></div>
+% foreach my $file (@{main::config('js')}) {
         <script type="text/javascript" href="/<%= $file %>" />
 % }
     </body>
