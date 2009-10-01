@@ -41,6 +41,8 @@ my %config = (
     cuttag    => '[cut]',
     pagelimit => 10,
     meta      => [],
+    css       => [],
+    js        => [],
 );
 
 my %hooks = (
@@ -82,6 +84,8 @@ _call_hook(app, 'preinit');
 
 sub config {
     if (@_) {
+        return $config{$_[0]} if @_ == 1;
+
         %config = (%config, @_);
     }
 
@@ -109,7 +113,6 @@ sub index {
     my $later = 0;
 
     $c->stash(
-        config   => \%config,
         article  => $article,
         articles => $articles,
         pager    => $pager
@@ -118,6 +121,9 @@ sub index {
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
     $c->stash(template => 'index');
+
+    $c->stash(layout => 'wrapper')
+      unless $c->stash('format') && $c->stash('format') eq 'rss';
 
     $c->render;
 
@@ -144,9 +150,9 @@ get '/archive' => sub {
     $c->res->headers->header('Last-Modified' => $last_modified);
 
     $c->stash(
+        layout        => 'wrapper',
         articles      => $articles,
         last_modified => $last_modified,
-        config        => \%config
     );
 
     $c->render;
@@ -175,7 +181,7 @@ get '/tags/:tag' => sub {
     }
 
     $c->stash(
-        config        => \%config,
+        layout        => 'wrapper',
         articles      => $articles,
         last_modified => $last_modified
     );
@@ -196,7 +202,7 @@ get '/tags' => sub {
 
     my $tags = get_tags();
 
-    $c->stash(config => \%config, tags => $tags);
+    $c->stash(layout => 'wrapper',  tags => $tags);
 
     $c->render;
 
@@ -218,7 +224,7 @@ get '/articles/:year/:month/:alias' => sub {
 
     return 1 unless _is_modified($c, $article->{modified});
 
-    $c->stash(article => $article, template => 'article', config => \%config);
+    $c->stash(article => $article, layout => 'wrapper');
 
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($article->{modified}));
@@ -242,7 +248,7 @@ get '/pages/:pageid' => sub {
 
     #return 1 unless _is_modified($c, $page->{modified});
 
-    $c->stash(page => $page, config => \%config);
+    $c->stash(layout => 'wrapper', page => $page);
 
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($page->{modified}));
@@ -266,7 +272,7 @@ get '/drafts/:draftid' => sub {
 
     #return 1 unless _is_modified($c, $page->{modified});
 
-    $c->stash(draft => $draft, config => \%config);
+    $c->stash(layout => 'wrapper', draft => $draft);
 
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($draft->{modified}));
@@ -552,6 +558,36 @@ sub get_page {
     return _parse_article($path);
 }
 
+sub url {
+    my $c = shift;
+    my $name = shift;
+    my $value = shift;
+
+    if ($name eq 'root') {
+        return $c->url_for(index => (format => '', @_));
+    }
+    elsif ($name eq 'index') {
+        return $c->url_for(index => ($value, @_));
+    }
+    elsif ($name eq 'article') {
+        return $c->url_for(
+            article => (
+                year   => $value->{year},
+                month  => $value->{month},
+                alias  => $value->{name},
+                format => 'html'
+            )
+        );
+    }
+    elsif ($name eq 'tag') {
+        return $c->url_for(tag => (tag => $value, format => 'html', @_));
+    }
+    elsif ($name eq 'pager') {
+        return $c->url_for('index', format => 'html')
+          . "?timestamp=$value";
+    }
+}
+
 my %_articles;
 sub _parse_article {
     my $path = shift;
@@ -818,69 +854,74 @@ shagadelic(@ARGV ? @ARGV : $config{'server'});
 __DATA__
 
 @@ index.html.epl
-% my $self = shift;
-% my $articles = $self->stash('articles');
-% my $pager = $self->stash('pager');
-% $self->stash(layout => 'wrapper');
+% my $c        = shift;
+% my $articles = $c->stash('articles');
+% my $pager    = $c->stash('pager');
+
 % foreach my $article (@{$articles}) {
     <div class="text">
-        <h1 class="title"><%= '&raquo;' if $article->{link} %> <a
-        href="<%= $article->{link} || $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%== $article->{title} %></a></h1>
+        <h1 class="title">
+            <%= '&raquo;' if $article->{link} %> 
+            <a href="<%= $article->{link} || url($c, article => $article) %>">
+                <%== $article->{title} %>
+            </a>
+        </h1>
         <div class="created"><%= $article->{created_format} %></div>
         <div class="tags">
-% foreach my $tag (@{$article->{tags}}) {
-        <a href="<%== $self->url_for('tag', tag => $tag) %>"><%= $tag %></a>
-% }
+%   foreach my $tag (@{$article->{tags}}) {
+            <a href="<%= url($c, tag => $tag) %>"><%= $tag %></a>
+%   }
         </div>
-% if ($article->{preview}) {
+%   if ($article->{preview}) {
         <%= $article->{preview} %>
-        <div class="more">&rarr; <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>#cut"><%= $article->{preview_link} %></a></div>
-% }
-% else {
+        <div class="more"> &rarr;
+            <a href="<%= url($c, article => $article) %>#cut">
+                <%= $article->{preview_link} %>
+            </a>
+        </div>
+%   }
+%   else {
         <%= $article->{content} %>
-% }
+%   }
     </div>
 % }
-
-<div id="pager">
+    <div id="pager">
 % if ($pager->{prev}) {
-    &larr; <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{prev} %>">Later</a>
+        &larr; <a href="<%= url($c, pager => $pager->{prev}) %>">Later</a>
 % }
 % else {
-<span class="notactive">
-&larr; Later
-</span>
+        <span class="notactive">&larr; Later</span>
 % }
-
 % if ($pager->{next}) {
-    <a href="<%= $self->url_for('index',format=>'html') %>?timestamp=<%= $pager->{next} %>">Earlier</a> &rarr;
+        <a href="<%= url($c, pager => $pager->{next}) %>">Earlier</a> &rarr;
 % }
 % else {
-<span class="notactive">
-Earlier &rarr;
-</span>
+        <span class="notactive">Earlier &rarr;</span>
 % }
-</div>
+    </div>
+
 
 @@ archive.html.epl
-% my $self = shift;
-% $self->stash(layout => 'wrapper');
-% $self->stash(title => 'Archive');
-% my $articles = $self->stash('articles');
+% my $c = shift;
+% $c->stash(title => 'Archive');
+% my $articles = $c->stash('articles');
 % my $tmp;
 % my $new = 0;
+
 <div class="text">
-<h1>Archive</h1>
-<br />
+    <h1>Archive</h1>
+    <br />
 % foreach my $article (@$articles) {
 %     if (!$tmp || $article->{year} ne $tmp->{year}) {
     <%= "</ul>" if $tmp %>
     <b><%= $article->{year} %></b>
-<ul>
+    <ul>
 %     }
-
     <li>
-        <a href="<%= $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%== $article->{title} %></a><br />
+        <a href="<%= url($c, article => $article) %>">
+            <%== $article->{title} %>
+        </a>
+        <br />
         <div class="created"><%= $article->{created_format} %></div>
     </li>
 
@@ -888,30 +929,26 @@ Earlier &rarr;
 % }
 </div>
 
+
 @@ index.rss.epl
-% my $self = shift;
-% my $articles = $self->stash('articles');
+% my $c = shift;
+% my $articles = $c->stash('articles');
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xml:base="<%= $self->req->url->base %>"
+<rss version="2.0" xml:base="<%= $c->req->url->base %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
-        <title><%== $self->stash('config')->{title} %></title>
-        <link><%= $self->req->url->base %></link>
-        <description><%== $self->stash('config')->{descr} %></description>
+        <title><%== config('title') %></title>
+        <link><%= $c->req->url->base %></link>
+        <description><%== config('descr') %></description>
         <pubDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></pubDate>
         <lastBuildDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
-% my $link = $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html')->to_abs;
+% my $link = url($c, article => $article)->to_abs;
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
-% if ($article->{preview}) {
-      <description><%== $article->{preview} %></description>
-% }
-% else {
-      <description><%== $article->{content} %></description>
-% }
+      <description><%== $article->{preview} || $article->{content} %></description>
 % foreach my $tag (@{$article->{tags}}) {
       <category><%== $tag %></category>
 % }
@@ -922,30 +959,32 @@ Earlier &rarr;
     </channel>
 </rss>
 
+
 @@ tags.html.epl
-% my $self = shift;
-% $self->stash(layout => 'wrapper');
-% my $tags = $self->stash('tags');
-% $self->stash(title => 'Tags');
+% my $c = shift;
+% my $tags = $c->stash('tags');
+% $c->stash(title => 'Tags');
+
 <div class="text">
-<h1>Tags</h1>
-<br />
-<div class="tags">
+    <h1>Tags</h1>
+    <br />
+    <div class="tags">
 % foreach my $tag (keys %$tags) {
-<a href="<%= $self->url_for('tag', tag => $tag, format => 'html') %>"><%== $tag %></a><sub>(<%= $tags->{$tag}->{count} %>)</sub>
+        <a href="<%= url($c, tag => $tag) %>"><%== $tag %></a>
+        <sub>(<%= $tags->{$tag}->{count} %>)</sub>
 % }
-</div>
+    </div>
 </div>
 
+
 @@ tag.html.epl
-% my $self = shift;
-% $self->stash(layout => 'wrapper');
-% my $tag = $self->stash('tag');
-% $self->stash(title => $tag);
-% my $articles = $self->stash('articles');
+% my $c = shift;
+% my $tag = $c->stash('tag');
+% $c->stash(title => $tag);
+% my $articles = $c->stash('articles');
 <div class="text">
 <h1>Tag <%= $tag %>
-<sup><a href="<%= $self->url_for('tag',tag=>$tag,format=>'rss') %>"><img src="data:image/png;base64,
+<sup><a href="<%= url($c, tag => $tag, format => 'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
@@ -962,22 +1001,25 @@ rkJggg==" alt="RSS" /></a></sup>
 </h1>
 <br />
 % foreach my $article (@$articles) {
-        <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}) %>"><%== $article->{title} %></a><br />
+        <a href="<%= url($c, article => $article) %>">
+            <%== $article->{title} %>
+        </a>
+        <br />
         <div class="created"><%= $article->{created_format} %></div>
 % }
 </div>
 
+
 @@ article.html.epl
-% my $self = shift;
-% $self->stash(layout => 'wrapper');
-% my $article = $self->stash('article');
-% $self->stash(title => $article->{title});
+% my $c = shift;
+% my $article = $c->stash('article');
+% $c->stash(title => $article->{title});
 <div class="text">
 <h1 class="title">
 % if ($article->{link}) {
-&raquo; <a href="<%= $article->{link} %>"><%== $article->{title} %></a>
+    &raquo; <a href="<%= $article->{link} %>"><%== $article->{title} %></a>
 % } else {
-<%== $article->{title} %>
+    <%== $article->{title} %>
 % }
 </h1>
 <div class="created"><%= $article->{created_format} %>
@@ -987,17 +1029,17 @@ rkJggg==" alt="RSS" /></a></sup>
 </div>
 <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
-<a href="<%= $self->url_for('tag', tag => $tag, format => 'html') %>"><%= $tag %></a>
+    <a href="<%= url($c, tag => $tag) %>"><%= $tag %></a>
 % }
 </div>
 <%= $article->{content} %>
 </div>
 
+
 @@ page.html.epl
-% my $self = shift;
-% $self->stash(layout => 'wrapper');
-% my $page = $self->stash('page');
-% $self->stash(title => $page->{title});
+% my $c = shift;
+% my $page = $c->stash('page');
+% $c->stash(title => $page->{title});
 <div class="text">
 <h1 class="title">
 <%== $page->{title} %>
@@ -1005,11 +1047,11 @@ rkJggg==" alt="RSS" /></a></sup>
 <%= $page->{content} %>
 </div>
 
+
 @@ draft.html.epl
-% my $self = shift;
-% $self->stash(layout => 'wrapper');
-% my $draft = $self->stash('draft');
-% $self->stash(title => $draft->{title});
+% my $c = shift;
+% my $draft = $c->stash('draft');
+% $c->stash(title => $draft->{title});
 <div class="text">
 <h1 class="title">
 <%== $draft->{title} %>
@@ -1017,24 +1059,24 @@ rkJggg==" alt="RSS" /></a></sup>
 <%= $draft->{content} %>
 </div>
 
+
 @@ layouts/wrapper.html.epl
-% my $self = shift;
-% my $config = $self->stash('config');
-% $self->res->headers->content_type('text/html; charset=utf-8');
+% my $c = shift;
+% $c->res->headers->content_type('text/html; charset=utf-8');
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
     <head>
-        <title><%= $self->stash('title') . ' / ' if $self->stash('title') %><%== $config->{title} %></title>
+        <title><%= $c->stash('title') . ' / ' if $c->stash('title') %><%== config('title') %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-% foreach my $meta (@{$config->{meta}}) {
+% foreach my $meta (@{config('meta')}) {
         <meta <%= "$_=\"$meta->{$_}\" " for keys %$meta %>/>
 % }
-% foreach my $file (@{$config->{css}}) {
+% foreach my $file (@{config('css')}) {
         <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
 % }
-% if (!@{$config->{css}}) {
+% if (!@{config('css')}) {
         <style type="text/css">
             html, body {height: 100%;margin:0}
             body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
@@ -1065,13 +1107,13 @@ rkJggg==" alt="RSS" /></a></sup>
             .push {height:6em}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%== $config->{title} %>" href="<%= $self->url_for('index', format => 'rss') %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%== config('title') %>" href="<%= url($c, 'index') %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= $self->url_for('root', format => '') %>"><%== $config->{title} %></a>
-                <sup><a href="<%= $self->url_for('index', format=>'rss') %>"><img src="data:image/png;base64,
+                <h1 id="title"><a href="<%= url($c, 'root') %>"><%== config('title') %></a>
+                <sup><a href="<%= url($c, 'index', format => 'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
@@ -1087,21 +1129,21 @@ fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
 rkJggg==" alt="RSS" /></a></sup>
 
                 </h1>
-                <h2 id="descr"><%= $config->{descr} %></h2>
-                <span id="author"><%= $config->{author} %></span>, <span id="about"><%= $config->{about} %></span>
+                <h2 id="descr"><%= config('descr') %></h2>
+                <span id="author"><%= config('author') %></span>, <span id="about"><%= config('about') %></span>
                 <div id="menu">
-% for (my $i = 0; $i < @{$config->{menu}}; $i += 2) {
-                    <a href="<%= $config->{menu}->[$i + 1] %>"><%= $config->{menu}->[$i] %></a>
+% for (my $i = 0; $i < @{config('menu')}; $i += 2) {
+                    <a href="<%= config('menu')->[$i + 1] %>"><%= config('menu')->[$i] %></a>
 % }
                 </div>
             </div>
             <div id="content">
-            <%= $self->render_inner %>
+            <%= $c->render_inner %>
             </div>
             <div class="push"></div>
         </div>
-        <div id="footer"><%= $config->{footer} %></div>
-% foreach my $file (@{$config->{js}}) {
+        <div id="footer"><%= config('footer') %></div>
+% foreach my $file (@{config('js')}) {
         <script type="text/javascript" href="/<%= $file %>" />
 % }
     </body>
