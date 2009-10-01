@@ -17,6 +17,7 @@ require Time::Local;
 require File::Basename;
 
 my %config = (
+    loglevel => 'debug',
     server => 'cgi',
     author => $ENV{BOOTYLICIOUS_AUTHOR} || 'whoami',
     email  => $ENV{BOOTYLICIOUS_EMAIL}  || '',
@@ -77,6 +78,8 @@ if ($ARGV[0] && $ARGV[0] eq 'inflate') {
 }
 
 _read_config_from_file(app->home->rel_file('bootylicious.conf'));
+
+app->log->level($config{loglevel});
 
 _load_plugins($config{plugins});
 
