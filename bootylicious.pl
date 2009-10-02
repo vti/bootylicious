@@ -36,7 +36,7 @@ my %config = (
     draftsdir => $ENV{BOOTYLICIOUS_DRAFTSDIR}
       || 'drafts',
     publicdir => $ENV{BOOTYLICIOUS_PUBLICDIR}
-      || undef,    # defaults to 'public',
+      || 'public',
     templatesdir => $ENV{BOOTYLICIOUS_TEMPLATESDIR}
       || undef,    # defaults to 'templates'
     footer => $ENV{BOOTYLICIOUS_FOOTER}
