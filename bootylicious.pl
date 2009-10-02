@@ -598,6 +598,20 @@ sub url {
     }
 }
 
+sub date {
+    my $c = shift;
+    my $epoch = shift;
+    my $fmt = shift;
+
+    $fmt ||= '';
+
+    my $date = Mojo::Date->new($epoch)->to_string;
+
+    $date =~ s/ [^ ]*? GMT$//;
+
+    return $date;
+}
+
 my %_articles;
 sub _parse_article {
     my $path = shift;
@@ -683,8 +697,6 @@ sub _parse_article {
         name            => $name,
         created         => $created,
         modified        => $modified,
-        modified_format => _format_date($modified),
-        created_format  => _format_date($created),
         timestamp       => $timestamp,
         year            => $year,
         month           => $month,
@@ -845,16 +857,6 @@ sub _parse_article_pod {
     };
 }
 
-sub _format_date {
-    my $date = shift;
-
-    $date = Mojo::Date->new($date)->to_string;
-
-    $date =~ s/ [^ ]*? GMT$//;
-
-    return $date;
-}
-
 _call_hook(app, 'init');
 
 theme if $config{'theme'};
@@ -876,7 +878,7 @@ __DATA__
                 <%== $article->{title} %>
             </a>
         </h1>
-        <div class="created"><%= $article->{created_format} %></div>
+        <div class="created"><%= main::date($c, $article->{created}) %></div>
         <div class="tags">
 %   foreach my $tag (@{$article->{tags}}) {
             <a href="<%= main::url($c, tag => $tag) %>"><%= $tag %></a>
@@ -932,7 +934,7 @@ __DATA__
             <%== $article->{title} %>
         </a>
         <br />
-        <div class="created"><%= $article->{created_format} %></div>
+        <div class="created"><%= main::date($c, $article->{created}) %></div>
     </li>
 
 %     $tmp = $article;
@@ -1015,7 +1017,7 @@ rkJggg==" alt="RSS" /></a></sup>
             <%== $article->{title} %>
         </a>
         <br />
-        <div class="created"><%= $article->{created_format} %></div>
+        <div class="created"><%= main::date($c, $article->{created}) %></div>
 % }
 </div>
 
@@ -1032,9 +1034,9 @@ rkJggg==" alt="RSS" /></a></sup>
     <%== $article->{title} %>
 % }
 </h1>
-<div class="created"><%= $article->{created_format} %>
+<div class="created"><%= main::date($c, $article->{created}) %>
 % if ($article->{created} != $article->{modified}) {
-, modified <span class="modified"><%= $article->{modified_format} %></span>
+, modified <span class="modified"><%= main::date($c, $article->{modified}) %></span>
 % }
 </div>
 <div class="tags">
