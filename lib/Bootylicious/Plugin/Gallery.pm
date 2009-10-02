@@ -36,7 +36,7 @@ sub hook_finalize {
     return unless $path =~ /^\/articles/;
 
     $c->app->log->debug('imagetypes ' . $self->imagetypes);
-    my $publicdir = $c->app->home->rel_dir($c->stash('config')->{publicdir});
+    my $publicdir = $c->app->home->rel_dir(main::config('publicdir'));
 
     my $article = $c->stash('article');
 
