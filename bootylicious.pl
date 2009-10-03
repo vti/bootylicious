@@ -10,11 +10,14 @@ use Mojo::ByteStream;
 use Mojo::Loader;
 use Mojo::JSON;
 use Mojo::Command;
-use Mojo::ByteStream;
+use Mojo::ByteStream 'b';
 
 use Pod::Simple::HTML;
-require Time::Local;
 require File::Basename;
+
+$ENV{LANG} = 'C';
+require Time::Piece;
+require Time::Local;
 
 my %config = (
     loglevel => 'debug',
@@ -52,6 +55,7 @@ my %config = (
     meta      => [],
     css       => [],
     js        => [],
+    datefmt   => '%a, %d %b %Y',
 );
 
 my %hooks = (
@@ -603,13 +607,11 @@ sub date {
     my $epoch = shift;
     my $fmt = shift;
 
-    $fmt ||= '';
+    $fmt ||= config('datefmt');
 
-    my $date = Mojo::Date->new($epoch)->to_string;
+    my $t = Time::Piece->gmtime($epoch);
 
-    $date =~ s/ [^ ]*? GMT$//;
-
-    return $date;
+    return b($t->strftime($fmt))->decode('utf-8');
 }
 
 my %_articles;
