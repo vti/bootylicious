@@ -1161,6 +1161,12 @@ rkJggg==" alt="RSS" /></a></sup>
     </body>
 </html>
 
+
+@@ exception.html.epl
+<div class="text">
+Internal error occuried :(
+</div>
+
 __END__
 
 =head1 NAME
