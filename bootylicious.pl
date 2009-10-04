@@ -1121,7 +1121,7 @@ rkJggg==" alt="RSS" /></a></sup>
             .push {height:6em}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%== main::config('title') %>" href="<%= main::url($c, 'index') %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%== main::config('title') %>" href="<%= main::url($c, 'index', format => 'rss')->to_abs %>" />
     </head>
     <body>
         <div id="body">
