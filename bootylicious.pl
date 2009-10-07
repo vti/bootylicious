@@ -102,7 +102,7 @@ app->log->level($config{loglevel});
 
 app->renderer->default_handler(config('template_handler'));
 
-app->renderer->add_helper(meta => sub { my $c = shift; $c->stash(@_); });
+app->renderer->add_helper(stash => sub { my $c = shift; $c->stash(@_); });
 app->renderer->add_helper(url => \&url);
 app->renderer->add_helper(config => sub { shift; config(@_) });
 app->renderer->add_helper(strings => sub { shift; config('strings')->{$_[0]} });
@@ -935,7 +935,7 @@ __DATA__
 
 
 @@ archive.html.ep
-% meta(title => strings('archive'));
+% stash(title => strings('archive'));
 % my $tmp;
 % my $new = 0;
 
@@ -990,7 +990,7 @@ __DATA__
 
 
 @@ tags.html.ep
-% meta(title => 'Tags');
+% stash(title => 'Tags');
 <div class="text">
     <h1><%= strings('tags') %></h1>
     <br />
@@ -1004,7 +1004,7 @@ __DATA__
 
 
 @@ tag.html.ep
-% meta(title => $tag);
+% stash(title => $tag);
 <div class="text">
 <h1><%= strings('tag') %> <%= $tag %>
 <sup><a href="<%= url(tag => $tag, format => 'rss') %>"><img src="data:image/png;base64,
@@ -1034,7 +1034,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 
 @@ article.html.ep
-% meta(title => $article->{title});
+% stash(title => $article->{title});
 <div class="text">
 <h1 class="title">
 % if ($article->{link}) {
@@ -1058,7 +1058,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 
 @@ page.html.ep
-% meta(title => $page->{title});
+% stash(title => $page->{title});
 <div class="text">
 <h1 class="title">
 <%== $page->{title} %>
@@ -1068,7 +1068,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 
 @@ draft.html.ep
-% meta(title = $draft->{title});
+% stash(title = $draft->{title});
 <div class="text">
 <h1 class="title">
 <%== $draft->{title} %>
