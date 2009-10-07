@@ -56,6 +56,13 @@ my %config = (
     css       => [],
     js        => [],
     datefmt   => '%a, %d %b %Y',
+    strings => {
+        'archive' => 'Archive',
+        'tags'    => 'Tags',
+        'tag'     => 'Tag',
+        'error'   => 'Internal error occuried :('
+    },
+    template_handler => 'ep'
 );
 
 my %hooks = (
@@ -81,9 +88,9 @@ if ($ARGV[0] && $ARGV[0] eq 'inflate') {
         |
       )
     {
-        my $data = $command->get_data("$template.epl", 'main');
+        my $data = $command->get_data("$template.ep", 'main');
 
-        $command->write_rel_file("templates/$template.epl", $data);
+        $command->write_rel_file("templates/$template.ep", $data);
     }
 
     exit(0);
@@ -92,6 +99,15 @@ if ($ARGV[0] && $ARGV[0] eq 'inflate') {
 _read_config_from_file(app->home->rel_file('bootylicious.conf'));
 
 app->log->level($config{loglevel});
+
+app->renderer->default_handler(config('template_handler'));
+
+app->renderer->add_helper(meta => sub { my $c = shift; $c->stash(@_); });
+app->renderer->add_helper(url => \&url);
+app->renderer->add_helper(config => sub { shift; config(@_) });
+app->renderer->add_helper(strings => sub { shift; config('strings')->{$_[0]} });
+app->renderer->add_helper(date => \&date);
+app->renderer->add_helper(date_rss => \&date_rss);
 
 _load_plugins($config{plugins});
 
@@ -112,7 +128,7 @@ sub index {
 
     my $timestamp = $c->req->param('timestamp') || 0;
 
-    my $article;
+    my $article = {};
     my ($articles, $pager) =
       get_articles(limit => $config{pagelimit}, timestamp => $timestamp);
 
@@ -137,7 +153,7 @@ sub index {
 
     $c->stash(template => 'index');
 
-    $c->stash(layout => 'wrapper')
+    $c->stash(layout => 'wrapper', title => '')
       unless $c->stash('format') && $c->stash('format') eq 'rss';
 
     $c->render;
@@ -614,6 +630,13 @@ sub date {
     return b($t->strftime($fmt))->decode('utf-8');
 }
 
+sub date_rss {
+    my $c = shift;
+    my $epoch = shift;
+
+    return Mojo::Date->new($epoch)->to_string;
+}
+
 my %_articles;
 sub _parse_article {
     my $path = shift;
@@ -720,7 +743,7 @@ sub _get_parser {
     my $ext = shift;
 
     my $parser = \&_parse_article_pod;
-    if ($ext eq 'epl') {
+    if ($ext eq 'ep') {
         $parser = sub {
             my ($head_string, $tail_string) = @_;
 
@@ -867,29 +890,25 @@ shagadelic(@ARGV ? @ARGV : $config{'server'});
 
 __DATA__
 
-@@ index.html.epl
-% my $c        = shift;
-% my $articles = $c->stash('articles');
-% my $pager    = $c->stash('pager');
-
+@@ index.html.ep
 % foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title">
-            <%= '&raquo;' if $article->{link} %> 
-            <a href="<%= $article->{link} || main::url($c, article => $article) %>">
+            <%= '&raquo;' if $article->{link} %>
+            <a href="<%= $article->{link} || url(article => $article) %>">
                 <%== $article->{title} %>
             </a>
         </h1>
-        <div class="created"><%= main::date($c, $article->{created}) %></div>
+        <div class="created"><%= date($article->{created}) %></div>
         <div class="tags">
 %   foreach my $tag (@{$article->{tags}}) {
-            <a href="<%= main::url($c, tag => $tag) %>"><%= $tag %></a>
+            <a href="<%= url(tag => $tag) %>"><%= $tag %></a>
 %   }
         </div>
 %   if ($article->{preview}) {
         <%= $article->{preview} %>
         <div class="more"> &rarr;
-            <a href="<%= main::url($c, article => $article) %>#cut">
+            <a href="<%= url(article => $article) %>#cut">
                 <%= $article->{preview_link} %>
             </a>
         </div>
@@ -901,13 +920,13 @@ __DATA__
 % }
     <div id="pager">
 % if ($pager->{prev}) {
-        &larr; <a href="<%= main::url($c, pager => $pager->{prev}) %>">Later</a>
+        &larr; <a href="<%= url(pager => $pager->{prev}) %>">Later</a>
 % }
 % else {
         <span class="notactive">&larr; Later</span>
 % }
 % if ($pager->{next}) {
-        <a href="<%= main::url($c, pager => $pager->{next}) %>">Earlier</a> &rarr;
+        <a href="<%= url(pager => $pager->{next}) %>">Earlier</a> &rarr;
 % }
 % else {
         <span class="notactive">Earlier &rarr;</span>
@@ -915,15 +934,13 @@ __DATA__
     </div>
 
 
-@@ archive.html.epl
-% my $c = shift;
-% $c->stash(title => 'Archive');
-% my $articles = $c->stash('articles');
+@@ archive.html.ep
+% meta(title => strings('archive'));
 % my $tmp;
 % my $new = 0;
 
 <div class="text">
-    <h1>Archive</h1>
+    <h1><%= strings('archive') %></h1>
     <br />
 % foreach my $article (@$articles) {
 %     if (!$tmp || $article->{year} ne $tmp->{year}) {
@@ -932,11 +949,11 @@ __DATA__
     <ul>
 %     }
     <li>
-        <a href="<%= main::url($c, article => $article) %>">
+        <a href="<%= url(article => $article) %>">
             <%== $article->{title} %>
         </a>
         <br />
-        <div class="created"><%= main::date($c, $article->{created}) %></div>
+        <div class="created"><%= date($article->{created}) %></div>
     </li>
 
 %     $tmp = $article;
@@ -944,21 +961,19 @@ __DATA__
 </div>
 
 
-@@ index.rss.epl
-% my $c = shift;
-% my $articles = $c->stash('articles');
+@@ index.rss.ep
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xml:base="<%= $c->req->url->base %>"
+<rss version="2.0" xml:base="<%= url('root') %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
-        <title><%== main::config('title') %></title>
-        <link><%= $c->req->url->base %></link>
-        <description><%== main::config('descr') %></description>
-        <pubDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></pubDate>
-        <lastBuildDate><%= Mojo::Date->new($articles->[0]->{created})->to_string %></lastBuildDate>
+        <title><%== config('title') %></title>
+        <link><%= url('root')->to_abs %></link>
+        <description><%== config('descr') %></description>
+        <pubDate><%= date_rss($articles->[0]->{created}) %></pubDate>
+        <lastBuildDate><%= date_rss($articles->[0]->{created}) %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
-% my $link = main::url($c, article => $article)->to_abs;
+% my $link = url(article => $article)->to_abs;
     <item>
       <title><%== $article->{title} %></title>
       <link><%= $link %></link>
@@ -966,7 +981,7 @@ __DATA__
 % foreach my $tag (@{$article->{tags}}) {
       <category><%== $tag %></category>
 % }
-      <pubDate><%= Mojo::Date->new($article->{created})->to_string %></pubDate>
+      <pubDate><%= date_rss($article->{created}) %></pubDate>
       <guid><%= $link %></guid>
     </item>
 % }
@@ -974,31 +989,25 @@ __DATA__
 </rss>
 
 
-@@ tags.html.epl
-% my $c = shift;
-% my $tags = $c->stash('tags');
-% $c->stash(title => 'Tags');
-
+@@ tags.html.ep
+% meta(title => 'Tags');
 <div class="text">
-    <h1>Tags</h1>
+    <h1><%= strings('tags') %></h1>
     <br />
     <div class="tags">
 % foreach my $tag (keys %$tags) {
-        <a href="<%= main::url($c, tag => $tag) %>"><%== $tag %></a>
+        <a href="<%= url(tag => $tag) %>"><%== $tag %></a>
         <sub>(<%= $tags->{$tag}->{count} %>)</sub>
 % }
     </div>
 </div>
 
 
-@@ tag.html.epl
-% my $c = shift;
-% my $tag = $c->stash('tag');
-% $c->stash(title => $tag);
-% my $articles = $c->stash('articles');
+@@ tag.html.ep
+% meta(title => $tag);
 <div class="text">
-<h1>Tag <%= $tag %>
-<sup><a href="<%= main::url($c, tag => $tag, format => 'rss') %>"><img src="data:image/png;base64,
+<h1><%= strings('tag') %> <%= $tag %>
+<sup><a href="<%= url(tag => $tag, format => 'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
@@ -1015,19 +1024,17 @@ rkJggg==" alt="RSS" /></a></sup>
 </h1>
 <br />
 % foreach my $article (@$articles) {
-        <a href="<%= main::url($c, article => $article) %>">
+        <a href="<%= url(article => $article) %>">
             <%== $article->{title} %>
         </a>
         <br />
-        <div class="created"><%= main::date($c, $article->{created}) %></div>
+        <div class="created"><%= date($article->{created}) %></div>
 % }
 </div>
 
 
-@@ article.html.epl
-% my $c = shift;
-% my $article = $c->stash('article');
-% $c->stash(title => $article->{title});
+@@ article.html.ep
+% meta(title => $article->{title});
 <div class="text">
 <h1 class="title">
 % if ($article->{link}) {
@@ -1036,24 +1043,22 @@ rkJggg==" alt="RSS" /></a></sup>
     <%== $article->{title} %>
 % }
 </h1>
-<div class="created"><%= main::date($c, $article->{created}) %>
+<div class="created"><%= date($article->{created}) %>
 % if ($article->{created} != $article->{modified}) {
-, modified <span class="modified"><%= main::date($c, $article->{modified}) %></span>
+, modified <span class="modified"><%= date($article->{modified}) %></span>
 % }
 </div>
 <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
-    <a href="<%= main::url($c, tag => $tag) %>"><%= $tag %></a>
+    <a href="<%= url(tag => $tag) %>"><%= $tag %></a>
 % }
 </div>
 <%= $article->{content} %>
 </div>
 
 
-@@ page.html.epl
-% my $c = shift;
-% my $page = $c->stash('page');
-% $c->stash(title => $page->{title});
+@@ page.html.ep
+% meta(title => $page->{title});
 <div class="text">
 <h1 class="title">
 <%== $page->{title} %>
@@ -1062,10 +1067,8 @@ rkJggg==" alt="RSS" /></a></sup>
 </div>
 
 
-@@ draft.html.epl
-% my $c = shift;
-% my $draft = $c->stash('draft');
-% $c->stash(title => $draft->{title});
+@@ draft.html.ep
+% meta(title = $draft->{title});
 <div class="text">
 <h1 class="title">
 <%== $draft->{title} %>
@@ -1074,23 +1077,22 @@ rkJggg==" alt="RSS" /></a></sup>
 </div>
 
 
-@@ layouts/wrapper.html.epl
-% my $c = shift;
-% $c->res->headers->content_type('text/html; charset=utf-8');
+@@ layouts/wrapper.html.ep
+%# $c->res->headers->content_type('text/html; charset=utf-8');
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
     <head>
-        <title><%= $c->stash('title') . ' / ' if $c->stash('title') %><%== main::config('title') %></title>
+        <title><%= $title . ' / ' if $title %><%== config('title') %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-% foreach my $meta (@{main::config('meta')}) {
+% foreach my $meta (@{config('meta')}) {
         <meta <%= "$_=\"$meta->{$_}\" " for keys %$meta %>/>
 % }
-% foreach my $file (@{main::config('css')}) {
+% foreach my $file (@{config('css')}) {
         <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
 % }
-% if (!@{main::config('css')}) {
+% if (!@{config('css')}) {
         <style type="text/css">
             html, body {height: 100%;margin:0}
             body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
@@ -1121,13 +1123,13 @@ rkJggg==" alt="RSS" /></a></sup>
             .push {height:6em}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%== main::config('title') %>" href="<%= main::url($c, 'index', format => 'rss')->to_abs %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%== config('title') %>" href="<%= url('index', format => 'rss')->to_abs %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= main::url($c, 'root') %>"><%== main::config('title') %></a>
-                <sup><a href="<%= main::url($c, 'index', format => 'rss') %>"><img src="data:image/png;base64,
+                <h1 id="title"><a href="<%= url('root') %>"><%== config('title') %></a>
+                <sup><a href="<%= url('index', format => 'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
@@ -1141,32 +1143,31 @@ rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
 I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
 fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
 rkJggg==" alt="RSS" /></a></sup>
-
                 </h1>
-                <h2 id="descr"><%= main::config('descr') %></h2>
-                <span id="author"><%= main::config('author') %></span>, <span id="about"><%= main::config('about') %></span>
+                <h2 id="descr"><%= config('descr') %></h2>
+                <span id="author"><%= config('author') %></span>, <span id="about"><%= config('about') %></span>
                 <div id="menu">
-% for (my $i = 0; $i < @{main::config('menu')}; $i += 2) {
-                    <a href="<%= main::config('menu')->[$i + 1] %>"><%= main::config('menu')->[$i] %></a>
+% for (my $i = 0; $i < @{config('menu')}; $i += 2) {
+                    <a href="<%= config('menu')->[$i + 1] %>"><%= config('menu')->[$i] %></a>
 % }
                 </div>
             </div>
             <div id="content">
-            <%= $c->render_inner %>
+            <%= $inner_template %>
             </div>
             <div class="push"></div>
         </div>
-        <div id="footer"><%= main::config('footer') %></div>
-% foreach my $file (@{main::config('js')}) {
+        <div id="footer"><%= config('footer') %></div>
+% foreach my $file (@{config('js')}) {
         <script type="text/javascript" href="/<%= $file %>" />
 % }
     </body>
 </html>
 
 
-@@ exception.html.epl
+@@ exception.html.ep
 <div class="text">
-Internal error occuried :(
+<%= strings('error') %>
 </div>
 
 __END__
@@ -1299,6 +1300,14 @@ L<< local::lib >> and use inside shared hosting environments)
 
 =item * pagelimit - how many articles to show on index page. Default is 10.
 
+=item * meta - html meta tags configuration. Empty by default.
+
+=item * template_handler - what template engine to use and what template files to
+search while rendering pages. Default value is 'ep'.
+
+=item * datefmt - date formatting template (strftime). Default value is
+'%a, %d %b %Y';
+
 =back
 
 =head1 FILESYSTEM
@@ -1335,7 +1344,7 @@ article's title.
 
 =head1 PARSERS
 
-Based on your article's extension (.pod, .epl, .md etc) it is parsed by one of
+Based on your article's extension (.pod, .ep, .md etc) it is parsed by one of
 the bootylicious parsers. By default you can use Mojo::Template or POD formats.
 But more parsers are available as third party modules.
 
@@ -1459,7 +1468,7 @@ If you need more hooks in different places feel free to contact me.
                 my $c = shift;
 
                 $c->stash(
-                    config         => main::config(),
+                    config         => config(),
                     format         => 'html',
                     template_class => __PACKAGE__,
                 );
@@ -1469,7 +1478,7 @@ If you need more hooks in different places feel free to contact me.
 
     1;
 
-    @@ search.html.epl
+    @@ search.html.ep
     % my $self = shift;
         ...
     Anything you can do with Mojo::Template goes here
@@ -1481,7 +1490,7 @@ Embedded templates will work just fine, but when you want to have something more
 advanced just create a template in templates/ directory with the same name but
 optionally with a different extension.
 
-For example there is index.html.epl, thus templates/index.html.epl should be
+For example there is index.html.ep, thus templates/index.html.ep should be
 created with a new content. If you want to use a different base directory for the 
 templates, set the C<templatesdir> config option as explained above.
 
