@@ -1068,7 +1068,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 
 @@ draft.html.ep
-% stash(title = $draft->{title});
+% stash(title => $draft->{title});
 <div class="text">
 <h1 class="title">
 <%== $draft->{title} %>
@@ -1509,6 +1509,8 @@ L<Mojo> L<Mojolicious> L<Mojolicious::Lite>
 Breno G. de Oliveira
 
 Konstantin Kapitanov
+
+Mirko Westermeier
 
 Sebastian Riedel
 
