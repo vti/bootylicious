@@ -20,7 +20,8 @@ sub hook_finalize {
     my $ga_script = $c->render_partial(
         'template',
         format         => 'html',
-        template_class => __PACKAGE__
+        template_class => __PACKAGE__,
+        handler        => 'ep'
     );
 
     $body =~ s{</body>}{$ga_script</body>};
@@ -30,14 +31,13 @@ sub hook_finalize {
 1;
 __DATA__
 
-@@ template.html.epl
-% my $self = shift;
+@@ template.html.ep
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
 document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
 </script>
 <script type="text/javascript">
 try {
-var pageTracker = _gat._getTracker("<%= $self->stash('urchin') %>");
+var pageTracker = _gat._getTracker("<%= $urchin %>");
 pageTracker._trackPageview();
 } catch(err) {}</script>
