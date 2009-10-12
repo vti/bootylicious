@@ -5,21 +5,15 @@ use warnings;
 
 use Test::More tests => 3;
 
-use Mojolicious;
-use Mojo::Transaction::Single;
-use Mojolicious::Controller;
+use lib 't/lib';
+
+use TestController;
 
 use_ok('Bootylicious::Plugin::GoogleAnalytics');
 
 my $ga = Bootylicious::Plugin::GoogleAnalytics->new(urchin => 'foo');
 
-my $c = Mojolicious::Controller->new(
-    tx  => Mojo::Transaction::Single->new,
-    app => Mojolicious->new
-);
-
-$c->app->log->level('error');
-
+my $c = TestController->new;
 $c->res->body('<body></body>');
 
 $ga->hook_finalize($c);
