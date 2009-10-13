@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use base 'Mojo::Base';
+use Mojo::ByteStream 'b';
 
 __PACKAGE__->attr('urchin');
 
@@ -23,6 +24,8 @@ sub hook_finalize {
         template_class => __PACKAGE__,
         handler        => 'ep'
     );
+
+    $ga_script = b($ga_script)->encode('utf-8');
 
     $body =~ s{</body>}{$ga_script</body>};
     $c->res->body($body);
