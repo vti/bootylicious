@@ -5,7 +5,7 @@ use warnings;
 
 use base 'Mojo::Base';
 
-use Mojo::ByteStream;
+use Mojo::ByteStream 'b';
 
 __PACKAGE__->attr('before_context' => 20);
 __PACKAGE__->attr('after_context'  => 20);
@@ -31,6 +31,8 @@ sub _search {
 
     my $results = [];
 
+    $c->stash(error => '');
+
     if (defined $q && length($q) < $self->min_length) {
         $c->stash(error => 'Has to be '
               . $self->min_length
@@ -43,6 +45,8 @@ sub _search {
     }
     else {
         if (defined $q) {
+            $q = b($q)->xml_escape;
+
             my ($articles) = main::get_articles;
 
             my $before_context = $self->before_context;
@@ -50,34 +54,33 @@ sub _search {
 
             foreach my $article (@$articles) {
                 my $found = 0;
-                if ($article->{title}
-                    =~ s/(\Q$q\E)/<font color="red">$1<\/font>/isg)
-                {
+
+                my $title = $article->{title};
+                if ($title =~ s/(\Q$q\E)/<font color="red">$1<\/font>/isg) {
                     $found = 1;
                 }
 
-                $article->{parts} = [];
-                while ($article->{content}
+                my $parts = [];
+                my $content = $article->{content};
+                while ($content
                     =~ s/((?:.{$before_context})?\Q$q\E(?:.{$after_context})?)//is
                   )
                 {
                     my $part = $1;
-                    $part =
-                      Mojo::ByteStream->new($part)->html_escape->to_string;
+                    $part = b($part)->xml_escape->to_string;
                     $part =~ s/(\Q$q\E)/<font color="red">$1<\/font>/isg;
-                    push @{$article->{parts}}, $part;
+                    push @$parts, $part;
 
                     $found = 1;
                 }
 
-                push @$results, $article if $found;
+                push @$results, {title => $title, parts => $parts} if $found;
             }
         }
     }
 
     $c->stash(
         articles       => $results,
-        config         => main::config(),
         format         => 'html',
         template_class => __PACKAGE__,
         layout         => 'wrapper'
@@ -87,29 +90,28 @@ sub _search {
 1;
 __DATA__
 
-@@ search.html.epl
-% my $self = shift;
-% my $articles = $self->stash('articles');
-% $self->stash(template_class => 'main');
+@@ search.html.ep
+% stash(template_class => 'main');
+% stash(title => 'Search');
 <div style="text-align:center;padding:2em">
 <form method="get">
-<input type="text" name="q" value="<%= $self->req->param('q') || '' %>" />
+<input type="text" name="q" value="<%= param('q') || '' %>" />
 <input type="submit" value="Search" />
-% if (my $error = $self->stash('error')) {
+% if ($error) {
 <div style="color:red"><%= $error %></div>
 % }
 </form>
 </div>
-% if (!$self->stash('error') && $self->req->param('q')) {
-<h1>Search results: <%= @$articles %></h1>
+% if (!$error && param('q')) {
+<h1>Search results: <%== @$articles %></h1>
 <br />
 % }
 % foreach my $article (@$articles) {
 <div class="text">
-    <a href="<%== $self->url_for('article', year => $article->{year}, month => $article->{month}, alias => $article->{name}, format => 'html') %>"><%= $article->{title} %></a><br />
-    <div class="created"><%= $article->{created_format} %></div>
+    <a href="<%= url(article => $article) %>"><%== $article->{title} %></a><br />
+    <div class="created"><%= date($article->{created}) %></div>
 %   foreach my $part (@{$article->{parts}}) {
-    <span style="font-size:small"><%= $part %></span> ...
-% }
+    <span style="font-size:small"><%== $part %></span> ...
+%   }
 </div>
 % }
