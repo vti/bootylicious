@@ -103,6 +103,7 @@ app->log->level($config{loglevel});
 app->renderer->default_handler(config('template_handler'));
 
 app->renderer->add_helper(stash => sub { my $c = shift; $c->stash(@_); });
+app->renderer->add_helper(param => sub { my $c = shift; $c->req->param(@_)});
 app->renderer->add_helper(url => \&url);
 app->renderer->add_helper(config => sub { shift; config(@_) });
 app->renderer->add_helper(strings => sub { shift; config('strings')->{$_[0]} });
@@ -200,9 +201,16 @@ get '/tags/:tag' => sub {
 
     $articles = [
         grep {
-            grep {/^$tag$/} @{$_->{tags}}
+            grep {m/^\Q$tag\E$/}
+              @{$_->{tags}}
           } @$articles
     ];
+
+    unless (@$articles) {
+        $c->stash(rendered => 1);
+        $c->app->static->serve_404($c);
+        return 1;
+    }
 
     my $last_modified = Mojo::Date->new;
     if (@$articles) {
@@ -894,9 +902,9 @@ __DATA__
 % foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title">
-            <%= '&raquo;' if $article->{link} %>
+            <%== $article->{link} ? '&raquo;' : '' %>
             <a href="<%= $article->{link} || url(article => $article) %>">
-                <%== $article->{title} %>
+                <%= $article->{title} %>
             </a>
         </h1>
         <div class="created"><%= date($article->{created}) %></div>
@@ -906,7 +914,7 @@ __DATA__
 %   }
         </div>
 %   if ($article->{preview}) {
-        <%= $article->{preview} %>
+        <%== $article->{preview} %>
         <div class="more"> &rarr;
             <a href="<%= url(article => $article) %>#cut">
                 <%= $article->{preview_link} %>
@@ -914,7 +922,7 @@ __DATA__
         </div>
 %   }
 %   else {
-        <%= $article->{content} %>
+        <%== $article->{content} %>
 %   }
     </div>
 % }
@@ -950,7 +958,7 @@ __DATA__
 %     }
     <li>
         <a href="<%= url(article => $article) %>">
-            <%== $article->{title} %>
+            <%= $article->{title} %>
         </a>
         <br />
         <div class="created"><%= date($article->{created}) %></div>
@@ -963,23 +971,23 @@ __DATA__
 
 @@ index.rss.ep
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xml:base="<%= url('root') %>"
+<rss version="2.0" xml:base="<%= url('root')->to_abs %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
-        <title><%== config('title') %></title>
+        <title><%= config('title') %></title>
         <link><%= url('root')->to_abs %></link>
-        <description><%== config('descr') %></description>
+        <description><%= config('descr') %></description>
         <pubDate><%= date_rss($articles->[0]->{created}) %></pubDate>
         <lastBuildDate><%= date_rss($articles->[0]->{created}) %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
 % my $link = url(article => $article)->to_abs;
     <item>
-      <title><%== $article->{title} %></title>
+      <title><%= $article->{title} %></title>
       <link><%= $link %></link>
-      <description><%== $article->{preview} || $article->{content} %></description>
+      <description><%= $article->{preview} || $article->{content} %></description>
 % foreach my $tag (@{$article->{tags}}) {
-      <category><%== $tag %></category>
+      <category><%= $tag %></category>
 % }
       <pubDate><%= date_rss($article->{created}) %></pubDate>
       <guid><%= $link %></guid>
@@ -996,7 +1004,7 @@ __DATA__
     <br />
     <div class="tags">
 % foreach my $tag (keys %$tags) {
-        <a href="<%= url(tag => $tag) %>"><%== $tag %></a>
+        <a href="<%= url(tag => $tag) %>"><%= $tag %></a>
         <sub>(<%= $tags->{$tag}->{count} %>)</sub>
 % }
     </div>
@@ -1025,7 +1033,7 @@ rkJggg==" alt="RSS" /></a></sup>
 <br />
 % foreach my $article (@$articles) {
         <a href="<%= url(article => $article) %>">
-            <%== $article->{title} %>
+            <%= $article->{title} %>
         </a>
         <br />
         <div class="created"><%= date($article->{created}) %></div>
@@ -1038,9 +1046,9 @@ rkJggg==" alt="RSS" /></a></sup>
 <div class="text">
 <h1 class="title">
 % if ($article->{link}) {
-    &raquo; <a href="<%= $article->{link} %>"><%== $article->{title} %></a>
+    &raquo; <a href="<%= $article->{link} %>"><%= $article->{title} %></a>
 % } else {
-    <%== $article->{title} %>
+    <%= $article->{title} %>
 % }
 </h1>
 <div class="created"><%= date($article->{created}) %>
@@ -1053,7 +1061,7 @@ rkJggg==" alt="RSS" /></a></sup>
     <a href="<%= url(tag => $tag) %>"><%= $tag %></a>
 % }
 </div>
-<%= $article->{content} %>
+<%== $article->{content} %>
 </div>
 
 
@@ -1061,9 +1069,9 @@ rkJggg==" alt="RSS" /></a></sup>
 % stash(title => $page->{title});
 <div class="text">
 <h1 class="title">
-<%== $page->{title} %>
+<%= $page->{title} %>
 </h1>
-<%= $page->{content} %>
+<%== $page->{content} %>
 </div>
 
 
@@ -1071,9 +1079,9 @@ rkJggg==" alt="RSS" /></a></sup>
 % stash(title => $draft->{title});
 <div class="text">
 <h1 class="title">
-<%== $draft->{title} %>
+<%= $draft->{title} %>
 </h1>
-<%= $draft->{content} %>
+<%== $draft->{content} %>
 </div>
 
 
@@ -1084,10 +1092,14 @@ rkJggg==" alt="RSS" /></a></sup>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
     <head>
-        <title><%= $title . ' / ' if $title %><%== config('title') %></title>
+        <title><%= $title ? "$title / " : '' %><%= config('title') %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 % foreach my $meta (@{config('meta')}) {
-        <meta <%= "$_=\"$meta->{$_}\" " for keys %$meta %>/>
+        <meta 
+% for my $key (keys %$meta) {
+<%= "$key=\"$meta->{$key}\" " %>
+% }
+/>
 % }
 % foreach my $file (@{config('css')}) {
         <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
@@ -1123,12 +1135,12 @@ rkJggg==" alt="RSS" /></a></sup>
             .push {height:6em}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%== config('title') %>" href="<%= url('index', format => 'rss')->to_abs %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%= config('title') %>" href="<%= url('index', format => 'rss')->to_abs %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= url('root') %>"><%== config('title') %></a>
+                <h1 id="title"><a href="<%= url('root') %>"><%= config('title') %></a>
                 <sup><a href="<%= url('index', format => 'rss') %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
@@ -1153,11 +1165,11 @@ rkJggg==" alt="RSS" /></a></sup>
                 </div>
             </div>
             <div id="content">
-            <%= $inner_template %>
+            <%== $inner_template %>
             </div>
             <div class="push"></div>
         </div>
-        <div id="footer"><%= config('footer') %></div>
+        <div id="footer"><%== config('footer') %></div>
 % foreach my $file (@{config('js')}) {
         <script type="text/javascript" href="/<%= $file %>" />
 % }
