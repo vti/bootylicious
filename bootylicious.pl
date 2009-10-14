@@ -1097,7 +1097,7 @@ rkJggg==" alt="RSS" /></a></sup>
 % foreach my $meta (@{config('meta')}) {
         <meta 
 % for my $key (keys %$meta) {
-<%= "$key=\"$meta->{$key}\" " %>
+<%== "$key=\"$meta->{$key}\" " %>
 % }
 />
 % }
