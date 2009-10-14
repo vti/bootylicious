@@ -1160,7 +1160,7 @@ rkJggg==" alt="RSS" /></a></sup>
                 <span id="author"><%= config('author') %></span>, <span id="about"><%= config('about') %></span>
                 <div id="menu">
 % for (my $i = 0; $i < @{config('menu')}; $i += 2) {
-                    <a href="<%= config('menu')->[$i + 1] %>"><%= config('menu')->[$i] %></a>
+                    <a href="<%= config('menu')->[$i + 1] %>"><%== config('menu')->[$i] %></a>
 % }
                 </div>
             </div>
