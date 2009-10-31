@@ -74,7 +74,7 @@ sub _search {
                     $found = 1;
                 }
 
-                push @$results, {title => $title, parts => $parts} if $found;
+                push @$results, {%$article, title => $title, parts => $parts} if $found;
             }
         }
     }
