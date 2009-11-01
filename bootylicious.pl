@@ -376,19 +376,22 @@ sub _load_plugins {
     my $lib_dir = app->home->rel_dir('lib');
     push @INC, $lib_dir;
 
+    my @plugins;
+
     my $prev;
     while (my $plugin = shift @$plugins_arrayref) {
-        if ($prev && ref $plugin eq 'HASH') {
-            _load_plugin($prev => $plugin);
-        }
-        elsif ($prev && ref($prev) ne 'HASH') {
-            _load_plugin($prev);
-        }
-        if (!@$plugins_arrayref) {
-            _load_plugin($plugin);
-        }
+        if (ref($plugin) eq 'HASH') {
+            next unless $plugins[-1];
 
-        $prev = $plugin;
+            $plugins[-1]->{args} = $plugin;
+        }
+        else {
+            push @plugins, {name => $plugin, args => {}};
+        }
+    }
+
+    foreach my $plugin (@plugins) {
+        _load_plugin($plugin->{name} => $plugin->{args});
     }
 }
 
