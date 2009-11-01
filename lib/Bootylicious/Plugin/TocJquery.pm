@@ -74,8 +74,8 @@ Register TocJquery and AjaxLibLoader plugins in a configuration file (bootylicio
 like this:
 
     "plugins" : [
-        "ajax_lib_loader" : { "jquery" : "on" },
-        "toc_jquery" : { "toc_tag" : "%TOC%" }
+        "ajax_lib_loader", { "jquery" : "on" },
+        "toc_jquery", { "toc_tag" : "%TOC%" }
     ]
 
  Insert into your post tag %TOC%, e.g.:

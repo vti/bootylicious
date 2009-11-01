@@ -225,7 +225,7 @@ Register gallery plugin in a configuration file (bootylicious.conf), add line
 like this:
 
     "plugins" : [
-        "gallery" : {
+        "gallery", {
             "thumb_width" : 144,
             "thumb_height" : 144,
             "bgcolor" : "white"

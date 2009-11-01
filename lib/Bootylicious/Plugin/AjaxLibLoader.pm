@@ -200,7 +200,7 @@ like this:
     #load JQuery version 1.3.2 for all Bootylicious blog pages
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "jquery" : "on",
             "jquery_version" : 1.3.2,
             "jquery_path" : "all"
@@ -210,7 +210,7 @@ like this:
     #OR load JQuery version 1.3.2 for all  pages and JQuery UI only for article pages:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "jquery" : "on",
             "jquery_version" : 1.3.2,
             "jquery_path" : "all",
@@ -242,7 +242,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "dojo" : "on",
             "dojo_version" : 1.3.2,
             "dojo_path" : "all"
@@ -261,7 +261,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "ext-core" : "on",
             "ext-core_version" : 3.0.0,
             "ext-core_path" : "all"
@@ -279,7 +279,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             jquery" : "on",
             jquery_version" : 1.3.2,
             jquery_path" : "all"
@@ -298,7 +298,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "jqueryui" : "on",
             "jqueryui_version" : 1.7.2,
             "jqueryui_path" : "all"
@@ -316,7 +316,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "mootools" : "on",
             "mootools_version" : 1.2.3,
             "mootools_path" : "all"
@@ -334,7 +334,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "prototype" : "on",
             "prototype_version" : 1.6.1.0,
             "prototype_path" : "all"
@@ -352,7 +352,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "scriptaculous" : "on",
             "scriptaculous_version" : 1.8.2,
             "scriptaculous_path" : "all"
@@ -370,7 +370,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "swfobject" : "on",
             "swfobject_version" : 2.2,
             "swfobject_path" : "all"
@@ -388,7 +388,7 @@ Attributes:
 Config line example:
 
     "plugins" : [
-        "ajax_lib_loader" : {
+        "ajax_lib_loader", {
             "yui" : "on",
             "yui_version" : 2.7.0,
             "yui_path" : "all"
