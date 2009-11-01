@@ -9,6 +9,7 @@ use MojoX::Locale::Maketext;
 use POSIX qw(locale_h);
 
 __PACKAGE__->attr('languages' => 'en');
+__PACKAGE__->attr('helper' => 'loc');
 
 sub hook_init {
     my $self = shift;
@@ -34,7 +35,7 @@ sub hook_init {
     main::config(strings => $strings);
 
     $app->renderer->add_handler(
-        'loc' => sub {
+        $self->helper => sub {
             my $c = shift;
 
             return $i18n->localize(@_);
