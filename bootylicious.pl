@@ -1520,6 +1520,8 @@ L<Mojo> L<Mojolicious> L<Mojolicious::Lite>
 
 Breno G. de Oliveira
 
+Johannes 'fish' Ziemke
+
 Konstantin Kapitanov
 
 Mirko Westermeier
