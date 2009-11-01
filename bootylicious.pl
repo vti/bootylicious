@@ -1423,10 +1423,10 @@ plugins constructors.
 
     # With params
     "plugins" : [
-        "search" : {
+        "search", {
             "before_context" : 10
         },
-        "gallery" : {
+        "gallery", {
             "columns" : 3
         }
     ]
