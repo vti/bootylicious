@@ -34,7 +34,7 @@ sub hook_init {
 
     main::config(strings => $strings);
 
-    $app->renderer->add_handler(
+    $app->renderer->add_helper(
         $self->helper => sub {
             my $c = shift;
 
