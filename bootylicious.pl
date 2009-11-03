@@ -809,10 +809,11 @@ sub _get_parser {
 sub _parse_metadata {
     my $string = shift;
 
-    $$string =~ s/^(.*?)(?:\n\n|\n\r\n\r|\r\r)//s;
-    return {} unless $1;
+    $$string =~ s/^((.*?)(?:\n\n|\n\r\n\r|\r\r))//s;
+    return {} unless $2;
 
-    my $data = $1;
+    my $original = $1;
+    my $data = $2;
 
     my $metadata = {};
     while ($data =~ s/^(.*?):\s*(.*?)(?:\n|\n\r|\r|$)//s) {
@@ -826,6 +827,10 @@ sub _parse_metadata {
         }
 
         $metadata->{$key} = $value;
+    }
+
+    unless (%$metadata) {
+        $$string = $original . $$string;
     }
 
     return $metadata;
