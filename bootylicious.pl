@@ -1277,9 +1277,9 @@ below) and uses it on the templates. To load more than one js file, in the same
 given order, just pass an array (e.g.: "js" : [ "foo.js", "bar.js", "baz.js" ]).
 
 =item * theme - bootylicious can automatically import css and js files via
-themes. Just put those files under PUBLICDIR/themes/my-theme/ and set this
-option to "my-theme". Files are loaded in the same order as the filesystem
-gives them, usually alphabetic.
+themes. Just put those files under PUBLICDIR/bootylicious/themes/my-theme/ and
+set this option to "my-theme". Files are loaded in the same order as the
+filesystem gives them, usually alphabetic.
 
 =item * footer - sets each page's footer text, to appear in every page.
 
