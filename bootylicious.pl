@@ -1138,7 +1138,7 @@ rkJggg==" alt="RSS" /></a></sup>
             a:hover{color:#000}
             a:visited{color:#000}
             img{border:0px}
-            pre{border:2px solid #ccc;background:#eee;padding:2em}
+            pre{border:2px solid #ccc;background:#eee;padding:2em;overflow:auto;overflow-y:visible;width:600px;}
             #body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
             #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
             h1#title{font-size:3em}
