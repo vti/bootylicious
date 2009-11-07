@@ -60,6 +60,7 @@ my %config = (
         'archive' => 'Archive',
         'tags'    => 'Tags',
         'tag'     => 'Tag',
+        'permalink-to' => 'Permalink to',
         'error'   => 'Internal error occuried :('
     },
     template_handler => 'ep'
@@ -910,10 +911,20 @@ __DATA__
 % foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title">
-            <%== $article->{link} ? '&raquo;' : '' %>
-            <a href="<%= $article->{link} || url(article => $article) %>">
+%           if ($article->{link}) {
+            &raquo;
+            <a href="<%= $article->{link} %>">
+                <%= $article->{title} %>
+            </a>&nbsp;
+            <a href="<%= url(article => $article) %>" title="Permalink to '<%= $article->{title} %>'">
+                &#x2605;
+            </a>
+%           }
+%           else {
+            <a href="<%= url(article => $article) %>">
                 <%= $article->{title} %>
             </a>
+%           }
         </h1>
         <div class="created"><%= date($article->{created}) %></div>
         <div class="tags">
@@ -993,7 +1004,13 @@ __DATA__
     <item>
       <title><%= $article->{title} %></title>
       <link><%= $link %></link>
-      <description><%= $article->{preview} || $article->{content} %></description>
+      <description>
+        <%= $article->{preview} || $article->{content} %>
+%     if ($article->{link}) {
+%     my $permalink = qq|<a href="$link" title="| . strings('permalink-to') . qq| '$article->{title}'">&#x2605;</a>|;
+      <%= $permalink %>
+%     }
+      </description>
 % foreach my $tag (@{$article->{tags}}) {
       <category><%= $tag %></category>
 % }
