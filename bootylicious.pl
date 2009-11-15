@@ -99,6 +99,8 @@ if ($ARGV[0] && $ARGV[0] eq 'inflate') {
     exit(0);
 }
 
+app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
+
 _read_config_from_file(app->home->rel_file('bootylicious.conf'));
 
 app->log->level($config{loglevel});
