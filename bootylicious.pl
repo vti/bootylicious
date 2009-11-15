@@ -96,6 +96,10 @@ if ($ARGV[0] && $ARGV[0] eq 'inflate') {
         $command->write_rel_file("templates/$template.ep", $data);
     }
 
+    foreach my $dir (qw/articlesdir draftsdir pagesdir publicdir/) {
+        $command->create_rel_dir(config($dir));
+    }
+
     exit(0);
 }
 
