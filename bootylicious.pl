@@ -19,6 +19,8 @@ $ENV{LANG} = 'C';
 require Time::Piece;
 require Time::Local;
 
+our $VERSION = '0.900101';
+
 my %config = (
     loglevel => 'debug',
     server   => 'cgi',
