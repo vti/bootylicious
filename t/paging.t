@@ -5,8 +5,6 @@ use warnings;
 
 use Test::More tests => 22;
 
-use Mojo::Transaction::Single;
-use Mojo::Client;
 use FindBin;
 
 my $articlesdir = "$FindBin::Bin/articles";

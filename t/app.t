@@ -5,36 +5,58 @@ use warnings;
 
 use Test::More tests => 7;
 
-use Mojo::Transaction::Single;
 use Mojo::Client;
 
 use FindBin;
 require "$FindBin::Bin/../bootylicious.pl";
 
-my $client = Mojo::Client->new;
+my $app = app();
+$app->log->level('fatal');
+
+my $client = Mojo::Client->new->app($app);
 
 # Index page
-my $tx = Mojo::Transaction::Single->new_get('/');
-$client->process_app(app(), $tx);
-is($tx->res->code, 200);
+$client->get(
+    '/' => sub {
+        my ($self, $tx) = @_;
 
-$tx = Mojo::Transaction::Single->new_get('/index');
-$client->process_app(app(), $tx);
-is($tx->res->code, 200);
+        is($tx->res->code, 200);
+    }
+)->process;
+
+$client->get(
+    '/index' => sub {
+        my ($self, $tx) = @_;
+
+        is($tx->res->code, 200);
+    }
+)->process;
 
 # Index rss page
-$tx = Mojo::Transaction::Single->new_get('/index.rss');
-$client->process_app(app(), $tx);
-is($tx->res->code, 200);
+$client->get(
+    '/index.rss' => sub {
+        my ($self, $tx) = @_;
+
+        is($tx->res->code, 200);
+    }
+)->process;
 
 # Archive page
-$tx = Mojo::Transaction::Single->new_get('/archive');
-$client->process_app(app(), $tx);
-is($tx->res->code, 200);
-like($tx->res->body, qr/Archive/);
+$client->get(
+    '/archive' => sub {
+        my ($self, $tx) = @_;
+
+        is($tx->res->code, 200);
+        like($tx->res->body, qr/Archive/);
+    }
+)->process;
 
 # Tags page
-$tx = Mojo::Transaction::Single->new_get('/tags');
-$client->process_app(app(), $tx);
-is($tx->res->code, 200);
-like($tx->res->body, qr/Tags/);
+$client->get(
+    '/tags' => sub {
+        my ($self, $tx) = @_;
+
+        is($tx->res->code, 200);
+        like($tx->res->body, qr/Tags/);
+    }
+)->process;
