@@ -13,7 +13,7 @@ my $mm = $ExtUtils::MakeMaker::VERSION;
 
 WriteMakefile(
     NAME         => 'bootylicious',
-    VERSION_FROM => 'bootylicious.pl',
+    VERSION_FROM => 'bootylicious',
     ABSTRACT     => 'Blog software',
     AUTHOR       => 'Viacheslav Tykhanovskyi <vti@cpan.org>',
 
@@ -38,7 +38,7 @@ WriteMakefile(
         )
     ),
 
-    EXE_FILES => ['bootylicious.pl'],
+    EXE_FILES => ['bootylicious'],
     PM        => {},
     PREREQ_PM => {
         'File::Basename'    => 0,
