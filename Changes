@@ -1,0 +1,435 @@
+2009-11-15  vti  <viacheslav.t@gmail.com>
+
+	Added VERSION
+
+2009-11-07  vti  <viacheslav.t@gmail.com>
+
+	Added overflow styling to the preformatted code
+
+	Added perlmalink
+
+2009-11-03  vti  <viacheslav.t@gmail.com>
+
+	Ignore everything that doesn't look like metadata
+
+	Updated Mojo version
+
+	Fixed documentation
+
+2009-11-01  vti  <viacheslav.t@gmail.com>
+
+	Fixed typo (sri)
+
+	Made helper name configurable
+
+	Added localization plugin
+
+	Fixed documentation
+
+	Refactored plugin configuration
+
+	Fixed documentation
+
+	Updated credits
+
+	Fixed links
+
+2009-10-17  vti  <viacheslav.t@gmail.com>
+
+	Updated mojo version
+
+2009-10-14  vti  <viacheslav.t@gmail.com>
+
+	Do not escape metadata
+
+	Do not escape menu labels
+
+	Fixed search plugin
+
+	Fixes due to Mojo update
+
+2009-10-13  vti  <viacheslav.t@gmail.com>
+
+	Added utf encoding for GoogleAnalytics plugin
+
+2009-10-12  vti  <viacheslav.t@gmail.com>
+
+	Made tests easier to write
+
+	Fixed GoogleAnalytics plugin
+
+2009-10-08  vti  <viacheslav.t@gmail.com>
+
+	Fixed bug in drafts template
+
+2009-10-07  vti  <viacheslav.t@gmail.com>
+
+	Renamed meta helper to stash
+
+	Moved to 'ep' templates
+
+2009-10-04  vti  <viacheslav.t@gmail.com>
+
+	Fixed alternate rss url
+
+	Added datefmt option
+
+2009-10-03  vti  <viacheslav.t@gmail.com>
+
+	Added simple exception template
+
+2009-10-02  vti  <viacheslav.t@gmail.com>
+
+	Created special date formatting subroutine, this will format date in the future
+
+	Set default publicdir, this affects plugins
+
+	Fixed plugin due to bootylicious update
+
+2009-10-01  vti  <viacheslav.t@gmail.com>
+
+	Fixed loading the last plugin
+
+	Don't set layout in tags rss template
+
+	Made it uglier but safer
+
+	Fixed config
+
+	Added log level control
+
+	Cleaned templates a bit
+
+	Fixed pubDate in rss
+
+2009-09-30  vti  <viacheslav.t@gmail.com>
+
+	Added inflate command
+
+	Fixed plugin configuration again!
+
+	Fixed plugin configuration
+
+	Fixed wrong month in xmlrpc plugin
+
+	Fixed plugin loading sub
+
+2009-09-29  vti  <viacheslav.t@gmail.com>
+
+	Made configurable what mojo server to run
+
+	Die on configuration script syntax error
+
+2009-09-27  vti  <viacheslav.t@gmail.com>
+
+	Fixed date handling
+
+2009-09-24  vti  <viacheslav.t@gmail.com>
+
+	Added more html escaping
+
+	Fixed paging labels
+
+2009-09-21  vti  <viacheslav.t@gmail.com>
+
+	POD test
+
+	Fixed POD
+
+	Added perltidy
+
+2009-09-19  vti  <viacheslav.t@gmail.com>
+
+	Added features description
+
+	Cleaned up xmlrpc plugin
+
+	Added more documentation
+
+	Cleanup
+
+	Added page titles
+
+	Drafts
+
+2009-09-18  vti  <viacheslav.t@gmail.com>
+
+	Static pages, epl templates
+
+	Cleanup
+
+	Introduced configurable meta information
+
+	Fixed documentation
+
+	Allowed commenting out lines in configuration file
+
+	Fixed plugins documentation
+
+	Added JSON configuration
+
+2009-09-16  vti  <viacheslav.t@gmail.com>
+
+	Made search a bit relaxed
+
+	Fixed no query situation
+
+	Added simple search plugin
+
+	Made menu more configurable
+
+	Fixed other formats parsing
+
+2009-09-15  vti  <viacheslav.t@gmail.com>
+
+	Fixed html
+
+	Reformatted
+
+2009-09-14  GreenKakadu  <gnezdo@gmail.com>
+
+	Add AjaxLibLoader and TocJquery plugins
+
+2009-09-14  vti  <viacheslav.t@gmail.com>
+
+	Made footer fixed
+
+	Changed default footer
+
+	Fixed publicdir environment variable
+
+2009-09-14  Breno G. de Oliveira  <garu@cpan.org>
+
+	fixed "publicdir" configuration
+
+2009-09-13  Breno G. de Oliveira  <garu@cpan.org>
+
+	added perl5lib config option's documentation
+
+	minor pod reordering (easy configs first)
+
+	added documentation for "templatesdir"
+
+	added support for "templatesdir" config option
+
+2009-09-13  vti  <viacheslav.t@gmail.com>
+
+	Updated credits section
+
+2009-09-12  Breno G. de Oliveira  <garu@cpan.org>
+
+	avoid theme() call w/o theme (fix css/js override)
+
+	fixed support for css=files and js=files on .conf
+
+	improved documentation
+
+	bugfix: pod with "." in name or short date format
+
+	small comma added for easier expandability
+
+2009-09-10  vti  <viacheslav.t@gmail.com>
+
+	Fixed urls formats
+
+	Fixed paging again and again
+
+	Fixed paging again
+
+	Updated to the latest Mojo
+
+	Made paging more robust
+
+	Cleanup
+
+	Fixed tests
+
+	Fixed paging
+
+	Fixed tags urls
+
+	Fixed tags rss url
+
+	Added context to xmlrpc plugin for url construction
+
+	XML-RPC plugin
+
+	No need for mmd, since we have our own metadata parser
+
+	Introducing metadata and nice public methods
+
+2009-09-08  vti  <viacheslav.t@gmail.com>
+
+	Changed next to return in sub
+
+2009-09-06  vti  <viacheslav.t@gmail.com>
+
+	Added preinit and init hooks
+
+	Fixed config parsing
+
+2009-09-05  vti  <viacheslav.t@gmail.com>
+
+	Cleanup
+
+2009-09-04  vti  <viacheslav.t@gmail.com>
+
+	PERL5LIB configuration
+
+	Reformatted
+
+2009-09-04  green  <green@localhost.(none)>
+
+	Add Gallery plugin
+
+2009-09-02  vti  <viacheslav.t@gmail.com>
+
+	Fixed situation when there is no preview
+
+	MultiMarkdown parser
+
+	Better parsers
+
+	Fixed wrong place pod hack
+
+	Render only html
+
+	Made easier creation of new parsers
+
+	Cleanup
+
+	Tests
+
+2009-09-01  vti  <viacheslav.t@gmail.com>
+
+	Google Analytics plugin
+
+	Plugins
+
+2009-08-27  vti  <viacheslav.t@gmail.com>
+
+	Made XHTML and CSS validators happy
+
+	Made RSS less portable but w3 validates it
+
+	And again
+
+	Fixed feed again. What was i thinking :(
+
+	Fixed rss feed items
+
+	Link posts
+
+2009-08-26  vti  <viacheslav.t@gmail.com>
+
+	Fixed urls to have format value
+
+	Jump right to the place where the article was cut
+
+	Fixed urls
+
+	Base configuration in CGI mode
+
+2009-08-25  vti  <viacheslav.t@gmail.com>
+
+	Fixed index page missing template
+
+	Fixed bugs created from moving links around
+
+	Default pagelimit is 10
+
+	Paging
+
+2009-08-24  vti  <viacheslav.t@gmail.com>
+
+	Fixed index page link
+
+	Fixed wrong article path parsing
+
+	Showing all the articles on the index page
+
+	No day in url, possibility to set creation time
+
+	Preview feature
+
+	Introducing themes
+
+	Fixed situation when there is no menu in config file
+
+2009-08-23  vti  <viacheslav.t@gmail.com>
+
+	Cleanup
+
+	Fixed menu alignment
+
+	Menu support
+
+	Changed HTML a little
+
+	Fixed CSS
+
+	Styling <pre>
+
+2009-08-22  vti  <viacheslav.t@gmail.com>
+
+	Smart config file parsing
+
+	Configuring through .conf file also
+
+	Do not render anything when it is not modified
+
+	Last-Modified and If-Modified-Since headers
+
+	Fixed dates formatting
+
+	Correct URLs in RSS
+
+	RSS icons
+
+	Typography
+
+2009-08-21  vti  <viacheslav.t@gmail.com>
+
+	Update Mojo submodule version
+
+	Run in CGI mode by default
+
+	Fixed FindBin
+
+	Added mojo submodule
+
+2009-08-16  vti  <viacheslav.t@gmail.com>
+
+	Get rid of non initialized warning
+
+	Tags
+
+	Cleanup
+
+	Made everything utf8
+
+2009-08-12  vti  <viacheslav.t@gmail.com>
+
+	changes due to Mojo update
+
+2009-08-07  vti  <viacheslav.t@gmail.com>
+
+	name change & some cleanup
+
+2009-08-04  vti  <viacheslav.t@gmail.com>
+
+	nice archive page and some cleanup
+
+2009-07-30  vti  <viacheslav.t@gmail.com>
+
+	documentation & css
+
+2009-07-29  vti  <viacheslav.t@gmail.com>
+
+	css
+
+	quiet
+
+	typos
+
+	initial
