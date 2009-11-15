@@ -998,8 +998,8 @@ __DATA__
         <title><%= config('title') %></title>
         <link><%= url('root')->to_abs %></link>
         <description><%= config('descr') %></description>
-        <pubDate><%= date_rss($articles->[0]->{created}) %></pubDate>
-        <lastBuildDate><%= date_rss($articles->[0]->{created}) %></lastBuildDate>
+        <pubDate><%= date_rss($article->{created}) %></pubDate>
+        <lastBuildDate><%= date_rss($article->{created}) %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
 % my $link = url(article => $article)->to_abs;
