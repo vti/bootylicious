@@ -345,6 +345,8 @@ sub theme {
 sub _read_config_from_file {
     my ($conf_file) = @_;
 
+    app->log->debug("Reading configuration from $conf_file.");
+
     if (-e $conf_file) {
         if (open FILE, "<", $conf_file) {
             my @lines = <FILE>;
@@ -368,6 +370,9 @@ sub _read_config_from_file {
                 ? @{$config{perl5lib}}
                 : $config{perl5lib});
         }
+    }
+    else {
+        app->log->debug("Configuration is not available.");
     }
 
     $ENV{SCRIPT_NAME} = $config{base} if $config{base};
