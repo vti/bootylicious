@@ -63,6 +63,7 @@ my %config = (
         'tags'    => 'Tags',
         'tag'     => 'Tag',
         'permalink-to' => 'Permalink to',
+        'not-found' => 'The page you are looking for was not found',
         'error'   => 'Internal error occuried :('
     },
     template_handler => 'ep'
@@ -1166,6 +1167,7 @@ rkJggg==" alt="RSS" /></a></sup>
             .tags{margin-left:10px;text-transform:uppercase;}
             .text {padding:2em;}
             .text h1.title {font-size:2.5em}
+            .error {padding:2em;text-align:center}
             .more {margin-left:10px}
             #pager {text-align:center;padding:2em}
             #pager span.notactive {color:#ccc}
@@ -1215,9 +1217,19 @@ rkJggg==" alt="RSS" /></a></sup>
     </body>
 </html>
 
+@@ not_found.html.ep
+% stash title => 'Not found', layout => 'wrapper';
+<div class="error">
+<h1>404</h1>
+<br />
+<%= strings 'not-found' %>
+</div>
 
 @@ exception.html.ep
-<div class="text">
+% stash title => 'Not found', layout => 'wrapper';
+<div class="error">
+<h1>500</h1>
+<br />
 <%= strings 'error' %>
 </div>
 
