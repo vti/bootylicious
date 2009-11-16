@@ -43,7 +43,7 @@ WriteMakefile(
     PREREQ_PM => {
         'File::Basename'    => 0,
         'FindBin'           => 0,
-        'Mojo'              => 0.999909,
+        'Mojo'              => 0.999910,
         'Pod::Simple::HTML' => 0,
         'Time::Local'       => 0,
         'Time::Piece'       => 0,
