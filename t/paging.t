@@ -11,7 +11,7 @@ my $articlesdir = "$FindBin::Bin/articles";
 mkdir $articlesdir;
 unlink $_ for glob("$articlesdir/*");
 
-require "$FindBin::Bin/../bootylicious.pl";
+require "$FindBin::Bin/../bootylicious";
 
 config(articlesdir => $articlesdir);
 

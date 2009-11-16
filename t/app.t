@@ -8,7 +8,7 @@ use Test::More tests => 7;
 use Mojo::Client;
 
 use FindBin;
-require "$FindBin::Bin/../bootylicious.pl";
+require "$FindBin::Bin/../bootylicious";
 
 my $app = app();
 $app->log->level('fatal');
