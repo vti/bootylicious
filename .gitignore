@@ -5,3 +5,4 @@ Makefile.old
 pm_to_blib
 *~
 *.bak
+*.swp
