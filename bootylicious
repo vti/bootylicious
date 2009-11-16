@@ -53,6 +53,7 @@ my %config = (
     ],
     theme     => '',
     cuttag    => '[cut]',
+    cuttext   => 'Keep reading',
     pagelimit => 10,
     meta      => [],
     css       => [],
@@ -767,7 +768,7 @@ sub _parse_article {
     my $preview_link = '';
     if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
         $tail = $3;
-        $preview_link = $2 || 'Keep reading';
+        $preview_link = $2 || $config{cuttext};
     }
 
     my $data = $parser->($head, $tail);
