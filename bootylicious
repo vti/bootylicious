@@ -60,8 +60,12 @@ my %config = (
     datefmt   => '%a, %d %b %Y',
     strings => {
         'archive' => 'Archive',
+        'archive-description' => 'Articles index',
         'tags'    => 'Tags',
+        'tags-description' => 'Tags overview',
         'tag'     => 'Tag',
+        'tag-description' => 'Articles with tag [_1]',
+        'draft' => 'Draft',
         'permalink-to' => 'Permalink to',
         'not-found' => 'The page you are looking for was not found',
         'error'   => 'Internal error occuried :('
@@ -117,9 +121,22 @@ app->renderer->add_helper(param => sub { my $c = shift; $c->req->param(@_)});
 app->renderer->add_helper(url => \&url);
 app->renderer->add_helper(url_abs => \&url_abs);
 app->renderer->add_helper(config => sub { shift; config(@_) });
-app->renderer->add_helper(strings => sub { shift; config('strings')->{$_[0]} });
 app->renderer->add_helper(date => \&date);
 app->renderer->add_helper(date_rss => \&date_rss);
+
+app->renderer->add_helper(
+    strings => sub {
+        my $c = shift;
+
+        my $string = config('strings')->{$_[0]};
+
+        for (my $i = 0; $i < @_; $i++) {
+            $string =~ s/\[_$i\]/$_[$i]/;
+        }
+
+        return $string;
+    }
+);
 
 _load_plugins($config{plugins});
 
@@ -778,6 +795,7 @@ sub _parse_article {
         minute          => $minute,
         second          => $second,
         title           => $metadata->{title} || $name,
+        description     => $metadata->{description} || '',
         link            => $metadata->{link} || '',
         tags            => $metadata->{tags} || [],
         preview         => $preview,
@@ -944,6 +962,7 @@ shagadelic(@ARGV ? @ARGV : $config{'server'});
 __DATA__
 
 @@ index.html.ep
+% stash description => config('descr');
 % foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title">
@@ -998,7 +1017,7 @@ __DATA__
 
 
 @@ archive.html.ep
-% stash title => strings('archive');
+% stash title => strings('archive'), description => strings('archive-description');
 % my $tmp;
 % my $new = 0;
 
@@ -1059,7 +1078,7 @@ __DATA__
 
 
 @@ tags.html.ep
-% stash(title => 'Tags');
+% stash title => strings('tags'), description => strings('tags-description');
 <div class="text">
     <h1><%= strings 'tags' %></h1>
     <br />
@@ -1073,7 +1092,7 @@ __DATA__
 
 
 @@ tag.html.ep
-% stash(title => $tag);
+% stash title => $tag, description => strings('tag-description', $tag);
 <div class="text">
 <h1><%= strings 'tag' %> <%= $tag %>
 <sup><a href="<%= url tag => $tag, format => 'rss' %>"><img src="data:image/png;base64,
@@ -1103,7 +1122,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 
 @@ article.html.ep
-% stash(title => $article->{title});
+% stash title => $article->{title}, description => $article->{description};
 <div class="text">
 <h1 class="title">
 % if ($article->{link}) {
@@ -1136,7 +1155,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 
 @@ page.html.ep
-% stash(title => $page->{title});
+% stash title => $page->{title}, description => $page->{description};
 <div class="text">
 <h1 class="title">
 <%= $page->{title} %>
@@ -1146,7 +1165,7 @@ rkJggg==" alt="RSS" /></a></sup>
 
 
 @@ draft.html.ep
-% stash(title => $draft->{title});
+% stash title => $draft->{title}, description => strings('draft');
 <div class="text">
 <h1 class="title">
 <%= $draft->{title} %>
@@ -1164,6 +1183,9 @@ rkJggg==" alt="RSS" /></a></sup>
     <head>
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+% if ($description) {
+        <meta name="description" content="<%= $description %>" />
+% }
 % foreach my $meta (@{config('meta')}) {
         <meta 
 % for my $key (keys %$meta) {
