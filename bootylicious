@@ -1408,7 +1408,7 @@ Default is 'pages'.
 =item * draftsdir - set the dir where bootylicious looks for draft pages.
 Default is 'drafts'.
 
-=item * cuttag - set the cuttag for parsing the articles. Default is "cut".
+=item * cuttag - set the cuttag for parsing the articles. Default is "[cut]".
 
 =item * cuttext - set the link to full article view for articles with a cuttag.
 Default is 'Keep reading'.
