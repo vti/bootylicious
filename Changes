@@ -1,4 +1,48 @@
+2009-11-16  vti  <viacheslav.t@gmail.com>
+
+	Made cuttext configuration (memowe)
+
+	Updated credits
+
+	Ignore spaces before comment sign (#) in configuration
+
+	Added description meta tag to every page
+
+	Added prev/next article links
+
+	Updated minimal required Mojo version
+
+	Fixed tests
+
 2009-11-15  vti  <viacheslav.t@gmail.com>
+
+	More verbose configuration reading in debug mode
+
+	Updated Makefile.PL
+
+	Do not die when configuration is an empty file
+
+	Renamed bootylicious.pl to bootylicious
+
+	Updated mojo version
+
+	Made error pages a bit nicer
+
+	Added dirs creation to the inflate command
+
+	Made bootylicious home dir configurable through env
+
+	Added FindBin to dependency list
+
+	Simplified templates
+
+	Fixed empty rss generation
+
+	Updated mojo version
+
+	Prepared for CPAN
+
+	Added Changes
 
 	Added VERSION
 
