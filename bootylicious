@@ -264,7 +264,7 @@ get '/articles/:year/:month/:alias' => sub {
     my $articleid =
       $c->stash('year') . '/' . $c->stash('month') . '/' . $c->stash('alias');
 
-    my $article = get_article($articleid);
+    my ($article, $pager) = get_article($articleid);
     unless ($article) {
         $c->stash(rendered => 1);
         $c->app->static->serve_404($c);
@@ -273,7 +273,7 @@ get '/articles/:year/:month/:alias' => sub {
 
     return 1 unless _is_modified($c, $article->{modified});
 
-    $c->stash(article => $article, layout => 'wrapper');
+    $c->stash(article => $article, pager => $pager, layout => 'wrapper');
 
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($article->{modified}));
@@ -378,7 +378,7 @@ sub _read_config_from_file {
     $ENV{SCRIPT_NAME} = $config{base} if $config{base};
 
     # set proper templates base dir, if defined
-    app->renderer->root(app->home->rel_dir($config{templatesdir})) 
+    app->renderer->root(app->home->rel_dir($config{templatesdir}))
         if defined $config{templatesdir};
 
     # set proper public base dir, if defined
@@ -556,21 +556,37 @@ sub get_article {
       ? $config{articlesdir}
       : app->home->rel_dir($config{articlesdir});
 
-    my @files =
-      glob( $root . '/'
-          . $year
-          . $month . '*-'
-          . $alias
-          . ".*");
+    my $timestamp_re = qr/^$year$month\d\dT.*?-$alias\./;
 
-    if (@files > 1) {
-        app->log->warn('More then one article is available '
-              . 'at the same year/month and name');
+    my @files = sort { $b cmp $a } glob($root . '/*.*');
+
+    my $path;
+
+    my ($prev, $next);
+    for (my $i = 0; $i <= $#files; $i++) {
+        $prev = $files[$i - 1] if $i > 0;
+        $next = $files[$i + 1] if $i <= $#files;
+
+        my $basename = File::Basename::basename($files[$i]);
+        if ($basename =~ m/$timestamp_re/) {
+            $path = $files[$i];
+            last;
+        }
     }
-    my $path = $files[0];
+
     return unless $path && -r $path;
 
-    return _parse_article($path);
+    my $pager = {};
+
+    if ($next && $next ne $path) {
+        ($pager->{next}) = _parse_article($next);
+    }
+
+    if ($prev && $prev ne $path) {
+        ($pager->{prev}) = _parse_article($prev);
+    }
+
+    return (_parse_article($path), $pager);
 }
 
 sub get_draft {
@@ -1107,6 +1123,15 @@ rkJggg==" alt="RSS" /></a></sup>
 % }
 </div>
 <%== $article->{content} %>
+    <div id="pager">
+% if ($pager->{prev}) {
+        &larr; <a href="<%= url article => $pager->{prev} %>"><%= $pager->{prev}->{title} %></a>&nbsp;|
+% }
+<a href="<%= url_for 'archive' %>"><%= strings('archive') %></a>
+% if ($pager->{next}) {
+      |&nbsp;<a href="<%= url article => $pager->{next} %>"><%= $pager->{next}->{title}%></a> &rarr;
+% }
+    </div>
 </div>
 
 
