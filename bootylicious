@@ -1294,11 +1294,11 @@ Bootylicious -- one-file blog on Mojo steroids!
 
 =head1 SYNOPSIS
 
-    $ perl bootylicious.pl daemon
+    $ perl bootylicious daemon
 
 =head1 DESCRIPTION
 
-Bootylicious is a minimalistic blogging application built on
+Bootylicious is a minimalistic blogging application built on top of
 L<Mojolicious::Lite>. You start with just one file, but it is easily extendable
 when you add new plugins, templates, css files etc.
 
@@ -1306,9 +1306,9 @@ when you add new plugins, templates, css files etc.
 
 =over
 
-    * filesystem
+    * filesystem-based storage
     * tags
-    * RSS
+    * RSS (articles and by tag)
     * paging
     * static pages
     * drafts
@@ -1321,8 +1321,8 @@ when you add new plugins, templates, css files etc.
 =head1 CONFIGURATION
 
 Bootylicious can be configured through config file that is placed in the same
-directory as bootylicious.pl file and is called bootylicious.conf. It is in JSON
-format.
+directory as C<bootylicious> (or set via BOOTYLICIOUS_HOME env variable) file
+and is called C<bootylicious.conf>. It is in JSON format.
 
     {
         "title" : "my blog title",
@@ -1507,8 +1507,8 @@ No configuration is required. That was easy, yeah?
 $head_string is everything before the cuttag and $tail_string is everything after
 the cuttag.
 
-You must return hashref with parsed head and tail. See Bootylicious::Parser::Md
-for a complete example.
+You must return hashref with parsed head and tail. See
+L<Bootylicious::Parser::Md> for a complete example.
 
 =head1 PLUGINS
 
@@ -1549,7 +1549,7 @@ There are several hooks where you can hook your plugin to. This includes:
 =item * init
 
     Called after all bootylicous setup is made. This can be used if you want to
-    add additional links (see Bootylicious::Plugin::Search).
+    add additional links (see L<Bootylicious::Plugin::Search>).
 
 =item * finalize
 
@@ -1609,6 +1609,12 @@ optionally with a different extension.
 For example there is index.html.ep, thus templates/index.html.ep should be
 created with a new content. If you want to use a different base directory for the 
 templates, set the C<templatesdir> config option as explained above.
+
+=head1 SUPPORT
+
+=head2 Web
+
+    http://getbootylicious.org/
 
 =head1 DEVELOPMENT
 
