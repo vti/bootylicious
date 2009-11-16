@@ -1410,6 +1410,9 @@ Default is 'drafts'.
 
 =item * cuttag - set the cuttag for parsing the articles. Default is "cut".
 
+=item * cuttext - set the link to full article view for articles with a cuttag.
+Default is 'Keep reading'.
+
 =item * perl5lib - set any additional lib folders the script should look
 into before trying to load Perl 5 modules (ideal for integrating with
 L<< local::lib >> and use inside shared hosting environments)
