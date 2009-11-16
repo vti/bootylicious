@@ -371,7 +371,7 @@ sub _read_config_from_file {
 
             my $line = '';
             foreach my $l (@lines) {
-                next if $l =~ m/^#/;
+                next if $l =~ m/^\s*#/;
                 $line .= $l;
             }
 
