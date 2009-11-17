@@ -1027,7 +1027,7 @@ __DATA__
     <br />
 % foreach my $article (@$articles) {
 %     if (!$tmp || $article->{year} ne $tmp->{year}) {
-    <%= "</ul>" if $tmp %>
+    <%== "</ul>" if $tmp %>
     <b><%= $article->{year} %></b>
     <ul>
 %     }
