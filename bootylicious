@@ -76,7 +76,16 @@ my %config = (
 
 my %hooks = (
     preinit  => [],
-    init     => [],
+    init     => [
+    ],
+    prepare => [
+        sub {
+            my $c = shift;
+            foreach my $init (qw/title description/) {
+                $c->stash($init => '') unless $c->stash($init);
+            }
+          }
+    ],
     finalize => []
 );
 
@@ -186,6 +195,8 @@ sub index {
     $c->stash(layout => 'wrapper', title => '')
       unless $c->stash('format') && $c->stash('format') eq 'rss';
 
+    _call_hook($c, 'prepare');
+
     $c->render;
 
     _call_hook($c, 'finalize');
@@ -215,6 +226,8 @@ get '/archive' => sub {
         articles      => $articles,
         last_modified => $last_modified,
     );
+
+    _call_hook($c, 'prepare');
 
     $c->render;
 
@@ -259,6 +272,8 @@ get '/tags/:tag' => sub {
         $c->stash(template => 'index');
     }
 
+    _call_hook($c, 'prepare');
+
     $c->render;
 
     _call_hook($c, 'finalize');
@@ -270,6 +285,8 @@ get '/tags' => sub {
     my $tags = get_tags();
 
     $c->stash(layout => 'wrapper',  tags => $tags);
+
+    _call_hook($c, 'prepare');
 
     $c->render;
 
@@ -296,6 +313,8 @@ get '/articles/:year/:month/:alias' => sub {
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($article->{modified}));
 
+    _call_hook($c, 'prepare');
+
     $c->render;
 
     _call_hook($c, 'finalize');
@@ -320,6 +339,8 @@ get '/pages/:pageid' => sub {
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($page->{modified}));
 
+    _call_hook($c, 'prepare');
+
     $c->render;
 
     _call_hook($c, 'finalize');
@@ -343,6 +364,8 @@ get '/drafts/:draftid' => sub {
 
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($draft->{modified}));
+
+    _call_hook($c, 'prepare');
 
     $c->render;
 
@@ -472,7 +495,7 @@ sub _call_hook {
     my $hook = shift;
 
     my $method = "hook_$hook";
-    $_->$method($c) foreach @{$hooks{$hook}};
+    ref $_ eq 'CODE' ? $_->($c) : $_->$method($c) foreach @{$hooks{$hook}};
 }
 
 sub _is_modified {
@@ -1259,7 +1282,7 @@ rkJggg==" alt="RSS" /></a></sup>
                 </div>
             </div>
             <div id="content">
-            <%== $inner_template %>
+            <%= content %>
             </div>
             <div class="push"></div>
         </div>
