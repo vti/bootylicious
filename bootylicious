@@ -162,6 +162,16 @@ sub config {
     return \%config;
 }
 
+ladder sub {
+    my $self = shift;
+
+    return 1 if $self->stash->{format};
+
+    $self->redirect_to($self->url_for(format => 'html')->to_abs);
+
+    return 0;
+};
+
 sub index {
     my $c = shift;
 
