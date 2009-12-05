@@ -167,9 +167,14 @@ ladder sub {
 
     return 1 if $self->stash->{format};
 
-    return 1 if $self->req->url eq '/';
+    return 1 if $self->req->url =~ m{/$};
 
-    $self->redirect_to($self->req->url->to_abs . '.html');
+    my $canonical_location = $self->req->url->to_abs . '.html';
+
+    $self->app->log->debug("Path is not canonical: " . $self->req->url);
+    $self->app->log->debug("Redirecting to: " . $canonical_location);
+
+    $self->redirect_to($canonical_location);
 
     return 0;
 };
