@@ -276,7 +276,13 @@ get '/tags/:tag' => sub {
 
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
-    $c->stash(articles => $articles, last_modified => $last_modified);
+    my $last_created = $articles->[0]->{created};
+
+    $c->stash(
+        articles        => $articles,
+        last_modified   => $last_modified,
+        last_created    => $last_created,
+    );
 
     if ($c->stash('format') && $c->stash('format') eq 'rss') {
         $c->stash(template => 'index');
@@ -1088,8 +1094,8 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= url_abs 'root' %></link>
         <description><%= config 'descr' %></description>
-        <pubDate><%= date_rss $article->{created} %></pubDate>
-        <lastBuildDate><%= date_rss $article->{created} %></lastBuildDate>
+        <pubDate><%= date_rss $last_created %></pubDate>
+        <lastBuildDate><%= date_rss $last_created %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
 % my $link = url_abs(article => $article);
