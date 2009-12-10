@@ -1092,8 +1092,8 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= url_abs 'root' %></link>
         <description><%= config 'descr' %></description>
-        <pubDate><%= date_rss $article->{created} %></pubDate>
-        <lastBuildDate><%= date_rss $article->{created} %></lastBuildDate>
+        <pubDate><%= date_rss ${$articles}[0]{created} %></pubDate>
+        <lastBuildDate><%= date_rss ${$articles}[0]{created} %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
 % my $link = url_abs(article => $article);
