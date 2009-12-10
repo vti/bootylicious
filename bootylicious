@@ -271,22 +271,18 @@ get '/tags/:tag' => sub {
         return 1;
     }
 
-    my $last_modified = Mojo::Date->new;
-    if (@$articles) {
-        $last_modified = $articles->[0]->{modified};
-
-        return 1 unless _is_modified($c, $last_modified);
-    }
-
-    $c->stash(articles => $articles, last_modified => $last_modified);
-
-    $c->stash(layout => 'wrapper')
-      unless $c->stash('format') && $c->stash('format') eq 'rss';
+    my $last_modified = $articles->[0]->{modified};
+    return 1 unless _is_modified($c, $last_modified);
 
     $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
+    $c->stash(articles => $articles, last_modified => $last_modified);
+
     if ($c->stash('format') && $c->stash('format') eq 'rss') {
         $c->stash(template => 'index');
+    }
+    else {
+        $c->stash(layout => 'wrapper');
     }
 
     _call_hook($c, 'prepare');
