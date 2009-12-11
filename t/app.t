@@ -25,7 +25,7 @@ $client->get(
 )->process;
 
 $client->get(
-    '/index' => sub {
+    '/index.html' => sub {
         my ($self, $tx) = @_;
 
         is($tx->res->code, 200);
@@ -43,7 +43,7 @@ $client->get(
 
 # Archive page
 $client->get(
-    '/archive' => sub {
+    '/archive.html' => sub {
         my ($self, $tx) = @_;
 
         is($tx->res->code, 200);
@@ -53,7 +53,7 @@ $client->get(
 
 # Tags page
 $client->get(
-    '/tags' => sub {
+    '/tags.html' => sub {
         my ($self, $tx) = @_;
 
         is($tx->res->code, 200);
