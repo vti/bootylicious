@@ -433,7 +433,7 @@ sub _read_config_from_file {
         app->log->debug("Configuration is not available.");
     }
 
-    $ENV{SCRIPT_NAME} = $config{base} if $config{base};
+    $ENV{SCRIPT_NAME} = $config{base} if defined $config{base};
 
     # set proper templates base dir, if defined
     app->renderer->root(app->home->rel_dir($config{templatesdir}))
