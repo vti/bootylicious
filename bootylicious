@@ -190,10 +190,12 @@ sub index {
     my ($articles, $pager) =
       get_articles(limit => $config{pagelimit}, timestamp => $timestamp);
 
-    my $last_modified;
+    my $last_created  = time;
+    my $last_modified = time;
     if (@$articles) {
         $article = $articles->[0];
 
+        $last_created  = $articles->[0]->{created};
         $last_modified = $article->{modified};
 
         return 1 unless _is_modified($c, $last_modified);
@@ -211,8 +213,15 @@ sub index {
 
     $c->stash(template => 'index');
 
-    $c->stash(layout => 'wrapper', title => '')
-      unless $c->stash('format') && $c->stash('format') eq 'rss';
+    if ($c->stash('format') && $c->stash('format') eq 'rss') {
+        $c->stash(
+            last_created  => $last_created,
+            last_modified => $last_modified,
+        );
+    }
+    else {
+        $c->stash(layout => 'wrapper', title => '');
+    }
 
     _call_hook($c, 'prepare');
 
@@ -280,14 +289,14 @@ get '/tags/:tag' => sub {
 
     my $last_created = $articles->[0]->{created};
 
-    $c->stash(
-        articles        => $articles,
-        last_modified   => $last_modified,
-        last_created    => $last_created,
-    );
+    $c->stash(articles => $articles);
 
     if ($c->stash('format') && $c->stash('format') eq 'rss') {
-        $c->stash(template => 'index');
+        $c->stash(
+            last_modified => $last_modified,
+            last_created  => $last_created,
+            template      => 'index'
+        );
     }
     else {
         $c->stash(layout => 'wrapper');
