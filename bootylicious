@@ -167,6 +167,8 @@ ladder sub {
 
     return 1 if $self->stash->{format};
 
+    return 1 unless $self->req->url;
+
     return 1 if $self->req->url =~ m{/$};
 
     my $canonical_location = $self->req->url->to_abs . '.html';
