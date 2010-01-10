@@ -3,60 +3,25 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
+use Test::More tests => 17;
 
-use Mojo::Client;
+use Test::Mojo;
 
 use FindBin;
 require "$FindBin::Bin/../bootylicious";
 
-my $app = app();
-$app->log->level('fatal');
-
-my $client = Mojo::Client->new->app($app);
+my $t = Test::Mojo->new;
 
 # Index page
-$client->get(
-    '/' => sub {
-        my ($self, $tx) = @_;
-
-        is($tx->res->code, 200);
-    }
-)->process;
-
-$client->get(
-    '/index.html' => sub {
-        my ($self, $tx) = @_;
-
-        is($tx->res->code, 200);
-    }
-)->process;
+$t->get_ok('/')->status_is(200)->content_like(qr/booty/);
+$t->get_ok('/index')->status_is(302);
+$t->get_ok('/index.html')->status_is(200)->content_like(qr/booty/);
 
 # Index rss page
-$client->get(
-    '/index.rss' => sub {
-        my ($self, $tx) = @_;
-
-        is($tx->res->code, 200);
-    }
-)->process;
+$t->get_ok('/index.rss')->status_is(200)->content_like(qr/rss/);
 
 # Archive page
-$client->get(
-    '/archive.html' => sub {
-        my ($self, $tx) = @_;
-
-        is($tx->res->code, 200);
-        like($tx->res->body, qr/Archive/);
-    }
-)->process;
+$t->get_ok('/archive.html')->status_is(200)->content_like(qr/Archive/);
 
 # Tags page
-$client->get(
-    '/tags.html' => sub {
-        my ($self, $tx) = @_;
-
-        is($tx->res->code, 200);
-        like($tx->res->body, qr/Tags/);
-    }
-)->process;
+$t->get_ok('/tags.html')->status_is(200)->content_like(qr/Tags/);
