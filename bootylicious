@@ -75,21 +75,6 @@ my %config = (
     template_handler => 'ep'
 );
 
-my %hooks = (
-    preinit  => [],
-    init     => [
-    ],
-    prepare => [
-        sub {
-            my $c = shift;
-            foreach my $init (qw/title description/) {
-                $c->stash($init => '') unless $c->stash($init);
-            }
-          }
-    ],
-    finalize => []
-);
-
 if ($ARGV[0] && $ARGV[0] eq 'inflate') {
     my $command = Mojo::Command->new;
     $command->create_rel_dir('templates');
@@ -149,9 +134,17 @@ app->renderer->add_helper(
     }
 );
 
-_load_plugins($config{plugins});
+app->plugins->add_hook(
+    before_dispatch => sub {
+        my ($self, $c) = @_;
 
-_call_hook(app, 'preinit');
+        foreach my $init (qw/title description/) {
+            $c->stash($init => '') unless $c->stash($init);
+        }
+    }
+);
+
+_load_plugins($config{plugins});
 
 sub config {
     if (@_) {
@@ -224,11 +217,7 @@ sub index {
         $c->stash(layout => 'wrapper', title => '');
     }
 
-    _call_hook($c, 'prepare');
-
     $c->render;
-
-    _call_hook($c, 'finalize');
 }
 
 get '/' => \&index => 'root';
@@ -256,11 +245,7 @@ get '/archive' => sub {
         last_modified => $last_modified,
     );
 
-    _call_hook($c, 'prepare');
-
     $c->render;
-
-    _call_hook($c, 'finalize');
 } => 'archive';
 
 get '/tags/:tag' => sub {
@@ -303,11 +288,7 @@ get '/tags/:tag' => sub {
         $c->stash(layout => 'wrapper');
     }
 
-    _call_hook($c, 'prepare');
-
     $c->render;
-
-    _call_hook($c, 'finalize');
 } => 'tag';
 
 get '/tags' => sub {
@@ -317,11 +298,7 @@ get '/tags' => sub {
 
     $c->stash(layout => 'wrapper',  tags => $tags);
 
-    _call_hook($c, 'prepare');
-
     $c->render;
-
-    _call_hook($c, 'finalize');
 } => 'tags';
 
 get '/articles/:year/:month/:alias' => sub {
@@ -344,11 +321,7 @@ get '/articles/:year/:month/:alias' => sub {
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($article->{modified}));
 
-    _call_hook($c, 'prepare');
-
     $c->render;
-
-    _call_hook($c, 'finalize');
 } => 'article';
 
 get '/pages/:pageid' => sub {
@@ -370,11 +343,7 @@ get '/pages/:pageid' => sub {
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($page->{modified}));
 
-    _call_hook($c, 'prepare');
-
     $c->render;
-
-    _call_hook($c, 'finalize');
 } => 'page';
 
 get '/drafts/:draftid' => sub {
@@ -396,11 +365,7 @@ get '/drafts/:draftid' => sub {
     $c->res->headers->header(
         'Last-Modified' => Mojo::Date->new($draft->{modified}));
 
-    _call_hook($c, 'prepare');
-
     $c->render;
-
-    _call_hook($c, 'finalize');
 } => 'draft';
 
 sub theme {
@@ -478,55 +443,10 @@ sub _load_plugins {
         }
     }
 
+    push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
     foreach my $plugin (@plugins) {
-        _load_plugin($plugin->{name} => $plugin->{args});
+        plugin($plugin->{name} => $plugin->{args});
     }
-}
-
-sub _load_plugin {
-    my ($class, $args) = @_;
-
-    my $loader = Mojo::Loader->new;
-
-    $class = Mojo::ByteStream->new($class)->camelize;
-    $class = "Bootylicious::Plugin::$class";
-
-    app->log->debug("Loading plugin '$class'");
-
-    if (my $e = $loader->load($class)) {
-        if (ref $e) {
-            app->log->error($e);
-        }
-        else {
-            app->log->error("Plugin not found: $class");
-        }
-
-        return;
-    }
-
-    unless ($class->can('new')) {
-        app->log->error(qq|Can't locate object method "new" via plugin '$class'|);
-        return;
-    }
-
-    $args ||= {};
-    my $instance = $class->new(%$args);
-
-    foreach my $hook (keys %hooks) {
-        next unless $class->can("hook_$hook");
-
-        app->log->debug("Registering hook '$class\::hook_$hook'");
-
-        push @{$hooks{$hook}}, $instance;
-    }
-}
-
-sub _call_hook {
-    my $c = shift;
-    my $hook = shift;
-
-    my $method = "hook_$hook";
-    ref $_ eq 'CODE' ? $_->($c) : $_->$method($c) foreach @{$hooks{$hook}};
 }
 
 sub _is_modified {
@@ -1007,8 +927,6 @@ sub _parse_article_pod {
         tail  => $tail
     };
 }
-
-_call_hook(app, 'init');
 
 theme if $config{'theme'};
 
@@ -1569,12 +1487,13 @@ L<Bootylicious::Parser::Md> for a complete example.
 
 =head1 PLUGINS
 
-Bootylicious can be extended by third party plugins.
+Bootylicious can be extended by using L<Mojolicious::Plugin> derived third party
+plugins.
 
 =head2 CONFIGURATION
 
-Configuration is done in bootylicious config file. Parameters are passed to the
-plugins constructors.
+Configuration is done in bootylicious config file. Parameters are passed when
+loading a plugin.
 
     # Without params (or with default ones)
     "plugins" : [
@@ -1592,70 +1511,8 @@ plugins constructors.
         }
     ]
 
-=head2 HOOKS
-
-There are several hooks where you can hook your plugin to. This includes:
-
-=over
-
-=item * preinit
-
-    Called before any bootylicious setup is made. This can be used if you want
-    to modify bootylicious heavily.
-
-=item * init
-
-    Called after all bootylicous setup is made. This can be used if you want to
-    add additional links (see L<Bootylicious::Plugin::Search>).
-
-=item * finalize
-
-    Called after any page is rendered. This can be used if you want to
-    substitute any part of the page after it is processed by the parser.
-
-=back
-
-If you need more hooks in different places feel free to contact me.
-
-=head2 INTERFACE
-
-    package Bootylicious::Plugin::MyNewPlugin;
-
-    use strict;
-    use warnings;
-
-    use base 'Mojo::Base';
-
-    # Any parameters that are passed from the configuration file
-    __PACKAGE__->attr('before_context' => 20);
-
-    # Hook you want to use
-    sub hook_init {
-        my $self = shift;
-        my $app  = shift;
-
-        my $r = $app->routes;
-
-        $r->route('/search')->to(
-            callback => sub {
-                my $c = shift;
-
-                $c->stash(
-                    config         => config(),
-                    format         => 'html',
-                    template_class => __PACKAGE__,
-                );
-            }
-        )->name('search');
-    }
-
-    1;
-
-    @@ search.html.ep
-    % my $self = shift;
-        ...
-    Anything you can do with Mojo::Template goes here
-        ...
+See L<Mojolicious::Plugin> documentation for more details and
+L<Bootylicious::Plugin::Search> as an example plugin.
 
 =head1 TEMPLATES
 
