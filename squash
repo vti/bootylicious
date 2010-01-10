@@ -1,0 +1,90 @@
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+
+use File::Spec;
+
+my $COMMENT = <<'COMMENT';
+# This file is generated when building a
+# distribution. DO NOT EDIT or send patches
+# for it.
+#
+# If you found an error, fix files in lib/
+# directory, then generate bootylicious script
+# and make sure it works and then send a patch
+# that fixes appropriate lib/ files.
+#
+# See source code at
+# http://github.com/vti/bootylicious
+#
+COMMENT
+
+my @code;
+my @data;
+my @pod;
+
+my @files = @ARGV;
+
+while (@files) {
+    my $file = shift @files;
+
+    if (-f $file) {
+        my $content = _read_file($file);
+
+        if ($file =~ m/\.pm/) {
+            $content =~ s/^package.*?\n//;
+            $content =~ s/^1;$//m;
+            if ($content =~ s/__END__(.*)//s) {
+                push @pod, $1;
+            }
+            push @code, $content;
+        }
+        elsif ($file =~ m/\.ep/) {
+            $file =~ s/^templates\/?//;
+            $content = "@@ $file\n$content";
+            push @data, $content;
+        }
+    }
+    elsif (-d $file) {
+        push @files, _read_dir($file);
+    }
+    else {
+        warn "Unknown file: $file";
+    }
+}
+
+print "#!/usr/bin/env perl\n\n";
+print $COMMENT;
+print $_ for @code;
+print q/shagadelic(@ARGV ? @ARGV : $config{'server'});/, "\n";
+print "1;\n";
+print "__DATA__\n\n";
+print $_ for @data;
+print "__END__\n\n";
+print $_ for @pod;
+
+sub _read_file {
+    my $file = shift;
+
+    warn "Reading file $file";
+
+    open FILE, "< $file" or die "Can't read file: $file: $!";
+    my $content;
+    $content = do { local $/; <FILE> };
+    close FILE;
+
+    return $content;
+}
+
+sub _read_dir {
+    my $dir = shift;
+
+    warn "Reading dir $dir";
+
+    opendir DIR, $dir or die "Can't open dir: $dir: $!";
+    my @files = grep {/^[^\.]/} readdir DIR;
+    closedir DIR;
+
+    return map { File::Spec->catfile($dir, $_) } @files;
+}

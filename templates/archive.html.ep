@@ -1,0 +1,26 @@
+% stash title => strings('archive'), description => strings('archive-description');
+% my $tmp;
+% my $new = 0;
+
+<div class="text">
+    <h1><%= strings 'archive' %></h1>
+    <br />
+% foreach my $article (@$articles) {
+%     if (!$tmp || $article->{year} ne $tmp->{year}) {
+    <%== "</ul>" if $tmp %>
+    <b><%= $article->{year} %></b>
+    <ul>
+%     }
+    <li>
+        <a href="<%= url article => $article %>">
+            <%= $article->{title} %>
+        </a>
+        <br />
+        <div class="created"><%= date $article->{created} %></div>
+    </li>
+
+%     $tmp = $article;
+% }
+</div>
+
+

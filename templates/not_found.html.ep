@@ -1,0 +1,6 @@
+% stash title => 'Not found', description => 'Not found', layout => 'wrapper';
+<div class="error">
+<h1>404</h1>
+<br />
+<%= strings 'not-found' %>
+</div>

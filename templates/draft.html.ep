@@ -1,0 +1,9 @@
+% stash title => $draft->{title}, description => strings('draft');
+<div class="text">
+<h1 class="title">
+<%= $draft->{title} %>
+</h1>
+<%== $draft->{content} %>
+</div>
+
+

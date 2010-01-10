@@ -1,0 +1,13 @@
+% stash title => strings('tags'), description => strings('tags-description');
+<div class="text">
+    <h1><%= strings 'tags' %></h1>
+    <br />
+    <div class="tags">
+% foreach my $tag (keys %$tags) {
+        <a href="<%= url tag => $tag %>"><%= $tag %></a>
+        <sub>(<%= $tags->{$tag}->{count} %>)</sub>
+% }
+    </div>
+</div>
+
+
