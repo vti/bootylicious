@@ -60,17 +60,19 @@ my %config = (
     css       => [],
     js        => [],
     datefmt   => '%a, %d %b %Y',
-    strings => {
-        'archive' => 'Archive',
+    strings   => {
+        'archive'             => 'Archive',
         'archive-description' => 'Articles index',
-        'tags'    => 'Tags',
-        'tags-description' => 'Tags overview',
-        'tag'     => 'Tag',
-        'tag-description' => 'Articles with tag [_1]',
-        'draft' => 'Draft',
-        'permalink-to' => 'Permalink to',
-        'not-found' => 'The page you are looking for was not found',
-        'error'   => 'Internal error occuried :('
+        'tags'                => 'Tags',
+        'tags-description'    => 'Tags overview',
+        'tag'                 => 'Tag',
+        'tag-description'     => 'Articles with tag [_1]',
+        'draft'               => 'Draft',
+        'permalink-to'        => 'Permalink to',
+        'later'               => 'Later',
+        'earlier'             => 'Earlier',
+        'not-found'           => 'The page you are looking for was not found',
+        'error'               => 'Internal error occuried :('
     },
     template_handler => 'ep'
 );
@@ -975,16 +977,16 @@ __DATA__
 % }
     <div id="pager">
 % if ($pager->{prev}) {
-        &larr; <a href="<%= url pager => $pager->{prev} %>">Later</a>
+        &larr; <a href="<%= url pager => $pager->{prev} %>"><%= strings 'later' %></a>
 % }
 % else {
-        <span class="notactive">&larr; Later</span>
+        <span class="notactive">&larr; <%= strings 'later' %></span>
 % }
 % if ($pager->{next}) {
-        <a href="<%= url pager => $pager->{next} %>">Earlier</a> &rarr;
+        <a href="<%= url pager => $pager->{next} %>"><%= strings 'earlier' %></a> &rarr;
 % }
 % else {
-        <span class="notactive">Earlier &rarr;</span>
+        <span class="notactive"><%= strings 'earlier' %> &rarr;</span>
 % }
     </div>
 
