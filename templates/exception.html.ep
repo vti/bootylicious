@@ -1,7 +1,0 @@
-@@ exception.html.ep
-% stash title => 'Not found', description => 'Not found', layout => 'wrapper';
-<div class="error">
-<h1>500</h1>
-<br />
-<%= strings 'error' %>
-</div>

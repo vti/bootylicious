@@ -124,6 +124,9 @@ app->renderer->add_helper(config => sub { shift; config(@_) });
 app->renderer->add_helper(date => \&date);
 app->renderer->add_helper(date_rss => \&date_rss);
 
+# Helpers for plugins
+app->renderer->add_helper(get_articles => sub { shift; get_articles(@_) });
+
 app->renderer->add_helper(
     strings => sub {
         my $c = shift;
@@ -142,9 +145,10 @@ app->plugins->add_hook(
     before_dispatch => sub {
         my ($self, $c) = @_;
 
-        foreach my $init (qw/title description/) {
-            $c->stash($init => '') unless $c->stash($init);
-        }
+        # Make the tests happy
+        $c->stash(template_class => __PACKAGE__);
+
+        $c->stash($_ => '') for (qw/title description/);
     }
 );
 
@@ -313,6 +317,7 @@ get '/articles/:year/:month/:alias' => sub {
 
     my ($article, $pager) = get_article($articleid);
     unless ($article) {
+        $c->app->log->debug("Article '$articleid' not found");
         $c->stash(rendered => 1);
         $c->app->static->serve_404($c);
         return 1;
@@ -552,7 +557,7 @@ sub get_article {
       ? $config{articlesdir}
       : app->home->rel_dir($config{articlesdir});
 
-    my $timestamp_re = qr/^$year$month\d\dT.*?-$alias\./;
+    my $timestamp_re = qr/^$year$month\d\d(T.*?)?-$alias\./;
 
     my @files = sort { $b cmp $a } glob($root . '/*.*');
 
@@ -935,6 +940,332 @@ sub _parse_article_pod {
 theme if $config{'theme'};
 
 1;
+
+__DATA__
+
+@@ index.html.ep
+% stash description => config('descr');
+% foreach my $article (@{$articles}) {
+    <div class="text">
+        <h1 class="title">
+%           if ($article->{link}) {
+            &raquo;
+            <a href="<%= $article->{link} %>">
+                <%= $article->{title} %>
+            </a>&nbsp;
+            <a href="<%= url article => $article %>" title="Permalink to '<%= $article->{title} %>'">
+                &#x2605;
+            </a>
+%           }
+%           else {
+            <a href="<%= url article => $article %>">
+                <%= $article->{title} %>
+            </a>
+%           }
+        </h1>
+        <div class="created"><%= date $article->{created} %></div>
+        <div class="tags">
+%   foreach my $tag (@{$article->{tags}}) {
+            <a href="<%= url tag => $tag %>"><%= $tag %></a>
+%   }
+        </div>
+%   if ($article->{preview}) {
+        <%== $article->{preview} %>
+        <div class="more"> &rarr;
+            <a href="<%= url article => $article %>#cut">
+                <%= $article->{preview_link} %>
+            </a>
+        </div>
+%   }
+%   else {
+        <%== $article->{content} %>
+%   }
+    </div>
+% }
+    <div id="pager">
+% if ($pager->{prev}) {
+        &larr; <a href="<%= url pager => $pager->{prev} %>"><%= strings 'later' %></a>
+% }
+% else {
+        <span class="notactive">&larr; <%= strings 'later' %></span>
+% }
+% if ($pager->{next}) {
+        <a href="<%= url pager => $pager->{next} %>"><%= strings 'earlier' %></a> &rarr;
+% }
+% else {
+        <span class="notactive"><%= strings 'earlier' %> &rarr;</span>
+% }
+    </div>
+
+
+@@ archive.html.ep
+% stash title => strings('archive'), description => strings('archive-description');
+% my $tmp;
+% my $new = 0;
+
+<div class="text">
+    <h1><%= strings 'archive' %></h1>
+    <br />
+% foreach my $article (@$articles) {
+%     if (!$tmp || $article->{year} ne $tmp->{year}) {
+    <%== "</ul>" if $tmp %>
+    <b><%= $article->{year} %></b>
+    <ul>
+%     }
+    <li>
+        <a href="<%= url article => $article %>">
+            <%= $article->{title} %>
+        </a>
+        <br />
+        <div class="created"><%= date $article->{created} %></div>
+    </li>
+
+%     $tmp = $article;
+% }
+</div>
+
+
+@@ index.rss.ep
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xml:base="<%= url_abs 'root' %>"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title><%= config 'title' %></title>
+        <link><%= url_abs 'root' %></link>
+        <description><%= config 'descr' %></description>
+        <pubDate><%= date_rss $last_created %></pubDate>
+        <lastBuildDate><%= date_rss $last_created %></lastBuildDate>
+        <generator>Mojolicious::Lite</generator>
+% foreach my $article (@$articles) {
+% my $link = url_abs(article => $article);
+    <item>
+      <title><%= $article->{title} %></title>
+      <link><%= $link %></link>
+      <description>
+        <%= $article->{preview} || $article->{content} %>
+%     if ($article->{link}) {
+%     my $permalink = qq|<a href="$link" title="| . strings('permalink-to') . qq| '$article->{title}'">&#x2605;</a>|;
+      <%= $permalink %>
+%     }
+      </description>
+% foreach my $tag (@{$article->{tags}}) {
+      <category><%= $tag %></category>
+% }
+      <pubDate><%= date_rss($article->{created}) %></pubDate>
+      <guid><%= $link %></guid>
+    </item>
+% }
+    </channel>
+</rss>
+
+
+@@ tags.html.ep
+% stash title => strings('tags'), description => strings('tags-description');
+<div class="text">
+    <h1><%= strings 'tags' %></h1>
+    <br />
+    <div class="tags">
+% foreach my $tag (keys %$tags) {
+        <a href="<%= url tag => $tag %>"><%= $tag %></a>
+        <sub>(<%= $tags->{$tag}->{count} %>)</sub>
+% }
+    </div>
+</div>
+
+
+@@ tag.html.ep
+% stash title => $tag, description => strings('tag-description', $tag);
+<div class="text">
+<h1><%= strings 'tag' %> <%= $tag %>
+<sup><a href="<%= url tag => $tag, format => 'rss' %>"><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
+bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
+LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
+7twz85jWGv8zZHaUmRjlHBnBkRYSCSnog/wzuECZMzxgDNPEW5E0ASHTl4qf6h+KD6iwUpwyuRCw
+kcCCNSPoRsNZKeS31D8WTOHLkqoagbQhV+sV1fDqEJQoidSCCMiMjskZU9HU4AAJpJsC0gokTGVD
+XnfhA0DRL7+Hn38M/foOeOUzOJEZs+2Cqy5F1iXs3PZLYEGl+ux1NF7eAmpfIXedQOjYbYgdh9tk
+Y3oTsDAnNCewPZqF8/SKjdqs+7aCj5wFDkwSlUEvzFgyPK8twNvuBv3GzixgzfgcQmNXqW/68IgE
+is+BvRPQ0fXE9eC7Lvy/Cfi5G8DSQ7DkTrCxKbrgJPSTS5TUDQwfgWvIBO0Dvv+bgPFAz12Dzl4E
+7p5svpQ9p6HLy9DFF2CD+9sCHpG9DgHHeGAExDglZnLAj09APgts2N089pdFsPjmXwIuHAJk8JKL
+rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
+I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
+fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
+rkJggg==" alt="RSS" /></a></sup>
+</h1>
+<br />
+% foreach my $article (@$articles) {
+        <a href="<%= url article => $article %>">
+            <%= $article->{title} %>
+        </a>
+        <br />
+        <div class="created"><%= date $article->{created} %></div>
+% }
+</div>
+
+
+@@ article.html.ep
+% stash title => $article->{title}, description => $article->{description};
+<div class="text">
+<h1 class="title">
+% if ($article->{link}) {
+    &raquo; <a href="<%= $article->{link} %>"><%= $article->{title} %></a>
+% } else {
+    <%= $article->{title} %>
+% }
+</h1>
+<div class="created"><%= date $article->{created} %>
+% if ($article->{created} != $article->{modified}) {
+, modified <span class="modified"><%= date $article->{modified} %></span>
+% }
+</div>
+<div class="tags">
+% foreach my $tag (@{$article->{tags}}) {
+    <a href="<%= url tag => $tag %>"><%= $tag %></a>
+% }
+</div>
+<%== $article->{content} %>
+    <div id="pager">
+% if ($pager->{prev}) {
+        &larr; <a href="<%= url article => $pager->{prev} %>"><%= $pager->{prev}->{title} %></a>&nbsp;|
+% }
+<a href="<%= url_for 'archive' %>"><%= strings('archive') %></a>
+% if ($pager->{next}) {
+      |&nbsp;<a href="<%= url article => $pager->{next} %>"><%= $pager->{next}->{title}%></a> &rarr;
+% }
+    </div>
+</div>
+
+
+@@ page.html.ep
+% stash title => $page->{title}, description => $page->{description};
+<div class="text">
+<h1 class="title">
+<%= $page->{title} %>
+</h1>
+<%== $page->{content} %>
+</div>
+
+
+@@ draft.html.ep
+% stash title => $draft->{title}, description => strings('draft');
+<div class="text">
+<h1 class="title">
+<%= $draft->{title} %>
+</h1>
+<%== $draft->{content} %>
+</div>
+
+
+@@ not_found.html.ep
+% stash title => 'Not found', description => 'Not found', layout => 'wrapper';
+<div class="error">
+<h1>404</h1>
+<br />
+<%= strings 'not-found' %>
+</div>
+
+@@ exception.html.ep
+% stash title => 'Not found', description => 'Not found', layout => 'wrapper';
+<div class="error">
+<h1>500</h1>
+<br />
+<%= strings 'error' %>
+</div>
+
+@@ layouts/wrapper.html.ep
+%# $c->res->headers->content_type('text/html; charset=utf-8');
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+    <head>
+        <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+% if ($description) {
+        <meta name="description" content="<%= $description %>" />
+% }
+% foreach my $meta (@{config('meta')}) {
+        <meta 
+% for my $key (keys %$meta) {
+<%== "$key=\"$meta->{$key}\" " %>
+% }
+/>
+% }
+% foreach my $file (@{config('css')}) {
+        <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
+% }
+% if (!@{config('css')}) {
+        <style type="text/css">
+            html, body {height: 100%;margin:0}
+            body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
+            h1,h2,h3,h4,h5 {font-family: times, "Times New Roman", times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
+            a,a:active {color:#555}
+            a:hover{color:#000}
+            a:visited{color:#000}
+            img{border:0px}
+            pre{border:2px solid #ccc;background:#eee;padding:2em;overflow:auto;overflow-y:visible;width:600px;}
+            #body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
+            #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
+            h1#title{font-size:3em}
+            h2#descr{font-size:1.5em;color:#999}
+            span#author {font-weight:bold}
+            span#about {font-style:italic}
+            #menu {padding-top:1em;text-align:right}
+            #content {background:#FFFFFF}
+            .created, .modified {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
+            .modified {margin:0px}
+            .tags{margin-left:10px;text-transform:uppercase;}
+            .text {padding:2em;}
+            .text h1.title {font-size:2.5em}
+            .error {padding:2em;text-align:center}
+            .more {margin-left:10px}
+            #pager {text-align:center;padding:2em}
+            #pager span.notactive {color:#ccc}
+            #subfooter {padding:2em;border-top:#000000 1px solid}
+            #footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
+            .push {height:6em}
+        </style>
+% }
+        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= url_abs 'index', format => 'rss' %>" />
+    </head>
+    <body>
+        <div id="body">
+            <div id="header">
+                <h1 id="title"><a href="<%= url 'root' %>"><%= config 'title' %></a>
+                <sup><a href="<%= url 'index', format => 'rss' %>"><img src="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
+bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
+LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
+7twz85jWGv8zZHaUmRjlHBnBkRYSCSnog/wzuECZMzxgDNPEW5E0ASHTl4qf6h+KD6iwUpwyuRCw
+kcCCNSPoRsNZKeS31D8WTOHLkqoagbQhV+sV1fDqEJQoidSCCMiMjskZU9HU4AAJpJsC0gokTGVD
+XnfhA0DRL7+Hn38M/foOeOUzOJEZs+2Cqy5F1iXs3PZLYEGl+ux1NF7eAmpfIXedQOjYbYgdh9tk
+Y3oTsDAnNCewPZqF8/SKjdqs+7aCj5wFDkwSlUEvzFgyPK8twNvuBv3GzixgzfgcQmNXqW/68IgE
+is+BvRPQ0fXE9eC7Lvy/Cfi5G8DSQ7DkTrCxKbrgJPSTS5TUDQwfgWvIBO0Dvv+bgPFAz12Dzl4E
+7p5svpQ9p6HLy9DFF2CD+9sCHpG9DgHHeGAExDglZnLAj09APgts2N089pdFsPjmXwIuHAJk8JKL
+rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
+I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
+fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
+rkJggg==" alt="RSS" /></a></sup>
+                </h1>
+                <h2 id="descr"><%= config 'descr' %></h2>
+                <span id="author"><%= config 'author' %></span>, <span id="about"><%= config 'about' %></span>
+                <div id="menu">
+% for (my $i = 0; $i < @{config('menu')}; $i += 2) {
+                    <a href="<%= config('menu')->[$i + 1] %>"><%== config('menu')->[$i] %></a>
+% }
+                </div>
+            </div>
+            <div id="content">
+            <%= content %>
+            </div>
+            <div class="push"></div>
+        </div>
+        <div id="footer"><%== config 'footer' %></div>
+% foreach my $file (@{config('js')}) {
+        <script type="text/javascript" href="/<%= $file %>" />
+% }
+    </body>
+</html>
 
 __END__
 

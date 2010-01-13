@@ -35,15 +35,13 @@ while (@files) {
         if ($file =~ m/\.pm/) {
             $content =~ s/^package.*?\n//;
             $content =~ s/^1;$//m;
+            if ($content =~ s/__DATA__(.*?)(?=__END__)//s) {
+                push @data, $1;
+            }
             if ($content =~ s/__END__(.*)//s) {
                 push @pod, $1;
             }
             push @code, $content;
-        }
-        elsif ($file =~ m/\.ep/) {
-            $file =~ s/^templates\/?//;
-            $content = "@@ $file\n$content";
-            push @data, $content;
         }
     }
     elsif (-d $file) {

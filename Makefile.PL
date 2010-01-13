@@ -54,11 +54,10 @@ sub MY::postamble {
     my $postamble          = <<'MAKE_FRAG';
 BOOTYLICIOUS           = bootylicious
 BOOTYLICIOUS_PM        = lib/Bootylicious.pm
-BOOTYLICIOUS_TEMPLATES = templates/
 ALL_PM                 = $(BOOTYLICIOUS_PM)
 
 $(BOOTYLICIOUS) : $(ALL_PM) squash Makefile
-	$(PERL) squash $(ALL_PM) $(BOOTYLICIOUS_TEMPLATES) > $(BOOTYLICIOUS)
+	$(PERL) squash $(ALL_PM) > $(BOOTYLICIOUS)
 	$(CHMOD) 0755 $(BOOTYLICIOUS)
 	$(PERL) -c $(BOOTYLICIOUS)
 
