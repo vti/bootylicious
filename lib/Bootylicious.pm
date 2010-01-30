@@ -19,7 +19,7 @@ $ENV{LANG} = 'C';
 require Time::Piece;
 require Time::Local;
 
-our $VERSION = '0.910101';
+our $VERSION = '0.910102';
 
 my %config = (
     perl5lib => '',
@@ -557,6 +557,8 @@ sub get_article {
       ? $config{articlesdir}
       : app->home->rel_dir($config{articlesdir});
 
+    $month = sprintf("%02d", $month);
+
     my $timestamp_re = qr/^$year$month\d\d(T.*?)?-$alias\./;
 
     my @files = sort { $b cmp $a } glob($root . '/*.*');
@@ -699,7 +701,7 @@ sub _parse_article {
     my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
 
     my ($year, $month, $day, $hour, $minute, $second);
-    if ($name =~ s/(\d\d\d\d)(\d\d)(\d\d)(?:T(\d\d):?(\d\d):?(\d\d))?-//) {
+    if ($name =~ s/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?-//) {
         ($year, $month, $day, $hour, $minute, $second) =
           ($1, $2, $3, ($4 || '00'), ($5 || '00'), ($6 || '00'));
 
