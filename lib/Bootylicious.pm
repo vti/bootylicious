@@ -152,6 +152,8 @@ app->plugins->add_hook(
     }
 );
 
+plugin charset => {charset => 'utf-8'};
+
 _load_plugins($config{plugins});
 
 sub config {
@@ -567,6 +569,7 @@ sub get_article {
 
     my ($prev, $next);
     for (my $i = 0; $i <= $#files; $i++) {
+        utf8::decode($files[$i]);
         $prev = $files[$i - 1] if $i > 0;
         $next = $files[$i + 1] if $i <= $#files;
 
@@ -786,7 +789,8 @@ sub _parse_article {
         tags            => $metadata->{tags} || [],
         preview         => $preview,
         preview_link    => $preview_link,
-        content         => $content
+        content         => $content,
+        raw_content     => $string,
     };
 }
 
