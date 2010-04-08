@@ -21,7 +21,7 @@ require Time::Local;
 
 our $VERSION = '0.910102';
 
-my %config = (
+my $config = {
     perl5lib => '',
     loglevel => 'debug',
     server   => 'cgi',
@@ -75,7 +75,7 @@ my %config = (
         'error'               => 'Internal error occuried :('
     },
     template_handler => 'ep'
-);
+};
 
 if ($ARGV[0] && $ARGV[0] eq 'inflate') {
     my $command = Mojo::Command->new;
@@ -110,9 +110,9 @@ if ($ARGV[0] && $ARGV[0] eq 'inflate') {
 
 app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
 
-_read_config_from_file(app->home->rel_file('bootylicious.conf'));
+_read_config_from_file();
 
-app->log->level($config{loglevel});
+app->log->level($config->{loglevel});
 
 app->renderer->default_handler(config('template_handler'));
 
@@ -154,16 +154,16 @@ app->plugins->add_hook(
 
 plugin charset => {charset => 'utf-8'};
 
-_load_plugins($config{plugins});
+_load_plugins($config->{plugins});
 
 sub config {
     if (@_) {
-        return $config{$_[0]} if @_ == 1;
+        return $config->{$_[0]} if @_ == 1;
 
-        %config = (%config, @_);
+        $config = {%$config, @_};
     }
 
-    return \%config;
+    return $config;
 }
 
 ladder sub {
@@ -192,7 +192,7 @@ sub index {
 
     my $article = {};
     my ($articles, $pager) =
-      get_articles(limit => $config{pagelimit}, timestamp => $timestamp);
+      get_articles(limit => $config->{pagelimit}, timestamp => $timestamp);
 
     my $last_created  = time;
     my $last_modified = time;
@@ -380,58 +380,37 @@ get '/drafts/:draftid' => sub {
 } => 'draft';
 
 sub theme {
-    my $publicdir = app->home->rel_dir($config{publicdir});
+    my $publicdir = app->home->rel_dir($config->{publicdir});
 
     # CSS, JS auto import
     foreach my $type (qw/css js/) {
-        $config{$type} =
+        $config->{$type} =
           [map { s/^$publicdir\///; $_ }
-              glob("$publicdir/bootylicious/themes/$config{theme}/*.$type")];
+              glob("$publicdir/bootylicious/themes/$config->{theme}/*.$type")];
     }
 }
 
 sub _read_config_from_file {
-    my ($conf_file) = @_;
+    $config = plugin json_config => {default => $config};
 
-    app->log->debug("Reading configuration from $conf_file.");
-
-    if (-e $conf_file) {
-        if (open FILE, "<", $conf_file) {
-            my @lines = <FILE>;
-            close FILE;
-
-            my $line = '';
-            foreach my $l (@lines) {
-                next if $l =~ m/^\s*#/;
-                $line .= $l;
-            }
-
-            my $json = Mojo::JSON->new;
-            my $json_config = $json->decode($line) || {};
-            die $json->error if !$json_config && $json->error;
-
-            %config = (%config, %$json_config);
-
-            unshift @INC, $_
-              for (
-                ref $config{perl5lib} eq 'ARRAY'
-                ? @{$config{perl5lib}}
-                : $config{perl5lib});
-        }
-    }
-    else {
-        app->log->debug("Configuration is not available.");
+    # Additional Perl modules
+    if ($config->{perl5lib}) {
+        unshift @INC, $_
+          for (
+            ref $config->{perl5lib} eq 'ARRAY'
+            ? @{$config->{perl5lib}}
+            : $config->{perl5lib});
     }
 
-    $ENV{SCRIPT_NAME} = $config{base} if defined $config{base};
+    $ENV{SCRIPT_NAME} = $config->{base} if defined $config->{base};
 
     # set proper templates base dir, if defined
-    app->renderer->root(app->home->rel_dir($config{templatesdir}))
-        if defined $config{templatesdir};
+    app->renderer->root(app->home->rel_dir($config->{templatesdir}))
+        if defined $config->{templatesdir};
 
     # set proper public base dir, if defined
-    app->static->root(app->home->rel_dir($config{publicdir}))
-        if defined $config{publicdir};
+    app->static->root(app->home->rel_dir($config->{publicdir}))
+        if defined $config->{publicdir};
 }
 
 sub _load_plugins {
@@ -495,9 +474,9 @@ sub get_articles {
     $params{limit} ||= 0;
 
     my $root =
-      ($config{articlesdir} =~ m/^\//)
-      ? $config{articlesdir}
-      : app->home->rel_dir($config{articlesdir});
+      ($config->{articlesdir} =~ m/^\//)
+      ? $config->{articlesdir}
+      : app->home->rel_dir($config->{articlesdir});
 
     my $pager = {};
 
@@ -555,9 +534,9 @@ sub get_article {
     return unless $year && $month && $alias;
 
     my $root =
-      ($config{articlesdir} =~ m/^\//)
-      ? $config{articlesdir}
-      : app->home->rel_dir($config{articlesdir});
+      ($config->{articlesdir} =~ m/^\//)
+      ? $config->{articlesdir}
+      : app->home->rel_dir($config->{articlesdir});
 
     $month = sprintf("%02d", $month);
 
@@ -600,9 +579,9 @@ sub get_draft {
     return unless $alias;
 
     my $root =
-      ($config{draftsdir} =~ m/^\//)
-      ? $config{draftsdir}
-      : app->home->rel_dir($config{draftsdir});
+      ($config->{draftsdir} =~ m/^\//)
+      ? $config->{draftsdir}
+      : app->home->rel_dir($config->{draftsdir});
 
     my @files = glob($root . '/' . '*' . $alias . ".*");
 
@@ -621,9 +600,9 @@ sub get_page {
     return unless $pageid;
 
     my $root =
-      ($config{pagesdir} =~ m/^\//)
-      ? $config{pagesdir}
-      : app->home->rel_dir($config{pagesdir});
+      ($config->{pagesdir} =~ m/^\//)
+      ? $config->{pagesdir}
+      : app->home->rel_dir($config->{pagesdir});
 
     my @files = glob($root . '/' . $pageid . ".*");
 
@@ -751,12 +730,12 @@ sub _parse_article {
 
     my $metadata = _parse_metadata(\$string);
 
-    my $cuttag = $config{cuttag};
+    my $cuttag = $config->{cuttag};
     my ($head, $tail) = ($string, '');
     my $preview_link = '';
     if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
         $tail = $3;
-        $preview_link = $2 || $config{cuttext};
+        $preview_link = $2 || $config->{cuttext};
     }
 
     my $data = $parser->($head, $tail);
@@ -943,7 +922,7 @@ sub _parse_article_pod {
     };
 }
 
-theme if $config{'theme'};
+theme if $config->{'theme'};
 
 1;
 
