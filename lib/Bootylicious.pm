@@ -123,7 +123,7 @@ app->plugins->add_hook(
 
 plugin charset => {charset => 'utf-8'};
 
-_load_plugins($config->{plugins});
+_load_plugins();
 
 sub config {
     if (@_) {
@@ -391,7 +391,7 @@ sub _load_plugins {
     my @plugins;
 
     my $prev;
-    while (my $plugin = shift @$plugins_arrayref) {
+    while (my $plugin = shift @{$config->{plugins}}) {
         if (ref($plugin) eq 'HASH') {
             next unless $plugins[-1];
 
@@ -402,7 +402,9 @@ sub _load_plugins {
         }
     }
 
+    push @{app->plugins->namespaces}, $_ for @{$config->{plugins_namespaces}};
     push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+
     foreach my $plugin (@plugins) {
         plugin($plugin->{name} => $plugin->{args});
     }
