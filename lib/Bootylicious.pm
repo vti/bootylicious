@@ -77,37 +77,6 @@ my $config = {
     template_handler => 'ep'
 };
 
-if ($ARGV[0] && $ARGV[0] eq 'inflate') {
-    my $command = Mojo::Command->new;
-    $command->create_rel_dir('templates');
-
-    foreach my $template (
-        qw|index.html
-        archive.html
-        index.rss
-        tags.html
-        tag.html
-        article.html
-        page.html
-        draft.html
-        not_found.html
-        exception.html
-        layouts/wrapper.html
-        |
-      )
-    {
-        my $data = $command->get_data("$template.ep", 'main');
-
-        $command->write_rel_file("templates/$template.ep", $data);
-    }
-
-    foreach my $dir (qw/articlesdir draftsdir pagesdir publicdir/) {
-        $command->create_rel_dir(config($dir));
-    }
-
-    exit(0);
-}
-
 app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
 
 _read_config_from_file();

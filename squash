@@ -55,7 +55,7 @@ while (@files) {
 print "#!/usr/bin/env perl\n\n";
 print $COMMENT;
 print $_ for @code;
-print q/shagadelic(@ARGV ? @ARGV : $config{'server'});/, "\n";
+print q/shagadelic(@ARGV ? @ARGV : $config->{'server'});/, "\n";
 print "1;\n";
 print "__DATA__\n\n";
 print $_ for @data;
