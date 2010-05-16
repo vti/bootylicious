@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 20;
+use Test::More tests => 29;
 use Test::Mojo;
 
 BEGIN { require FindBin; $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/../"; }
@@ -31,4 +31,16 @@ $t->get_ok('/tags.html')->status_is(200)->content_like(qr/Tags/);
 
 # 404
 $t->get_ok('/foo.html')->status_is(404)
+  ->content_like(qr/The page you are looking for was not found/);
+
+# 404 Articles
+$t->get_ok('/articles/foo.html')->status_is(404)
+  ->content_like(qr/The page you are looking for was not found/);
+
+# 404 Drafts
+$t->get_ok('/drafts/foo.html')->status_is(404)
+  ->content_like(qr/The page you are looking for was not found/);
+
+# 404 Pages
+$t->get_ok('/pages/foo.html')->status_is(404)
   ->content_like(qr/The page you are looking for was not found/);

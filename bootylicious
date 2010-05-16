@@ -70,6 +70,8 @@ app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
 
 _read_config_from_file();
 
+plugin charset => {charset => 'utf-8'};
+
 app->log->level($config->{loglevel});
 
 app->renderer->default_handler(config('template_handler'));
@@ -85,7 +87,7 @@ app->renderer->add_helper(get_articles => sub { shift; get_articles(@_) });
 
 app->renderer->add_helper(
     strings => sub {
-        my $c = shift;
+        my $self = shift;
 
         my $string = config('strings')->{$_[0]};
 
@@ -96,19 +98,6 @@ app->renderer->add_helper(
         return $string;
     }
 );
-
-app->plugins->add_hook(
-    before_dispatch => sub {
-        my ($self, $c) = @_;
-
-        # Make the tests happy
-        $c->stash(template_class => __PACKAGE__);
-
-        $c->stash($_ => '') for (qw/title description/);
-    }
-);
-
-plugin charset => {charset => 'utf-8'};
 
 _load_plugins();
 
@@ -138,13 +127,14 @@ ladder sub {
 
     $self->redirect_to($canonical_location);
 
+    # Stop
     return 0;
 };
 
 sub index {
-    my $c = shift;
+    my $self = shift;
 
-    my $timestamp = $c->req->param('timestamp') || 0;
+    my $timestamp = $self->req->param('timestamp') || 0;
 
     my $article = {};
     my ($articles, $pager) =
@@ -158,41 +148,37 @@ sub index {
         $last_created  = $articles->[0]->{created};
         $last_modified = $article->{modified};
 
-        return 1 unless _is_modified($c, $last_modified);
+        return 1 unless _is_modified($self, $last_modified);
     }
 
-    my $later = 0;
-
-    $c->stash(
+    $self->stash(
         article  => $article,
         articles => $articles,
         pager    => $pager
     );
 
-    $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+    $self->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
-    $c->stash(template => 'index');
+    $self->stash(template => 'index');
 
-    if ($c->stash('format') && $c->stash('format') eq 'rss') {
-        $c->stash(
+    if ($self->stash('format') && $self->stash('format') eq 'rss') {
+        $self->stash(
             last_created  => $last_created,
             last_modified => $last_modified,
         );
     }
     else {
-        $c->stash(layout => 'wrapper', title => '');
+        $self->stash(layout => 'wrapper', title => '');
     }
-
-    $c->render;
 }
 
 get '/' => \&index => 'root';
 get '/index' => \&index => 'index';
 
 get '/archive' => sub {
-    my $c = shift;
+    my $self = shift;
 
-    my $root = $c->app->home;
+    my $root = $self->app->home;
 
     my $last_modified = Mojo::Date->new;
 
@@ -200,24 +186,22 @@ get '/archive' => sub {
     if (@$articles) {
         $last_modified = $articles->[0]->{modified};
 
-        return 1 unless _is_modified($c, $last_modified);
+        return 1 unless _is_modified($self, $last_modified);
     }
 
-    $c->res->headers->header('Last-Modified' => $last_modified);
+    $self->res->headers->header('Last-Modified' => $last_modified);
 
-    $c->stash(
+    $self->stash(
         layout        => 'wrapper',
         articles      => $articles,
         last_modified => $last_modified,
     );
-
-    $c->render;
 } => 'archive';
 
 get '/tags/:tag' => sub {
-    my $c = shift;
+    my $self = shift;
 
-    my $tag = $c->stash('tag');
+    my $tag = $self->stash('tag');
 
     my ($articles) = get_articles(limit => 0);
 
@@ -228,111 +212,84 @@ get '/tags/:tag' => sub {
           } @$articles
     ];
 
-    unless (@$articles) {
-        $c->stash(rendered => 1);
-        $c->app->static->serve_404($c);
-        return 1;
-    }
+    return $self->render_not_found unless @$articles;
 
     my $last_modified = $articles->[0]->{modified};
-    return 1 unless _is_modified($c, $last_modified);
+    return 1 unless _is_modified($self, $last_modified);
 
-    $c->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+    $self->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
 
     my $last_created = $articles->[0]->{created};
 
-    $c->stash(articles => $articles);
+    $self->stash(articles => $articles);
 
-    if ($c->stash('format') && $c->stash('format') eq 'rss') {
-        $c->stash(
+    if ($self->stash('format') && $self->stash('format') eq 'rss') {
+        $self->stash(
             last_modified => $last_modified,
             last_created  => $last_created,
             template      => 'index'
         );
     }
     else {
-        $c->stash(layout => 'wrapper');
+        $self->stash(layout => 'wrapper');
     }
-
-    $c->render;
 } => 'tag';
 
 get '/tags' => sub {
-    my $c = shift;
+    my $self = shift;
 
     my $tags = get_tags();
 
-    $c->stash(layout => 'wrapper',  tags => $tags);
-
-    $c->render;
+    $self->stash(layout => 'wrapper',  tags => $tags);
 } => 'tags';
 
 get '/articles/:year/:month/:alias' => sub {
-    my $c = shift;
+    my $self = shift;
 
     my $articleid =
-      $c->stash('year') . '/' . $c->stash('month') . '/' . $c->stash('alias');
+      $self->stash('year') . '/' . $self->stash('month') . '/' . $self->stash('alias');
 
     my ($article, $pager) = get_article($articleid);
-    unless ($article) {
-        $c->app->log->debug("Article '$articleid' not found");
-        $c->stash(rendered => 1);
-        $c->app->static->serve_404($c);
-        return 1;
-    }
+    return $self->render_not_found unless $article;
 
-    return 1 unless _is_modified($c, $article->{modified});
+    return 1 unless _is_modified($self, $article->{modified});
 
-    $c->stash(article => $article, pager => $pager, layout => 'wrapper');
+    $self->stash(article => $article, pager => $pager, layout => 'wrapper');
 
-    $c->res->headers->header(
+    $self->res->headers->header(
         'Last-Modified' => Mojo::Date->new($article->{modified}));
-
-    $c->render;
 } => 'article';
 
 get '/pages/:pageid' => sub {
-    my $c = shift;
+    my $self = shift;
 
-    my $pageid = $c->stash('pageid');
+    my $pageid = $self->stash('pageid');
 
     my $page = get_page($pageid);
-    unless ($page) {
-        $c->stash(rendered => 1);
-        $c->app->static->serve_404($c);
-        return 1;
-    }
+    return $self->render_not_found unless $page;
 
     #return 1 unless _is_modified($c, $page->{modified});
 
-    $c->stash(layout => 'wrapper', page => $page);
+    $self->stash(layout => 'wrapper', page => $page);
 
-    $c->res->headers->header(
+    $self->res->headers->header(
         'Last-Modified' => Mojo::Date->new($page->{modified}));
-
-    $c->render;
 } => 'page';
 
 get '/drafts/:draftid' => sub {
-    my $c = shift;
+    my $self = shift;
 
-    my $draftid = $c->stash('draftid');
+    my $draftid = $self->stash('draftid');
 
     my $draft = get_draft($draftid);
-    unless ($draft) {
-        $c->stash(rendered => 1);
-        $c->app->static->serve_404($c);
-        return 1;
-    }
+    return $self->render_not_found unless $draft;
 
     #return 1 unless _is_modified($c, $page->{modified});
 
-    $c->stash(layout => 'wrapper', draft => $draft);
+    $self->stash(layout => 'wrapper', draft => $draft);
 
-    $c->res->headers->header(
+    $self->res->headers->header(
         'Last-Modified' => Mojo::Date->new($draft->{modified}));
-
-    $c->render;
 } => 'draft';
 
 sub theme {
@@ -398,16 +355,16 @@ sub _load_plugins {
 }
 
 sub _is_modified {
-    my $c = shift;
+    my $self = shift;
     my ($last_modified) = @_;
 
-    my $date = $c->req->headers->header('If-Modified-Since');
+    my $date = $self->req->headers->header('If-Modified-Since');
     return 1 unless $date;
 
     return 1 unless Mojo::Date->new($date)->epoch == $last_modified;
 
-    $c->res->code(304);
-    $c->stash(rendered => 1);
+    $self->res->code(304);
+    $self->stash(rendered => 1);
 
     return 0;
 }
@@ -575,7 +532,7 @@ sub get_page {
 }
 
 sub url {
-    my $c = shift;
+    my $self = shift;
     my $name = shift;
     my $value = shift;
 
@@ -583,13 +540,13 @@ sub url {
         return '';
     }
     elsif ($name eq 'root') {
-        return $c->url_for(index => (format => '', @_));
+        return $self->url_for(index => (format => '', @_));
     }
     elsif ($name eq 'index') {
-        return $c->url_for(index => ($value, @_));
+        return $self->url_for(index => ($value, @_));
     }
     elsif ($name eq 'article') {
-        return $c->url_for(
+        return $self->url_for(
             article => (
                 year   => $value->{year},
                 month  => $value->{month},
@@ -599,10 +556,10 @@ sub url {
         );
     }
     elsif ($name eq 'tag') {
-        return $c->url_for(tag => (tag => $value, format => 'html', @_));
+        return $self->url_for(tag => (tag => $value, format => 'html', @_));
     }
     elsif ($name eq 'pager') {
-        return $c->url_for('index', format => 'html')
+        return $self->url_for('index', format => 'html')
           . "?timestamp=$value";
     }
 }
@@ -610,7 +567,7 @@ sub url {
 sub url_abs { url(@_)->to_abs }
 
 sub date {
-    my $c = shift;
+    my $self = shift;
     my $epoch = shift;
     my $fmt = shift;
 
@@ -622,7 +579,7 @@ sub date {
 }
 
 sub date_rss {
-    my $c = shift;
+    my $self = shift;
     my $epoch = shift;
 
     return Mojo::Date->new($epoch)->to_string;
@@ -773,10 +730,10 @@ sub _get_parser {
             #my $loader = Mojo::Loader->new;
             #if (my $e = $loader->load($parser_class)) {
                 #if (ref $e) {
-                    #$c->app->log->error($e);
+                    #$self->app->log->error($e);
                 #}
                 #else {
-                    #$c->app->log->error("Unknown parser: $parser_class");
+                    #$self->app->log->error("Unknown parser: $parser_class");
                 #}
                 #return;
             #}
@@ -1118,7 +1075,6 @@ rkJggg==" alt="RSS" /></a></sup>
 </div>
 
 @@ layouts/wrapper.html.ep
-%# $c->res->headers->content_type('text/html; charset=utf-8');
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
