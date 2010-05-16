@@ -7,18 +7,19 @@ use Test::More tests => 22;
 
 BEGIN { require FindBin; $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/../"; }
 
-use Bootylicious;
+require "$FindBin::Bin/../bootylicious";
 
-my $app = Bootylicious::app;
+my $app = app();
+
 $app->log->level('error');
 
 my $articlesdir = "$FindBin::Bin/articles";
 mkdir $articlesdir;
 unlink $_ for glob("$articlesdir/*");
 
-Bootylicious::config(articlesdir => $articlesdir);
+config(articlesdir => $articlesdir);
 
-my ($articles, $pager) = Bootylicious::get_articles();
+my ($articles, $pager) = get_articles();
 is(@$articles, 0);
 is_deeply($pager, {});
 
@@ -30,32 +31,32 @@ for (qw/ one two three four five six seven eight nine ten/) {
     $c++
 }
 
-($articles, $pager) = Bootylicious::get_articles();
+($articles, $pager) = get_articles();
 is(@$articles, 10);
 is_deeply($pager, {});
 
-($articles, $pager) = Bootylicious::get_articles(limit => 3);
+($articles, $pager) = get_articles(limit => 3);
 is(@$articles, 3);
 is ($articles->[0]->{title}, 'ten');
 is ($articles->[1]->{title}, 'nine');
 is ($articles->[2]->{title}, 'eight');
 is_deeply($pager, {next => '20090907T10:10:10'});
 
-($articles, $pager) = Bootylicious::get_articles(limit => 3, timestamp => '20090907T10:10:10');
+($articles, $pager) = get_articles(limit => 3, timestamp => '20090907T10:10:10');
 is(@$articles, 3);
 is ($articles->[0]->{title}, 'seven');
 is ($articles->[1]->{title}, 'six');
 is ($articles->[2]->{title}, 'five');
 is_deeply($pager, {prev => '20090910T10:10:10', next => '20090904T10:10:10'});
 
-($articles, $pager) = Bootylicious::get_articles(limit => 3, timestamp => '20090904T10:10:10');
+($articles, $pager) = get_articles(limit => 3, timestamp => '20090904T10:10:10');
 is(@$articles, 3);
 is ($articles->[0]->{title}, 'four');
 is ($articles->[1]->{title}, 'three');
 is ($articles->[2]->{title}, 'two');
 is_deeply($pager, {prev => '20090907T10:10:10', next => '20090901T10:10:10'});
 
-($articles, $pager) = Bootylicious::get_articles(limit => 3, timestamp => '20090901T10:10:10');
+($articles, $pager) = get_articles(limit => 3, timestamp => '20090901T10:10:10');
 is(@$articles, 1);
 is ($articles->[0]->{title}, 'one');
 is_deeply($pager, {prev => '20090904T10:10:10'});

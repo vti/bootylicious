@@ -11,7 +11,7 @@ my $mm = $ExtUtils::MakeMaker::VERSION;
 
 WriteMakefile(
     NAME         => 'Bootylicious',
-    VERSION_FROM => 'lib/Bootylicious.pm',
+    VERSION_FROM => 'bootylicious',
     ABSTRACT     => 'Blog software',
     AUTHOR       => 'Viacheslav Tykhanovskyi <vti@cpan.org>',
 
@@ -47,23 +47,5 @@ WriteMakefile(
     },
     test => {TESTS => 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t'}
 );
-
-package MY;
-
-sub MY::postamble {
-    my $postamble          = <<'MAKE_FRAG';
-BOOTYLICIOUS           = bootylicious
-BOOTYLICIOUS_PM        = lib/Bootylicious.pm
-ALL_PM                 = $(BOOTYLICIOUS_PM)
-
-$(BOOTYLICIOUS) : $(ALL_PM) squash Makefile
-	$(PERL) squash $(ALL_PM) > $(BOOTYLICIOUS)
-	$(CHMOD) 0755 $(BOOTYLICIOUS)
-	$(PERL) -c $(BOOTYLICIOUS)
-
-MAKE_FRAG
-
-    return $postamble;
-}
 
 1;

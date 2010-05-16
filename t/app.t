@@ -8,9 +8,9 @@ use Test::Mojo;
 
 BEGIN { require FindBin; $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/../"; }
 
-use Bootylicious;
+require "$FindBin::Bin/../bootylicious";
 
-my $app = Bootylicious::app;
+my $app = app();
 $app->log->level('error');
 
 my $t = Test::Mojo->new;
