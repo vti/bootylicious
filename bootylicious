@@ -11,18 +11,19 @@ use Mojo::JSON;
 use Mojo::Loader;
 use Mojo::Template;
 
-use Pod::Simple::HTML;
 require File::Basename;
 
 $ENV{LANG} = 'C';
 require Time::Piece;
 require Time::Local;
 
+use constant MARKDOWN => eval { require Text::Markdown; 1 };
+
 our $VERSION = '0.910102';
 
 my $config = {
     perl5lib     => '',
-    loglevel     => 'fatal',
+    loglevel     => 'error',
     server       => 'cgi',
     author       => 'whoami',
     email        => '',
@@ -71,6 +72,7 @@ app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
 _read_config_from_file();
 
 plugin charset => {charset => 'utf-8'};
+plugin 'pod_renderer';
 
 app->log->level($config->{loglevel});
 
@@ -83,7 +85,7 @@ app->renderer->add_helper(url      => \&url);
 app->renderer->add_helper(url_abs  => \&url_abs);
 
 # Helpers for plugins
-app->renderer->add_helper(get_articles => sub { shift; get_articles(@_) });
+#app->renderer->add_helper(get_articles => sub { get_articles(@_) });
 
 app->renderer->add_helper(
     strings => sub {
@@ -138,7 +140,7 @@ sub index {
 
     my $article = {};
     my ($articles, $pager) =
-      get_articles(limit => $config->{pagelimit}, timestamp => $timestamp);
+      get_articles($self, limit => $config->{pagelimit}, timestamp => $timestamp);
 
     my $last_created  = time;
     my $last_modified = time;
@@ -182,7 +184,7 @@ get '/archive' => sub {
 
     my $last_modified = Mojo::Date->new;
 
-    my ($articles) = get_articles(limit => 0);
+    my ($articles) = get_articles($self, limit => 0);
     if (@$articles) {
         $last_modified = $articles->[0]->{modified};
 
@@ -203,7 +205,7 @@ get '/tags/:tag' => sub {
 
     my $tag = $self->stash('tag');
 
-    my ($articles) = get_articles(limit => 0);
+    my ($articles) = get_articles($self, limit => 0);
 
     $articles = [
         grep {
@@ -238,7 +240,7 @@ get '/tags/:tag' => sub {
 get '/tags' => sub {
     my $self = shift;
 
-    my $tags = get_tags();
+    my $tags = get_tags($self);
 
     $self->stash(layout => 'wrapper',  tags => $tags);
 } => 'tags';
@@ -249,7 +251,7 @@ get '/articles/:year/:month/:alias' => sub {
     my $articleid =
       $self->stash('year') . '/' . $self->stash('month') . '/' . $self->stash('alias');
 
-    my ($article, $pager) = get_article($articleid);
+    my ($article, $pager) = get_article($self, $articleid);
     return $self->render_not_found unless $article;
 
     return 1 unless _is_modified($self, $article->{modified});
@@ -265,7 +267,7 @@ get '/pages/:pageid' => sub {
 
     my $pageid = $self->stash('pageid');
 
-    my $page = get_page($pageid);
+    my $page = get_page($self, $pageid);
     return $self->render_not_found unless $page;
 
     #return 1 unless _is_modified($c, $page->{modified});
@@ -281,7 +283,7 @@ get '/drafts/:draftid' => sub {
 
     my $draftid = $self->stash('draftid');
 
-    my $draft = get_draft($draftid);
+    my $draft = get_draft($self, $draftid);
     return $self->render_not_found unless $draft;
 
     #return 1 unless _is_modified($c, $page->{modified});
@@ -370,9 +372,11 @@ sub _is_modified {
 }
 
 sub get_tags {
+    my $self = shift;
+
     my $tags = {};
 
-    my ($articles) = get_articles(limit => 0);
+    my ($articles) = get_articles($self, limit => 0);
 
     foreach my $article (@$articles) {
         foreach my $tag (@{$article->{tags}}) {
@@ -385,6 +389,7 @@ sub get_tags {
 }
 
 sub get_articles {
+    my $self = shift;
     my %params = @_;
     $params{limit} ||= 0;
 
@@ -432,7 +437,7 @@ sub get_articles {
 
     my @articles;
     foreach my $file (@files) {
-        my $data = _parse_article($file);
+        my $data = _parse_article($self, $file);
         next unless $data && %$data;
 
         push @articles, $data;
@@ -442,6 +447,7 @@ sub get_articles {
 }
 
 sub get_article {
+    my $self = shift;
     my $articleid = shift;
     return unless $articleid;
 
@@ -479,17 +485,18 @@ sub get_article {
     my $pager = {};
 
     if ($next && $next ne $path) {
-        ($pager->{next}) = _parse_article($next);
+        ($pager->{next}) = _parse_article($self, $next);
     }
 
     if ($prev && $prev ne $path) {
-        ($pager->{prev}) = _parse_article($prev);
+        ($pager->{prev}) = _parse_article($self, $prev);
     }
 
-    return (_parse_article($path), $pager);
+    return (_parse_article($self, $path), $pager);
 }
 
 sub get_draft {
+    my $self = shift;
     my $alias = shift;
     return unless $alias;
 
@@ -507,10 +514,11 @@ sub get_draft {
     my $path = $files[0];
     return unless $path && -r $path;
 
-    return _parse_article($path);
+    return _parse_article($self, $path);
 }
 
 sub get_page {
+    my $self = shift;
     my $pageid = shift;
     return unless $pageid;
 
@@ -528,7 +536,7 @@ sub get_page {
     my $path = $files[0];
     return unless $path && -r $path;
 
-    return _parse_article($path);
+    return _parse_article($self, $path);
 }
 
 sub url {
@@ -587,6 +595,7 @@ sub date_rss {
 
 my %_articles;
 sub _parse_article {
+    my $self = shift;
     my $path = shift;
     return unless $path;
 
@@ -633,12 +642,8 @@ sub _parse_article {
         return;
     }
 
-    unless (open FILE, "<:encoding(UTF-8)", $path) {
-        app->log->error("Can't open file: $path: $!");
-        return;
-    }
-    my $string = join("", <FILE>);
-    close FILE;
+    my $string = _slurp_file($path);
+    return unless defined $string;
 
     my $parser = _get_parser($ext);
     return unless $parser;
@@ -653,17 +658,21 @@ sub _parse_article {
         $preview_link = $2 || $config->{cuttext};
     }
 
-    my $data = $parser->($head, $tail);
-    unless ($data) {
-        app->log->debug("Ignoring $path: parser error");
-        return;
-    }
+    $head = $parser->($self, $head);
+    app->log->debug('Error while parsing ' . $metadata->{title}), return
+      unless defined $head;
+    $tail = $parser->($self, $tail) if $tail;
 
-    my $content =
-        $data->{tail}
-      ? $data->{head} . '<a name="cut"></a>' . $data->{tail}
-      : $data->{head};
-    my $preview = $data->{tail} ? $data->{head} : '';
+    my ($preview, $content);
+
+    if ($tail) {
+        $content = $head . '<a name="cut"></a>' . $tail;
+        $preview = $head;
+    }
+    else {
+        $content = $head;
+        $preview = '';
+    }
 
     return $_articles{$path} = {
         path            => $path,
@@ -674,9 +683,6 @@ sub _parse_article {
         year            => $year,
         month           => $month,
         day             => $day,
-        hour            => $hour,
-        minute          => $minute,
-        second          => $second,
         title           => $metadata->{title} || $name,
         description     => $metadata->{description} || '',
         link            => $metadata->{link} || '',
@@ -688,61 +694,22 @@ sub _parse_article {
     };
 }
 
+sub _slurp_file {
+    my $file = shift;
+
+    open my $fh, '<:encoding(UTF-8)', $file or return;
+    return do { local $/; <$fh> };
+}
+
 my %_parsers;
 sub _get_parser {
     my $ext = shift;
 
-    my $parser = \&_parse_article_pod;
-    if ($ext eq 'ep') {
-        $parser = sub {
-            my ($head_string, $tail_string) = @_;
+    return \&_parse_pod if $ext eq 'pod';
 
-            my $head  = '';
-            my $tail  = '';
+    return \&_parse_md if $ext eq 'md' && MARKDOWN;
 
-            my $mt = Mojo::Template->new;
-
-            $head = $mt->render($head_string);
-
-            if ($tail_string) {
-                $tail = $mt->render($tail_string);
-            }
-
-            return {
-                head  => $head,
-                tail  => $tail
-            };
-          }
-    }
-    elsif ($ext ne 'pod') {
-        my $parser_class =
-          'Bootylicious::Parser::' . Mojo::ByteStream->new($ext)->camelize;
-
-        if ($_parsers{$parser_class}) {
-            $parser = $_parsers{$parser_class};
-        }
-        else {
-            eval "require $parser_class";
-            if ($@) {
-                app->log->error($@);
-                return;
-            }
-            #my $loader = Mojo::Loader->new;
-            #if (my $e = $loader->load($parser_class)) {
-                #if (ref $e) {
-                    #$self->app->log->error($e);
-                #}
-                #else {
-                    #$self->app->log->error("Unknown parser: $parser_class");
-                #}
-                #return;
-            #}
-
-            $parser = $_parsers{$parser_class} = $parser_class->new->parser_cb;
-        }
-    }
-
-    return $parser;
+    return;
 }
 
 sub _parse_metadata {
@@ -775,67 +742,8 @@ sub _parse_metadata {
     return $metadata;
 }
 
-sub _parse_article_pod {
-    my ($head_string, $tail_string) = @_;
-
-    my $parser = Pod::Simple::HTML->new;
-
-    $parser->force_title('');
-    $parser->html_header_before_title('');
-    $parser->html_header_after_title('');
-    $parser->html_footer('');
-
-    my $title = '';
-    my $head  = '';
-    my $tail  = '';
-
-    $parser->output_string(\$head);
-    $head_string = "=pod\n\n$head_string";
-    eval { $parser->parse_string_document($head_string) };
-    return if $@;
-
-    # Hacking
-    $head =~ s{<a name='___top' class='dummyTopAnchor'\s*></a>\n}{}g;
-    $head =~ s{<a class='u'.*?name=".*?"\s*>(.*?)</a>}{$1}sg;
-    $head =~ s{^\s*<h1>NAME</h1>\s*<p>(.*?)</p>}{}sg;
-    $title = $1;
-
-    if ($tail_string) {
-        $tail_string = "=pod\n$tail_string";
-        my $parser = Pod::Simple::HTML->new;
-
-        $parser->force_title('');
-        $parser->html_header_before_title('');
-        $parser->html_header_after_title('');
-        $parser->html_footer('');
-
-        $parser->output_string(\$tail);
-        eval { $parser->parse_string_document($tail_string) };
-        return if $@;
-
-        $tail =~ s{<a name='___top' class='dummyTopAnchor'\s*></a>\n}{}g;
-        $tail =~ s{<a class='u'.*?name=".*?"\s*>(.*?)</a>}{$1}sg;
-    }
-
-    my $link = '';
-    if ($head =~ s{^\s*<h1>LINK</h1>\s*<p>(.*?)</p>}{}sg) {
-        $link = $1;
-    }
-
-    my $tags = [];
-    if ($head =~ s{^\s*<h1>TAGS</h1>\s*<p>(.*?)</p>}{}sg) {
-        my $list = $1; $list =~ s/(?:\r|\n)*//gs;
-        @$tags = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $list);
-    }
-
-    return {
-        title => $title,
-        link  => $link,
-        tags  => $tags,
-        head  => $head,
-        tail  => $tail
-    };
-}
+sub _parse_pod { $_[0]->helper(pod_to_html => $_[1]) }
+sub _parse_md { Text::Markdown->new->markdown($_[1]) }
 
 theme if $config->{'theme'};
 
