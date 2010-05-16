@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-BEGIN { use FindBin; use lib "$FindBin::Bin/mojo/lib" }
+BEGIN { use FindBin; unshift @INC, "$FindBin::Bin/mojo/lib" }
 
 use Mojolicious::Lite;
 
@@ -314,7 +314,7 @@ sub _read_config_from_file {
 
     # Additional Perl modules
     if ($config->{perl5lib}) {
-        unshift @INC, $_
+        push @INC, $_
           for (
             ref $config->{perl5lib} eq 'ARRAY'
             ? @{$config->{perl5lib}}
