@@ -755,6 +755,11 @@ __DATA__
 
 @@ index.html.ep
 % stash description => config('descr');
+% if (!@{$articles}) {
+<div class="text center">
+Nothing here yet :(
+</div>
+% }
 % foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title">
@@ -1032,6 +1037,7 @@ rkJggg==" alt="RSS" /></a></sup>
             #pager span.notactive {color:#ccc}
             #subfooter {padding:2em;border-top:#000000 1px solid}
             #footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
+            .center {text-align:center}
             .push {height:6em}
         </style>
 % }
