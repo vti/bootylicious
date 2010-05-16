@@ -116,13 +116,17 @@ sub config {
 ladder sub {
     my $self = shift;
 
+    my $path = $self->req->url->path;
+
     return 1 if $self->stash->{format};
 
-    return 1 unless $self->req->url;
+    return 1 unless $path;
 
-    return 1 if $self->req->url =~ m{/$};
+    return 1 if $path =~ m{/$};
 
-    my $canonical_location = $self->req->url->to_abs . '.html';
+    return 1 if $path =~ m{\.html$};
+
+    my $canonical_location = $self->req->url->clone->path($path . '.html')->to_abs;
 
     $self->app->log->debug("Path is not canonical: " . $self->req->url);
     $self->app->log->debug("Redirecting to: " . $canonical_location);
