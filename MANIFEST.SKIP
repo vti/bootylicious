@@ -8,3 +8,4 @@ mojo
 .json$
 ^articles\/
 .bak$
+.tar.gz$
