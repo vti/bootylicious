@@ -13,7 +13,8 @@ use Mojo::Template;
 
 require File::Basename;
 
-$ENV{LANG} = 'C';
+# Don't use set locale unless it is explicitly specified via a config file
+$ENV{LC_ALL} = 'C';
 require Time::Piece;
 require Time::Local;
 
@@ -24,7 +25,6 @@ our $VERSION = '0.910102';
 my $config = {
     perl5lib     => '',
     loglevel     => 'error',
-    server       => 'cgi',
     author       => 'whoami',
     email        => '',
     title        => 'Just another blog',
@@ -71,6 +71,7 @@ app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
 
 _read_config_from_file();
 
+plugin 'tag_helpers';
 plugin charset => {charset => 'utf-8'};
 plugin 'pod_renderer';
 
@@ -118,7 +119,8 @@ ladder sub {
 
     my $path = $self->req->url->path;
 
-    return 1 if $self->stash->{format};
+    my $format = $self->stash->{format};
+    return 1 if $format && $format ne 'html';
 
     return 1 unless $path;
 
@@ -751,7 +753,7 @@ sub _parse_md { Text::Markdown->new->markdown($_[1]) }
 
 theme if $config->{'theme'};
 
-shagadelic(@ARGV ? @ARGV : $config->{'server'});
+app->start;
 
 1;
 
@@ -760,18 +762,17 @@ __DATA__
 @@ index.html.ep
 % stash description => config('descr');
 % if (!@{$articles}) {
-<div class="text center">
-Nothing here yet :(
-</div>
+    <div class="text center">
+        Nothing here yet :(
+    </div>
 % }
 % foreach my $article (@{$articles}) {
     <div class="text">
         <h1 class="title">
 %           if ($article->{link}) {
             &raquo;
-            <a href="<%= $article->{link} %>">
-                <%= $article->{title} %>
-            </a>&nbsp;
+            <%= link_to $article->{link} => {%><%= $article->{title} %><%}%>
+            &nbsp;
             <a href="<%= url article => $article %>" title="Permalink to '<%= $article->{title} %>'">
                 &#x2605;
             </a>
@@ -1113,7 +1114,7 @@ when you add new plugins, templates, css files etc.
     * static pages
     * drafts
     * themes
-    * multi-parser support
+    * multi-parser support (POD, Markdown)
     * plugins
 
 =back
@@ -1122,7 +1123,7 @@ when you add new plugins, templates, css files etc.
 
 Bootylicious can be configured through config file that is placed in the same
 directory as C<bootylicious> (or set via BOOTYLICIOUS_HOME env variable) file
-and is called C<bootylicious.conf>. It is in JSON format.
+and is called C<bootylicious.json>. It is in JSON format.
 
     {
         "title" : "my blog title",
@@ -1252,7 +1253,7 @@ The title may contain dots (".") or dashes ("-") freely.
 =head2 PAGES
 
 These are static pages that don't appear on articles page and can be used to
-show some static information like documentation, download are, author info etc.
+show some static information like documentation, download area, author info etc.
 
 =head2 DRAFTS
 
@@ -1336,7 +1337,7 @@ Viacheslav Tykhanovskyi, C<viacheslav.t@gmail.com>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2008-2009, Viacheslav Tykhanovskyi.
+Copyright (C) 2008-2010, Viacheslav Tykhanovskyi.
 
 This program is free software, you can redistribute it and/or modify it under
 the same terms as Perl 5.10.
