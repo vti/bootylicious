@@ -40,13 +40,13 @@ config(pagelimit => 3);
 $t->get_ok('/')->status_is(200)
   ->content_like(qr/.*ten.*nine.*eight.*20090907T10:10:10/s);
 
-$t->get_ok('/index.html?timestamp=20090907T10:10:10')->status_is(200)
+$t->get_ok('/index/20090907T10:10:10.html')->status_is(200)
   ->content_like(qr/.*seven.*six.*five.*20090910T10:10:10.*20090904T10:10:10/s);
 
-$t->get_ok('/index.html?timestamp=20090904T10:10:10')->status_is(200)
+$t->get_ok('/index/20090904T10:10:10.html')->status_is(200)
   ->content_like(qr/.*four.*three.*two.*20090907T10:10:10.*20090901T10:10:10/s);
 
-$t->get_ok('/index.html?timestamp=20090901T10:10:10')->status_is(200)
+$t->get_ok('/index/20090901T10:10:10.html')->status_is(200)
   ->content_like(qr/.*one.*20090904T10:10:10/s);
 
 unlink $_ for glob("$articlesdir/*");

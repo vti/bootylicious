@@ -82,39 +82,40 @@ app->renderer->default_handler(config('template_handler'));
 app->renderer->add_helper(config   => sub { shift; config(@_) });
 app->renderer->add_helper(date     => \&date);
 app->renderer->add_helper(date_rss => \&date_rss);
-app->renderer->add_helper(url      => \&url);
-app->renderer->add_helper(url_abs  => \&url_abs);
+app->renderer->add_helper(
+    href_to_article => sub {
+        my $self    = shift;
+        my $article = shift;
+
+        return $self->url_for(
+            article => (
+                year   => $article->{year},
+                month  => $article->{month},
+                alias  => $article->{name},
+                format => 'html'
+            )
+        );
+    }
+);
 app->renderer->add_helper(
     link_to_article => sub {
         my $self    = shift;
         my $article = shift;
 
+        my $href = $self->helper('href_to_article' => $article);
+
         if ($article->{link}) {
             my $string = '';
 
-            $string .= $self->helper(
-                link_to => article => {
-                    year   => $article->{year},
-                    month  => $article->{month},
-                    alias  => $article->{name},
-                    format => 'html'
-                  } => sub {
-                      $article->{title} }
-            );
+            $string
+              .= $self->helper(link_to => $href => sub { $article->{title} });
             $string .= '&nbsp;';
             $string .= $self->helper(link_to => $article->{link} => sub { "&raquo;" });
 
             return Mojo::ByteStream->new($string);
         }
 
-        return $self->helper(
-            link_to => article => {
-                year   => $article->{year},
-                month  => $article->{month},
-                alias  => $article->{name},
-                format => 'html'
-              } => sub { $article->{title} }
-        );
+        return $self->helper(link_to => $href => sub { $article->{title} });
     }
 );
 app->renderer->add_helper(
@@ -127,6 +128,14 @@ app->renderer->add_helper(
 
         return $self->helper(
             link_to => tag => {tag => $tag, format => 'html', %$args} => $cb);
+    }
+);
+app->renderer->add_helper(
+    link_to_page => sub {
+        my $self      = shift;
+        my $timestamp = shift;
+
+        return $self->helper(link_to => 'index' => {timestamp => $timestamp, format => 'html'} => @_);
     }
 );
 
@@ -159,7 +168,7 @@ sub config {
     return $config;
 }
 
-ladder sub {
+under sub {
     my $self = shift;
 
     my $path = $self->req->url->path;
@@ -187,7 +196,7 @@ ladder sub {
 sub index {
     my $self = shift;
 
-    my $timestamp = $self->req->param('timestamp') || 0;
+    my $timestamp = $self->stash('timestamp') || 0;
 
     my $article = {};
     my ($articles, $pager) =
@@ -226,7 +235,7 @@ sub index {
 }
 
 get '/' => \&index => 'root';
-get '/index' => \&index => 'index';
+get '/index/:timestamp' => {timestamp => ''} => \&index => 'index';
 
 get '/archive' => sub {
     my $self = shift;
@@ -590,41 +599,6 @@ sub get_page {
     return _parse_article($self, $path);
 }
 
-sub url {
-    my $self = shift;
-    my $name = shift;
-    my $value = shift;
-
-    if (!defined $name || $name eq '') {
-        return '';
-    }
-    elsif ($name eq 'root') {
-        return $self->url_for(index => (format => '', @_));
-    }
-    elsif ($name eq 'index') {
-        return $self->url_for(index => ($value, @_));
-    }
-    elsif ($name eq 'article') {
-        return $self->url_for(
-            article => (
-                year   => $value->{year},
-                month  => $value->{month},
-                alias  => $value->{name},
-                format => 'html'
-            )
-        );
-    }
-    elsif ($name eq 'tag') {
-        return $self->url_for(tag => (tag => $value, format => 'html', @_));
-    }
-    elsif ($name eq 'pager') {
-        return $self->url_for('index', format => 'html')
-          . "?timestamp=$value";
-    }
-}
-
-sub url_abs { url(@_)->to_abs }
-
 sub date {
     my $self = shift;
     my $epoch = shift;
@@ -825,7 +799,7 @@ __DATA__
 %   if ($article->{preview}) {
         <%== $article->{preview} %>
         <div class="more"> &rarr;
-            <a href="<%= url article => $article %>#cut">
+            <a href="<%= href_to_article $article %>#cut">
                 <%= $article->{preview_link} %>
             </a>
         </div>
@@ -837,13 +811,13 @@ __DATA__
 % }
     <div id="pager">
 % if ($pager->{prev}) {
-        &larr; <a href="<%= url pager => $pager->{prev} %>"><%= strings 'later' %></a>
+        &larr; <%= link_to_page $pager->{prev} => {%><%= strings 'later' %><%}%>
 % }
 % else {
         <span class="notactive">&larr; <%= strings 'later' %></span>
 % }
 % if ($pager->{next}) {
-        <a href="<%= url pager => $pager->{next} %>"><%= strings 'earlier' %></a> &rarr;
+        <%= link_to_page $pager->{next} => {%><%= strings 'earlier' %><%}%> &rarr;
 % }
 % else {
         <span class="notactive"><%= strings 'earlier' %> &rarr;</span>
@@ -878,17 +852,17 @@ __DATA__
 
 @@ index.rss.ep
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xml:base="<%= url_abs 'root' %>"
+<rss version="2.0" xml:base="<%= url_for('root')->to_abs %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
         <title><%= config 'title' %></title>
-        <link><%= url_abs 'root' %></link>
+        <link><%= url_for('root')->to_abs %></link>
         <description><%= config 'descr' %></description>
         <pubDate><%= date_rss $last_created %></pubDate>
         <lastBuildDate><%= date_rss $last_created %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
 % foreach my $article (@$articles) {
-% my $link = url_abs(article => $article);
+% my $link = href_to_article $article;
     <item>
       <title><%= $article->{title} %></title>
       <link><%= $link %></link>
@@ -1071,13 +1045,14 @@ rkJggg==" alt="RSS" /><%}%></sup>
             .push {height:6em}
         </style>
 % }
-        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= url_abs 'index', format => 'rss' %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= url_for('index', format => 'rss')->to_abs %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
-                <h1 id="title"><a href="<%= url 'root' %>"><%= config 'title' %></a>
-                <sup><a href="<%= url 'index', format => 'rss' %>"><img src="data:image/png;base64,
+                <h1 id="title">
+                <%= link_to 'root' => {%><%= config 'title' %><%}%>
+                <sup><a href="<%= url_for 'index', format => 'rss' %>"><img src="data:image/png;base64,
 iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
 bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
 LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
