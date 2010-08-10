@@ -171,16 +171,12 @@ sub config {
 under sub {
     my $self = shift;
 
-    my $path = $self->req->url->path;
-
-    my $format = $self->stash->{format};
-    return 1 if $format && $format ne 'html';
-
+    my $path = $self->req->url->path->to_string;
     return 1 unless $path;
 
     return 1 if $path =~ m{/$};
 
-    return 1 if $path =~ m{\.html$};
+    return 1 if $path =~ m{\.(?:html|rss)$};
 
     my $canonical_location = $self->req->url->clone->path($path . '.html')->to_abs;
 
