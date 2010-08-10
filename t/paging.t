@@ -11,9 +11,10 @@ BEGIN { require FindBin; $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/../"; }
 require "$FindBin::Bin/../bootylicious";
 
 my $app = app();
+$app->home->parse($FindBin::Bin);
 $app->log->level('error');
 
-my $articlesdir = "$FindBin::Bin/articles";
+my $articlesdir = "$FindBin::Bin/paging-articles";
 mkdir $articlesdir;
 unlink $_ for glob("$articlesdir/*");
 

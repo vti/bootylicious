@@ -18,6 +18,9 @@ $ENV{LC_ALL} = 'C';
 require Time::Piece;
 require Time::Local;
 
+my $ALIAS_RE = qr/[a-zA-Z0-9-]+/;
+my $TAG_RE   = qr/[a-zA-Z0-9]+/;
+
 use constant MARKDOWN => eval { require Text::Markdown; 1 };
 
 our $VERSION = '0.910102';
@@ -256,7 +259,7 @@ get '/archive' => sub {
     );
 } => 'archive';
 
-get '/tags/:tag' => sub {
+get '/tags/:tag' => [tag => $TAG_RE] => sub {
     my $self = shift;
 
     my $tag = $self->stash('tag');
@@ -301,7 +304,7 @@ get '/tags' => sub {
     $self->stash(layout => 'wrapper',  tags => $tags);
 } => 'tags';
 
-get '/articles/:year/:month/:alias' => sub {
+get '/articles/:year/:month/:alias' => [year => qr/\d+/, month => qr/\d+/, alias => $ALIAS_RE] => sub {
     my $self = shift;
 
     my $articleid =
@@ -318,7 +321,7 @@ get '/articles/:year/:month/:alias' => sub {
         'Last-Modified' => Mojo::Date->new($article->{modified}));
 } => 'article';
 
-get '/pages/:pageid' => sub {
+get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
     my $self = shift;
 
     my $pageid = $self->stash('pageid');
@@ -334,7 +337,7 @@ get '/pages/:pageid' => sub {
         'Last-Modified' => Mojo::Date->new($page->{modified}));
 } => 'page';
 
-get '/drafts/:draftid' => sub {
+get '/drafts/:draftid' => [draftid => $ALIAS_RE]=> sub {
     my $self = shift;
 
     my $draftid = $self->stash('draftid');
@@ -517,7 +520,7 @@ sub get_article {
 
     $month = sprintf("%02d", $month);
 
-    my $timestamp_re = qr/^$year$month\d\d(T.*?)?-$alias\./;
+    my $timestamp_re = qr/^$year$month\d\d(T.*?)?-\Q$alias\E\./;
 
     my @files = sort { $b cmp $a } glob($root . '/*.*');
 
