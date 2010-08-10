@@ -176,7 +176,7 @@ under sub {
 
     return 1 if $path =~ m{/$};
 
-    return 1 if $path =~ m{\.(?:html|rss)$};
+    return 1 if $path =~ m{\.(?:[a-z]+)$};
 
     my $canonical_location = $self->req->url->clone->path($path . '.html')->to_abs;
 
