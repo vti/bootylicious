@@ -329,7 +329,7 @@ get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
     my $page = get_page($self, $pageid);
     return $self->render_not_found unless $page;
 
-    return 1 unless _is_modified($c, $page->{modified});
+    return 1 unless _is_modified($self, $page->{modified});
 
     $self->stash(layout => 'wrapper', page => $page);
 
@@ -345,7 +345,7 @@ get '/drafts/:draftid' => [draftid => $ALIAS_RE]=> sub {
     my $draft = get_draft($self, $draftid);
     return $self->render_not_found unless $draft;
 
-    return 1 unless _is_modified($c, $page->{modified});
+    return 1 unless _is_modified($self, $draft->{modified});
 
     $self->stash(layout => 'wrapper', draft => $draft);
 
