@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 36;
+use Test::More tests => 39;
 use Test::Mojo;
 
 BEGIN { require FindBin; $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/../"; }
@@ -18,6 +18,8 @@ my $t = Test::Mojo->new;
 
 # Index page
 $t->get_ok('/')->status_is(200)->content_like(qr/booty/);
+$t->get_ok('/' => {'If-Modified-Since' => time - 2})->status_is(304)
+  ->content_is('');
 $t->get_ok('/index')->status_is(302);
 $t->get_ok('/index.html')->status_is(200)->content_like(qr/booty/);
 

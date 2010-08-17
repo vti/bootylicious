@@ -329,7 +329,7 @@ get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
     my $page = get_page($self, $pageid);
     return $self->render_not_found unless $page;
 
-    #return 1 unless _is_modified($c, $page->{modified});
+    return 1 unless _is_modified($c, $page->{modified});
 
     $self->stash(layout => 'wrapper', page => $page);
 
@@ -345,7 +345,7 @@ get '/drafts/:draftid' => [draftid => $ALIAS_RE]=> sub {
     my $draft = get_draft($self, $draftid);
     return $self->render_not_found unless $draft;
 
-    #return 1 unless _is_modified($c, $page->{modified});
+    return 1 unless _is_modified($c, $page->{modified});
 
     $self->stash(layout => 'wrapper', draft => $draft);
 
@@ -422,10 +422,9 @@ sub _is_modified {
     my $date = $self->req->headers->header('If-Modified-Since');
     return 1 unless $date;
 
-    return 1 unless Mojo::Date->new($date)->epoch == $last_modified;
+    return 1 unless Mojo::Date->new($date)->epoch >= $last_modified;
 
-    $self->res->code(304);
-    $self->stash(rendered => 1);
+    $self->render_text('', status => 304);
 
     return 0;
 }
