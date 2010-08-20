@@ -18,7 +18,7 @@ $ENV{LC_ALL} = 'C';
 require Time::Piece;
 require Time::Local;
 
-my $ALIAS_RE = qr/[a-zA-Z0-9-]+/;
+my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
 my $TAG_RE   = qr/[a-zA-Z0-9]+/;
 
 use constant MARKDOWN => eval { require Text::Markdown; 1 };
