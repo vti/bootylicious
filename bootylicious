@@ -74,9 +74,9 @@ app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
 
 _read_config_from_file();
 
-plugin 'tag_helpers';
-plugin charset => {charset => 'utf-8'};
+plugin 'charset' => {charset => 'utf-8'};
 plugin 'pod_renderer';
+plugin 'tag_helpers';
 
 app->log->level($config->{loglevel});
 
@@ -624,6 +624,7 @@ sub _parse_article {
 
     my $modified = (stat($path))[9];
 
+    # Cache
     return $_articles{$path}
       if $_articles{$path} && $_articles{$path}->{modified} == $modified;
 
@@ -646,13 +647,8 @@ sub _parse_article {
         $month += 1;
     }
 
-    my $timestamp =
-        $year
-      . sprintf('%02d', $month)
-      . sprintf('%02d', $day) . 'T'
-      . sprintf('%02d', $hour) . ':'
-      . sprintf('%02d', $minute) . ':'
-      . sprintf('%02d', $second);
+    my $timestamp = sprintf('%d%02d%02dT%02d%02d%02d',
+        $year, $month, $day, $hour, $minute, $second);
 
     my $created = 0;
     eval {
@@ -778,12 +774,16 @@ __DATA__
 
 @@ index.html.ep
 % stash description => config('descr');
-% if (!@{$articles}) {
+% if (!@$articles) {
     <div class="text center">
         Nothing here yet :(
     </div>
 % }
-% foreach my $article (@{$articles}) {
+%= include 'index-item', article => $_ for @$articles;
+%= include 'index-pager', pager => $pager;
+
+
+@@ index-item.html.ep
     <div class="text">
         <h1 class="title">
             <%= link_to_article $article %>
@@ -806,7 +806,9 @@ __DATA__
         <%== $article->{content} %>
 %   }
     </div>
-% }
+
+
+@@ index-pager.html.ep
     <div id="pager">
 % if ($pager->{prev}) {
         &larr; <%= link_to_page $pager->{prev} => {%><%= strings 'later' %><%}%>
@@ -832,18 +834,18 @@ __DATA__
     <h1><%= strings 'archive' %></h1>
     <br />
 % foreach my $article (@$articles) {
-%     if (!$tmp || $article->{year} ne $tmp->{year}) {
+%   if (!$tmp || $article->{year} ne $tmp->{year}) {
     <%== "</ul>" if $tmp %>
     <b><%= $article->{year} %></b>
     <ul>
-%     }
+%   }
     <li>
         <%= link_to_article $article %>
         <br />
         <div class="created"><%= date $article->{created} %></div>
     </li>
 
-%     $tmp = $article;
+%   $tmp = $article;
 % }
 </div>
 
@@ -901,27 +903,13 @@ __DATA__
 <div class="text">
 <h1><%= strings 'tag' %> <%= $tag %>
 <sup>
-<%= link_to_tag $tag => { format => 'rss'} => {%>
-<img src="data:image/png;base64,
-iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
-bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
-LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
-7twz85jWGv8zZHaUmRjlHBnBkRYSCSnog/wzuECZMzxgDNPEW5E0ASHTl4qf6h+KD6iwUpwyuRCw
-kcCCNSPoRsNZKeS31D8WTOHLkqoagbQhV+sV1fDqEJQoidSCCMiMjskZU9HU4AAJpJsC0gokTGVD
-XnfhA0DRL7+Hn38M/foOeOUzOJEZs+2Cqy5F1iXs3PZLYEGl+ux1NF7eAmpfIXedQOjYbYgdh9tk
-Y3oTsDAnNCewPZqF8/SKjdqs+7aCj5wFDkwSlUEvzFgyPK8twNvuBv3GzixgzfgcQmNXqW/68IgE
-is+BvRPQ0fXE9eC7Lvy/Cfi5G8DSQ7DkTrCxKbrgJPSTS5TUDQwfgWvIBO0Dvv+bgPFAz12Dzl4E
-7p5svpQ9p6HLy9DFF2CD+9sCHpG9DgHHeGAExDglZnLAj09APgts2N089pdFsPjmXwIuHAJk8JKL
-rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
-I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
-fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
-rkJggg==" alt="RSS" /><%}%></sup>
+<%= link_to_tag $tag => { format => 'rss'} => {%><img src="/rss.png" alt="RSS" /><%}%></sup>
 </h1>
 <br />
 % foreach my $article (@$articles) {
-        <%= link_to_article $article %>
-        <br />
-        <div class="created"><%= date $article->{created} %></div>
+    <%= link_to_article $article %>
+    <br />
+    <div class="created"><%= date $article->{created} %></div>
 % }
 </div>
 
@@ -929,74 +917,77 @@ rkJggg==" alt="RSS" /><%}%></sup>
 @@ article.html.ep
 % stash title => $article->{title}, description => $article->{description};
 <div class="text">
-<h1 class="title"><%= link_to_article $article %></h1>
-<div class="created"><%= date $article->{created} %>
-% if ($article->{created} != $article->{modified}) {
+    <h1 class="title"><%= link_to_article $article %></h1>
+    <div class="created"><%= date $article->{created} %>
+%   if ($article->{created} != $article->{modified}) {
 , modified <span class="modified"><%= date $article->{modified} %></span>
 % }
-</div>
-<div class="tags">
+    </div>
+    <div class="tags">
 % foreach my $tag (@{$article->{tags}}) {
-    <%= link_to_tag $tag %>
-% }
-</div>
-<%== $article->{content} %>
-    <div id="pager">
-% if ($pager->{prev}) {
-        &larr; <%= link_to_article $pager->{prev} %> &nbsp;|
-% }
-<a href="<%= url_for 'archive' %>"><%= strings('archive') %></a>
-% if ($pager->{next}) {
-      |&nbsp;<%= link_to_article $pager->{next} %> &rarr;
+        <%= link_to_tag $tag %>
 % }
     </div>
+<%== $article->{content} %>
+%= include 'article-pager', pager => $pager;
 </div>
+
+
+@@ article-pager.html.ep
+    <div id="pager">
+%   if ($pager->{prev}) {
+        &larr; <%= link_to_article $pager->{prev} %> &nbsp;|
+%   }
+        <a href="<%= url_for 'archive' %>"><%= strings('archive') %></a>
+%   if ($pager->{next}) {
+        |&nbsp;<%= link_to_article $pager->{next} %> &rarr;
+%   }
+    </div>
 
 
 @@ page.html.ep
 % stash title => $page->{title}, description => $page->{description};
 <div class="text">
-<h1 class="title">
-<%= $page->{title} %>
-</h1>
-<%== $page->{content} %>
+    <h1 class="title">
+        <%= $page->{title} %>
+    </h1>
+    <%== $page->{content} %>
 </div>
 
 
 @@ draft.html.ep
 % stash title => $draft->{title}, description => strings('draft');
 <div class="text">
-<h1 class="title">
-<%= $draft->{title} %>
-</h1>
-<%== $draft->{content} %>
+    <h1 class="title">
+        <%= $draft->{title} %>
+    </h1>
+    <%== $draft->{content} %>
 </div>
 
 
 @@ not_found.html.ep
 % stash title => 'Not found', description => 'Not found', layout => 'wrapper';
 <div class="error">
-<h1>404</h1>
-<br />
-<%= strings 'not-found' %>
+    <h1>404</h1>
+    <br />
+    <%= strings 'not-found' %>
 </div>
+
 
 @@ exception.html.ep
 % stash title => 'Not found', description => 'Not found', layout => 'wrapper';
 <div class="error">
-<h1>500</h1>
-<br />
-<%= strings 'error' %>
+    <h1>500</h1>
+    <br />
+    <%= strings 'error' %>
 </div>
 
-@@ layouts/wrapper.html.ep
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+@@ layouts/wrapper.html.ep
+<!doctype html>
     <head>
+        <meta charset="UTF-8">
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
-        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 % if ($description) {
         <meta name="description" content="<%= $description %>" />
 % }
@@ -1011,37 +1002,7 @@ rkJggg==" alt="RSS" /><%}%></sup>
         <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
 % }
 % if (!@{config('css')}) {
-        <style type="text/css">
-            html, body {height: 100%;margin:0}
-            body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
-            h1,h2,h3,h4,h5 {font-family: times, "Times New Roman", times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
-            a,a:active {color:#555}
-            a:hover{color:#000}
-            a:visited{color:#000}
-            img{border:0px}
-            pre{border:2px solid #ccc;background:#eee;padding:2em;overflow:auto;overflow-y:visible;width:600px;}
-            #body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
-            #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
-            h1#title{font-size:3em}
-            h2#descr{font-size:1.5em;color:#999}
-            span#author {font-weight:bold}
-            span#about {font-style:italic}
-            #menu {padding-top:1em;text-align:right}
-            #content {background:#FFFFFF}
-            .created, .modified {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
-            .modified {margin:0px}
-            .tags{margin-left:10px;text-transform:uppercase;}
-            .text {padding:2em;}
-            .text h1.title {font-size:2.5em}
-            .error {padding:2em;text-align:center}
-            .more {margin-left:10px}
-            #pager {text-align:center;padding:2em}
-            #pager span.notactive {color:#ccc}
-            #subfooter {padding:2em;border-top:#000000 1px solid}
-            #footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
-            .center {text-align:center}
-            .push {height:6em}
-        </style>
+        <link rel="stylesheet" href="/styles.css" type="text/css" />
 % }
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= url_for('index', format => 'rss')->to_abs %>" />
     </head>
@@ -1049,21 +1010,8 @@ rkJggg==" alt="RSS" /><%}%></sup>
         <div id="body">
             <div id="header">
                 <h1 id="title">
-                <%= link_to 'root' => {%><%= config 'title' %><%}%>
-                <sup><a href="<%= url_for 'index', format => 'rss' %>"><img src="data:image/png;base64,
-iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
-bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
-LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
-7twz85jWGv8zZHaUmRjlHBnBkRYSCSnog/wzuECZMzxgDNPEW5E0ASHTl4qf6h+KD6iwUpwyuRCw
-kcCCNSPoRsNZKeS31D8WTOHLkqoagbQhV+sV1fDqEJQoidSCCMiMjskZU9HU4AAJpJsC0gokTGVD
-XnfhA0DRL7+Hn38M/foOeOUzOJEZs+2Cqy5F1iXs3PZLYEGl+ux1NF7eAmpfIXedQOjYbYgdh9tk
-Y3oTsDAnNCewPZqF8/SKjdqs+7aCj5wFDkwSlUEvzFgyPK8twNvuBv3GzixgzfgcQmNXqW/68IgE
-is+BvRPQ0fXE9eC7Lvy/Cfi5G8DSQ7DkTrCxKbrgJPSTS5TUDQwfgWvIBO0Dvv+bgPFAz12Dzl4E
-7p5svpQ9p6HLy9DFF2CD+9sCHpG9DgHHeGAExDglZnLAj09APgts2N089pdFsPjmXwIuHAJk8JKL
-rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
-I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
-fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
-rkJggg==" alt="RSS" /></a></sup>
+                <%= link_to 'root', {format => undef} => {%><%= config 'title' %><%}%>
+                <sup><a href="<%= url_for 'index', format => 'rss' %>"><img src="/rss.png" alt="RSS" /></a></sup>
                 </h1>
                 <h2 id="descr"><%= config 'descr' %></h2>
                 <span id="author"><%= config 'author' %></span>, <span id="about"><%= config 'about' %></span>
@@ -1084,6 +1032,54 @@ rkJggg==" alt="RSS" /></a></sup>
 % }
     </body>
 </html>
+
+
+@@ styles.css
+html, body {height: 100%;margin:0}
+body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
+h1,h2,h3,h4,h5 {font-family: times, "Times New Roman", times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
+a,a:active {color:#555}
+a:hover{color:#000}
+a:visited{color:#000}
+img{border:0px}
+pre{border:2px solid #ccc;background:#eee;padding:2em;overflow:auto;overflow-y:visible;width:600px;}
+#body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
+#header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
+h1#title{font-size:3em}
+h2#descr{font-size:1.5em;color:#999}
+span#author {font-weight:bold}
+span#about {font-style:italic}
+#menu {padding-top:1em;text-align:right}
+#content {background:#FFFFFF}
+.created, .modified {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
+.modified {margin:0px}
+.tags{margin-left:10px;text-transform:uppercase;}
+.text {padding:2em;}
+.text h1.title {font-size:2.5em}
+.error {padding:2em;text-align:center}
+.more {margin-left:10px}
+#pager {text-align:center;padding:2em}
+#pager span.notactive {color:#ccc}
+#subfooter {padding:2em;border-top:#000000 1px solid}
+#footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
+.center {text-align:center}
+.push {height:6em}
+
+
+@@ rss.png (base64)
+iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJ
+bWFnZVJlYWR5ccllPAAAAlJJREFUeNqkU0toU0EUPfPJtOZDm9gSPzWVKloXgiCCInXTRTZVQcSN
+LtyF6qILFwoVV+7EjR9oFy7VlSAVF+ouqMWWqCCIrbYSosaARNGmSV7ee+OdyUsMogtx4HBn5t1z
+7twz85jWGv8zZHaUmRjlHBnBkRYSCSnog/wzuECZMzxgDNPEW5E0ASHTl4qf6h+KD6iwUpwyuRCw
+kcCCNSPoRsNZKeS31D8WTOHLkqoagbQhV+sV1fDqEJQoidSCCMiMjskZU9HU4AAJpJsC0gokTGVD
+XnfhA0DRL7+Hn38M/foOeOUzOJEZs+2Cqy5F1iXs3PZLYEGl+ux1NF7eAmpfIXedQOjYbYgdh9tk
+Y3oTsDAnNCewPZqF8/SKjdqs+7aCj5wFDkwSlUEvzFgyPK8twNvuBv3GzixgzfgcQmNXqW/68IgE
+is+BvRPQ0fXE9eC7Lvy/Cfi5G8DSQ7DkTrCxKbrgJPSTS5TUDQwfgWvIBO0Dvv+bgPFAz12Dzl4E
+7p5svpQ9p6HLy9DFF2CD+9sCHpG9DgHHeGAExDglZnLAj09APgts2N089pdFsPjmXwIuHAJk8JKL
+rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
+I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
+fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
+rkJggg==
 
 __END__
 
