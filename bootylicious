@@ -82,8 +82,8 @@ app->log->level($config->{loglevel});
 
 app->renderer->default_handler(config('template_handler'));
 
-app->renderer->add_helper(config   => sub { shift; config(@_) });
-app->renderer->add_helper(date     => \&date);
+app->renderer->add_helper(config => sub { shift; config(@_) });
+app->renderer->add_helper(date => \&date);
 app->renderer->add_helper(date_rss => \&date_rss);
 app->renderer->add_helper(
     href_to_article => sub {
@@ -113,7 +113,9 @@ app->renderer->add_helper(
             $string
               .= $self->helper(link_to => $href => sub { $article->{title} });
             $string .= '&nbsp;';
-            $string .= $self->helper(link_to => $article->{link} => sub { "&raquo;" });
+            $string
+              .= $self->helper(link_to => $article->{link} => sub {"&raquo;"}
+              );
 
             return Mojo::ByteStream->new($string);
         }
@@ -138,7 +140,8 @@ app->renderer->add_helper(
         my $self      = shift;
         my $timestamp = shift;
 
-        return $self->helper(link_to => 'index' => {timestamp => $timestamp, format => 'html'} => @_);
+        return $self->helper(link_to => 'index' =>
+              {timestamp => $timestamp, format => 'html'} => @_);
     }
 );
 
@@ -181,7 +184,8 @@ under sub {
 
     return 1 if $path =~ m{\.(?:[a-z]+)$};
 
-    my $canonical_location = $self->req->url->clone->path($path . '.html')->to_abs;
+    my $canonical_location =
+      $self->req->url->clone->path($path . '.html')->to_abs;
 
     $self->app->log->debug("Path is not canonical: " . $self->req->url);
     $self->app->log->debug("Redirecting to: " . $canonical_location);
@@ -198,8 +202,11 @@ sub index {
     my $timestamp = $self->stash('timestamp') || 0;
 
     my $article = {};
-    my ($articles, $pager) =
-      get_articles($self, limit => $config->{pagelimit}, timestamp => $timestamp);
+    my ($articles, $pager) = get_articles(
+        $self,
+        limit     => $config->{pagelimit},
+        timestamp => $timestamp
+    );
 
     my $last_created  = time;
     my $last_modified = time;
@@ -218,7 +225,8 @@ sub index {
         pager    => $pager
     );
 
-    $self->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+    $self->res->headers->header(
+        'Last-Modified' => Mojo::Date->new($last_modified));
 
     $self->stash(template => 'index');
 
@@ -278,7 +286,8 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
     my $last_modified = $articles->[0]->{modified};
     return 1 unless _is_modified($self, $last_modified);
 
-    $self->res->headers->header('Last-Modified' => Mojo::Date->new($last_modified));
+    $self->res->headers->header(
+        'Last-Modified' => Mojo::Date->new($last_modified));
 
     my $last_created = $articles->[0]->{created};
 
@@ -301,14 +310,17 @@ get '/tags' => sub {
 
     my $tags = get_tags($self);
 
-    $self->stash(layout => 'wrapper',  tags => $tags);
+    $self->stash(layout => 'wrapper', tags => $tags);
 } => 'tags';
 
-get '/articles/:year/:month/:alias' => [year => qr/\d+/, month => qr/\d+/, alias => $ALIAS_RE] => sub {
+get '/articles/:year/:month/:alias' =>
+  [year => qr/\d+/, month => qr/\d+/, alias => $ALIAS_RE] => sub {
     my $self = shift;
 
     my $articleid =
-      $self->stash('year') . '/' . $self->stash('month') . '/' . $self->stash('alias');
+        $self->stash('year') . '/'
+      . $self->stash('month') . '/'
+      . $self->stash('alias');
 
     my ($article, $pager) = get_article($self, $articleid);
     return $self->render_not_found unless $article;
@@ -319,7 +331,7 @@ get '/articles/:year/:month/:alias' => [year => qr/\d+/, month => qr/\d+/, alias
 
     $self->res->headers->header(
         'Last-Modified' => Mojo::Date->new($article->{modified}));
-} => 'article';
+  } => 'article';
 
 get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
     my $self = shift;
@@ -337,7 +349,7 @@ get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
         'Last-Modified' => Mojo::Date->new($page->{modified}));
 } => 'page';
 
-get '/drafts/:draftid' => [draftid => $ALIAS_RE]=> sub {
+get '/drafts/:draftid' => [draftid => $ALIAS_RE] => sub {
     my $self = shift;
 
     my $draftid = $self->stash('draftid');
@@ -360,7 +372,8 @@ sub theme {
     foreach my $type (qw/css js/) {
         $config->{$type} =
           [map { s/^$publicdir\///; $_ }
-              glob("$publicdir/bootylicious/themes/$config->{theme}/*.$type")];
+              glob("$publicdir/bootylicious/themes/$config->{theme}/*.$type")
+          ];
     }
 }
 
@@ -373,18 +386,19 @@ sub _read_config_from_file {
           for (
             ref $config->{perl5lib} eq 'ARRAY'
             ? @{$config->{perl5lib}}
-            : $config->{perl5lib});
+            : $config->{perl5lib}
+          );
     }
 
     $ENV{SCRIPT_NAME} = $config->{base} if defined $config->{base};
 
     # set proper templates base dir, if defined
     app->renderer->root(app->home->rel_dir($config->{templatesdir}))
-        if defined $config->{templatesdir};
+      if defined $config->{templatesdir};
 
     # set proper public base dir, if defined
     app->static->root(app->home->rel_dir($config->{publicdir}))
-        if defined $config->{publicdir};
+      if defined $config->{publicdir};
 }
 
 sub _load_plugins {
@@ -447,7 +461,7 @@ sub get_tags {
 }
 
 sub get_articles {
-    my $self = shift;
+    my $self   = shift;
     my %params = @_;
     $params{limit} ||= 0;
 
@@ -505,7 +519,7 @@ sub get_articles {
 }
 
 sub get_article {
-    my $self = shift;
+    my $self      = shift;
     my $articleid = shift;
     return unless $articleid;
 
@@ -554,7 +568,7 @@ sub get_article {
 }
 
 sub get_draft {
-    my $self = shift;
+    my $self  = shift;
     my $alias = shift;
     return unless $alias;
 
@@ -566,8 +580,8 @@ sub get_draft {
     my @files = glob($root . '/' . '*' . $alias . ".*");
 
     if (@files > 1) {
-        app->log->warn('More then one draft is available '
-              . 'with the same alias');
+        app->log->warn(
+            'More then one draft is available ' . 'with the same alias');
     }
     my $path = $files[0];
     return unless $path && -r $path;
@@ -576,7 +590,7 @@ sub get_draft {
 }
 
 sub get_page {
-    my $self = shift;
+    my $self   = shift;
     my $pageid = shift;
     return unless $pageid;
 
@@ -588,8 +602,8 @@ sub get_page {
     my @files = glob($root . '/' . $pageid . ".*");
 
     if (@files > 1) {
-        app->log->warn('More then one page is available '
-              . 'with the same extension');
+        app->log->warn(
+            'More then one page is available ' . 'with the same extension');
     }
     my $path = $files[0];
     return unless $path && -r $path;
@@ -598,9 +612,9 @@ sub get_page {
 }
 
 sub date {
-    my $self = shift;
+    my $self  = shift;
     my $epoch = shift;
-    my $fmt = shift;
+    my $fmt   = shift;
 
     $fmt ||= config('datefmt');
 
@@ -610,13 +624,14 @@ sub date {
 }
 
 sub date_rss {
-    my $self = shift;
+    my $self  = shift;
     my $epoch = shift;
 
     return Mojo::Date->new($epoch)->to_string;
 }
 
 my %_articles;
+
 sub _parse_article {
     my $self = shift;
     my $path = shift;
@@ -640,10 +655,9 @@ sub _parse_article {
         $hour   ||= 0;
     }
     else {
-        ($second, $minute, $hour, $day, $month, $year) =
-          gmtime($modified);
+        ($second, $minute, $hour, $day, $month, $year) = gmtime($modified);
 
-        $year += 1900;
+        $year  += 1900;
         $month += 1;
     }
 
@@ -694,22 +708,22 @@ sub _parse_article {
     }
 
     return $_articles{$path} = {
-        path            => $path,
-        name            => $name,
-        created         => $created,
-        modified        => $modified,
-        timestamp       => $timestamp,
-        year            => $year,
-        month           => $month,
-        day             => $day,
-        title           => $metadata->{title} || $name,
-        description     => $metadata->{description} || '',
-        link            => $metadata->{link} || '',
-        tags            => $metadata->{tags} || [],
-        preview         => $preview,
-        preview_link    => $preview_link,
-        content         => $content,
-        raw_content     => $string,
+        path         => $path,
+        name         => $name,
+        created      => $created,
+        modified     => $modified,
+        timestamp    => $timestamp,
+        year         => $year,
+        month        => $month,
+        day          => $day,
+        title        => $metadata->{title} || $name,
+        description  => $metadata->{description} || '',
+        link         => $metadata->{link} || '',
+        tags         => $metadata->{tags} || [],
+        preview      => $preview,
+        preview_link => $preview_link,
+        content      => $content,
+        raw_content  => $string,
     };
 }
 
@@ -721,6 +735,7 @@ sub _slurp_file {
 }
 
 my %_parsers;
+
 sub _get_parser {
     my $ext = shift;
 
@@ -738,11 +753,11 @@ sub _parse_metadata {
     return {} unless $2;
 
     my $original = $1;
-    my $data = $2;
+    my $data     = $2;
 
     my $metadata = {};
     while ($data =~ s/^(.*?):\s*(.*?)(?:\n|\n\r|\r|$)//s) {
-        my $key = lc $1;
+        my $key   = lc $1;
         my $value = $2;
 
         if ($key eq 'tags') {
