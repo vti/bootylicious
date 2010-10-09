@@ -127,11 +127,7 @@ sub index {
         return 1 unless _is_modified($self, $last_modified);
     }
 
-    $self->stash(
-        article  => $article,
-        articles => $articles,
-        pager    => $pager
-    );
+    $self->stash(article => $article, articles => $articles, pager => $pager);
 
     $self->res->headers->header(
         'Last-Modified' => Mojo::Date->new($last_modified));
@@ -141,12 +137,14 @@ sub index {
     if ($self->stash('format') && $self->stash('format') eq 'rss') {
         $self->stash(
             last_created  => $last_created,
-            last_modified => $last_modified,
+            last_modified => $last_modified
         );
     }
     else {
         $self->stash(layout => 'wrapper', title => '');
     }
+
+    _set_last_modified_header($self, @$articles ? $articles->[0] : time);
 }
 
 get '/' => \&index => 'root';
@@ -184,8 +182,7 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     $articles = [
         grep {
-            grep {m/^\Q$tag\E$/}
-              @{$_->{tags}}
+            grep {m/^\Q$tag\E$/} @{$_->{tags}}
           } @$articles
     ];
 
@@ -193,9 +190,6 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     my $last_modified = $articles->[0]->{modified};
     return 1 unless _is_modified($self, $last_modified);
-
-    $self->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($last_modified));
 
     my $last_created = $articles->[0]->{created};
 
@@ -211,6 +205,8 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
     else {
         $self->stash(layout => 'wrapper');
     }
+
+    _set_last_modified_header($self, $articles->[0]);
 } => 'tag';
 
 get '/tags' => sub {
@@ -333,8 +329,7 @@ sub _register_helpers {
             return b($t->strftime($fmt))->decode('utf-8');
         }
     );
-    app->helper(
-        date_rss => sub { Mojo::Date->new($_[1])->to_string });
+    app->helper(date_rss => sub { Mojo::Date->new($_[1])->to_string });
     app->helper(
         href_to_article => sub {
             my $self    = shift;
@@ -366,7 +361,8 @@ sub _register_helpers {
 
                 $string .= $self->link_to($href => sub { $article->{title} });
                 $string .= '&nbsp;';
-                $string .= $self->link_to($article->{link} => sub {"&raquo;"});
+                $string
+                  .= $self->link_to($article->{link} => sub {"&raquo;"});
 
                 return Mojo::ByteStream->new($string);
             }
@@ -382,7 +378,8 @@ sub _register_helpers {
             my $href = $self->href_to_article($article);
             $href->fragment('cut');
 
-            return $self->link_to($href => sub { $article->{preview_link_text} });
+            return $self->link_to(
+                $href => sub { $article->{preview_link_text} });
         }
     );
     app->helper(
@@ -393,7 +390,8 @@ sub _register_helpers {
             my $cb = ref $_[-1] eq 'CODE' ? $_[-1] : sub {$tag};
             my $args = ref $_[0] eq 'HASH' ? $_[0] : {};
 
-            return $self->link_to(tag => {tag => $tag, format => 'html', %$args} => $cb);
+            return $self->link_to(
+                tag => {tag => $tag, format => 'html', %$args} => $cb);
         }
     );
     app->helper(
@@ -415,7 +413,8 @@ sub _register_helpers {
             my $self      = shift;
             my $timestamp = shift;
 
-            return $self->link_to('index' => {timestamp => $timestamp, format => 'html'} => @_);
+            return $self->link_to(
+                'index' => {timestamp => $timestamp, format => 'html'} => @_);
         }
     );
 
@@ -478,10 +477,11 @@ sub _is_modified {
 
 sub _set_last_modified_header {
     my $self = shift;
-    my ($object) = @_;
+    my $time = shift;
 
-    $self->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($object->{modified}));
+    $time = $time->{modified} if ref $time;
+
+    $self->res->headers->header('Last-Modified' => Mojo::Date->new($time));
 }
 
 sub get_tags {
@@ -668,7 +668,8 @@ sub _parse_article {
 
     my $metadata = _parse_metadata(\$string);
 
-    my ($preview, $preview_link_text, $content) = _parse_content($self, $parser, $string);
+    my ($preview, $preview_link_text, $content) =
+      _parse_content($self, $parser, $string);
     app->log->error('Error while parsing ' . $metadata->{title}), return
       unless defined $preview;
 
@@ -759,7 +760,7 @@ sub _parse_cuttag {
 
     my $cuttag = $config->{cuttag};
 
-    my $tail = '';
+    my $tail              = '';
     my $preview_link_text = '';
     if ($$string =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
         $tail = $3;
@@ -817,7 +818,7 @@ sub _parse_metadata {
 }
 
 sub _parse_pod { $_[0]->pod_to_html($_[1]) }
-sub _parse_md { Text::Markdown->new->markdown($_[1]) }
+sub _parse_md  { Text::Markdown->new->markdown($_[1]) }
 
 theme if $config->{'theme'};
 
