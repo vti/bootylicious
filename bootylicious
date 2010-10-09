@@ -70,128 +70,6 @@ my $config = {
     template_handler => 'ep',
 };
 
-_read_config_from_file();
-
-plugin 'charset' => {charset => 'utf-8'};
-plugin 'pod_renderer';
-plugin 'tag_helpers';
-
-app->log->level($config->{loglevel});
-
-app->renderer->default_handler(config('template_handler'));
-
-app->renderer->add_helper(config => sub { shift; config(@_) });
-app->renderer->add_helper(date => \&date);
-app->renderer->add_helper(date_rss => \&date_rss);
-app->renderer->add_helper(
-    href_to_article => sub {
-        my $self    = shift;
-        my $article = shift;
-
-        my ($year, $month) = (gmtime($article->{created}))[5, 4];
-        $year += 1900;
-        $month += 1;
-
-        return $self->url_for(
-            article => (
-                year   => $year,
-                month  => $month,
-                alias  => $article->{name},
-                format => 'html'
-            )
-        );
-    }
-);
-app->renderer->add_helper(
-    link_to_article => sub {
-        my $self    = shift;
-        my $article = shift;
-
-        my $href = $self->helper(href_to_article => $article);
-
-        if ($article->{link}) {
-            my $string = '';
-
-            $string
-              .= $self->helper(link_to => $href => sub { $article->{title} });
-            $string .= '&nbsp;';
-            $string
-              .= $self->helper(link_to => $article->{link} => sub {"&raquo;"}
-              );
-
-            return Mojo::ByteStream->new($string);
-        }
-
-        return $self->helper(link_to => $href => sub { $article->{title} });
-    }
-);
-app->renderer->add_helper(
-    link_to_full_content => sub {
-        my $self = shift;
-        my ($article) = @_;
-
-        my $href = $self->helper(href_to_article => $article);
-        $href->fragment('cut');
-
-        return $self->helper(link_to => $href => sub { $article->{preview_link_text} });
-    }
-);
-app->renderer->add_helper(
-    link_to_tag => sub {
-        my $self = shift;
-        my $tag  = shift;
-
-        my $cb = ref $_[-1] eq 'CODE' ? $_[-1] : sub {$tag};
-        my $args = ref $_[0] eq 'HASH' ? $_[0] : {};
-
-        return $self->helper(
-            link_to => tag => {tag => $tag, format => 'html', %$args} => $cb);
-    }
-);
-app->renderer->add_helper(
-    tags_links => sub {
-        my $self = shift;
-        my $article = shift;
-
-        my @links =
-          map { $self->helper(link_to_tag => $_) } @{$article->{tags}};
-
-        my $string = '<div class="tags">';
-        $string .= join ', ' => @links;
-        $string .= '</div>';
-
-        return Mojo::ByteStream->new($string);
-    }
-);
-app->renderer->add_helper(
-    link_to_page => sub {
-        my $self      = shift;
-        my $timestamp = shift;
-
-        return $self->helper(link_to => 'index' =>
-              {timestamp => $timestamp, format => 'html'} => @_);
-    }
-);
-
-# Helpers for plugins
-#app->renderer->add_helper(get_articles => sub { get_articles(@_) });
-
-app->renderer->add_helper(
-    strings => sub {
-        my $self = shift;
-
-        my $string = config('strings')->{$_[0]};
-
-        for (my $i = 0; $i < @_; $i++) {
-            $string =~ s/\[_$i\]/$_[$i]/;
-        }
-
-        return $string;
-    }
-);
-
-_load_plugins();
-
 sub config {
     if (@_) {
         return $config->{$_[0]} if @_ == 1;
@@ -201,6 +79,8 @@ sub config {
 
     return $config;
 }
+
+_prepare_ourselves();
 
 under sub {
     my $self = shift;
@@ -402,7 +282,11 @@ sub theme {
     }
 }
 
-sub _read_config_from_file {
+sub _prepare_ourselves {
+    plugin 'charset' => {charset => 'utf-8'};
+    plugin 'pod_renderer';
+    plugin 'tag_helpers';
+
     $config = plugin json_config => {default => $config};
 
     # Additional Perl modules
@@ -424,6 +308,130 @@ sub _read_config_from_file {
     # set proper public base dir, if defined
     app->static->root(app->home->rel_dir($config->{publicdir}))
       if defined $config->{publicdir};
+
+    _register_helpers();
+
+    app->log->level($config->{loglevel});
+
+    app->renderer->default_handler($config->{'template_handler'});
+
+    _load_plugins();
+}
+
+sub _register_helpers {
+    app->helper(config => sub { shift; config(@_) });
+    app->helper(
+        date => sub {
+            my $self  = shift;
+            my $epoch = shift;
+            my $fmt   = shift;
+
+            $fmt ||= $config->{'datefmt'};
+
+            my $t = Time::Piece->gmtime($epoch);
+
+            return b($t->strftime($fmt))->decode('utf-8');
+        }
+    );
+    app->helper(
+        date_rss => sub { Mojo::Date->new($_[1])->to_string });
+    app->helper(
+        href_to_article => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            my ($year, $month) = (gmtime($article->{created}))[5, 4];
+            $year  += 1900;
+            $month += 1;
+
+            return $self->url_for(
+                article => (
+                    year   => $year,
+                    month  => $month,
+                    alias  => $article->{name},
+                    format => 'html'
+                )
+            );
+        }
+    );
+    app->helper(
+        link_to_article => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            my $href = $self->href_to_article($article);
+
+            if ($article->{link}) {
+                my $string = '';
+
+                $string .= $self->link_to($href => sub { $article->{title} });
+                $string .= '&nbsp;';
+                $string .= $self->link_to($article->{link} => sub {"&raquo;"});
+
+                return Mojo::ByteStream->new($string);
+            }
+
+            return $self->link_to($href => sub { $article->{title} });
+        }
+    );
+    app->helper(
+        link_to_full_content => sub {
+            my $self = shift;
+            my ($article) = @_;
+
+            my $href = $self->href_to_article($article);
+            $href->fragment('cut');
+
+            return $self->link_to($href => sub { $article->{preview_link_text} });
+        }
+    );
+    app->helper(
+        link_to_tag => sub {
+            my $self = shift;
+            my $tag  = shift;
+
+            my $cb = ref $_[-1] eq 'CODE' ? $_[-1] : sub {$tag};
+            my $args = ref $_[0] eq 'HASH' ? $_[0] : {};
+
+            return $self->link_to(tag => {tag => $tag, format => 'html', %$args} => $cb);
+        }
+    );
+    app->helper(
+        tags_links => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            my @links = map { $self->link_to_tag($_) } @{$article->{tags}};
+
+            my $string = '<div class="tags">';
+            $string .= join ', ' => @links;
+            $string .= '</div>';
+
+            return Mojo::ByteStream->new($string);
+        }
+    );
+    app->helper(
+        link_to_page => sub {
+            my $self      = shift;
+            my $timestamp = shift;
+
+            return $self->link_to('index' => {timestamp => $timestamp, format => 'html'} => @_);
+        }
+    );
+
+    app->helper(
+        strings => sub {
+            my $self = shift;
+
+            my $string = $config->{'strings'}->{$_[0]};
+
+            for (my $i = 0; $i < @_; $i++) {
+                $string =~ s/\[_$i\]/$_[$i]/;
+            }
+
+            return $string;
+        }
+    );
 }
 
 sub _load_plugins {
@@ -644,25 +652,6 @@ sub get_page {
     return _parse_article($self, $path);
 }
 
-sub date {
-    my $self  = shift;
-    my $epoch = shift;
-    my $fmt   = shift;
-
-    $fmt ||= config('datefmt');
-
-    my $t = Time::Piece->gmtime($epoch);
-
-    return b($t->strftime($fmt))->decode('utf-8');
-}
-
-sub date_rss {
-    my $self  = shift;
-    my $epoch = shift;
-
-    return Mojo::Date->new($epoch)->to_string;
-}
-
 sub _parse_article {
     my $self = shift;
     my $path = shift;
@@ -827,7 +816,7 @@ sub _parse_metadata {
     return $metadata;
 }
 
-sub _parse_pod { $_[0]->helper(pod_to_html => $_[1]) }
+sub _parse_pod { $_[0]->pod_to_html($_[1]) }
 sub _parse_md { Text::Markdown->new->markdown($_[1]) }
 
 theme if $config->{'theme'};
