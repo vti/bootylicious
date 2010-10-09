@@ -70,8 +70,6 @@ my $config = {
     template_handler => 'ep',
 };
 
-app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
-
 _read_config_from_file();
 
 plugin 'charset' => {charset => 'utf-8'};
