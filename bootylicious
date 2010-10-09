@@ -663,8 +663,6 @@ sub date_rss {
     return Mojo::Date->new($epoch)->to_string;
 }
 
-my %_articles;
-
 sub _parse_article {
     my $self = shift;
     my $path = shift;
@@ -685,7 +683,7 @@ sub _parse_article {
     app->log->error('Error while parsing ' . $metadata->{title}), return
       unless defined $preview;
 
-    return $_articles{$path} = {
+    return {
         name              => $name,
         created           => $created,
         modified          => $modified,
@@ -746,7 +744,7 @@ sub _parse_created {
 sub _parse_content {
     my ($self, $parser, $string) = @_;
 
-    my ($head, $tail, $preview_link_text) = _parse_cuttag($string);
+    my ($head, $tail, $preview_link_text) = _parse_cuttag(\$string);
 
     $head = $parser->($self, $head);
     return () unless $head;
@@ -772,15 +770,14 @@ sub _parse_cuttag {
 
     my $cuttag = $config->{cuttag};
 
-    my ($head, $tail) = ($string, '');
-
+    my $tail = '';
     my $preview_link_text = '';
-    if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
+    if ($$string =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
         $tail = $3;
         $preview_link_text = $2 || $config->{cuttext};
     }
 
-    return ($head, $tail, $preview_link_text);
+    return ($$string, $tail, $preview_link_text);
 }
 
 sub _slurp_file {
@@ -789,8 +786,6 @@ sub _slurp_file {
     open my $fh, '<:encoding(UTF-8)', $file or return;
     return do { local $/; <$fh> };
 }
-
-my %_parsers;
 
 sub _get_parser {
     my $ext = shift;
