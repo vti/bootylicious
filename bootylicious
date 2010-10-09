@@ -103,7 +103,7 @@ app->renderer->add_helper(
         my $self    = shift;
         my $article = shift;
 
-        my $href = $self->helper('href_to_article' => $article);
+        my $href = $self->helper(href_to_article => $article);
 
         if ($article->{link}) {
             my $string = '';
@@ -119,6 +119,17 @@ app->renderer->add_helper(
         }
 
         return $self->helper(link_to => $href => sub { $article->{title} });
+    }
+);
+app->renderer->add_helper(
+    link_to_full_content => sub {
+        my $self = shift;
+        my ($article) = @_;
+
+        my $href = $self->helper(href_to_article => $article);
+        $href->fragment('cut');
+
+        return $self->helper(link_to => $href => sub { $article->{preview_link_text} });
     }
 );
 app->renderer->add_helper(
@@ -821,9 +832,7 @@ __DATA__
 %   if ($article->{preview}) {
         <%== $article->{preview} %>
         <div class="more"> &rarr;
-            <a href="<%= href_to_article $article %>#cut">
-                <%= $article->{preview_link} %>
-            </a>
+            <%= link_to_full_content $article %>
         </div>
 %   }
 %   else {
