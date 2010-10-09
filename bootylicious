@@ -88,10 +88,14 @@ app->renderer->add_helper(
         my $self    = shift;
         my $article = shift;
 
+        my ($year, $month) = (gmtime($article->{created}))[5, 4];
+        $year += 1900;
+        $month += 1;
+
         return $self->url_for(
             article => (
-                year   => $article->{year},
-                month  => $article->{month},
+                year   => $year,
+                month  => $month,
                 alias  => $article->{name},
                 format => 'html'
             )
@@ -666,63 +670,87 @@ sub _parse_article {
     my $path = shift;
     return unless $path;
 
-    my $modified = (stat($path))[9];
+    my ($name, $created, $modified, $ext) = _parse_path($path);
 
-    # Cache
-    return $_articles{$path}
-      if $_articles{$path} && $_articles{$path}->{modified} == $modified;
+    my $string = _slurp_file($path);
+    return unless defined $string;
+
+    my $parser = _get_parser($ext);
+    app->log->error('No parser found'), return
+      unless defined $parser;
+
+    my $metadata = _parse_metadata(\$string);
+
+    my ($preview, $preview_link_text, $content) = _parse_content($self, $parser, $string);
+    app->log->error('Error while parsing ' . $metadata->{title}), return
+      unless defined $preview;
+
+    return $_articles{$path} = {
+        name              => $name,
+        created           => $created,
+        modified          => $modified,
+        title             => $metadata->{title} || $name,
+        description       => $metadata->{description} || '',
+        link              => $metadata->{link} || '',
+        tags              => $metadata->{tags} || [],
+        preview           => $preview,
+        preview_link_text => $preview_link_text,
+        content           => $content
+    };
+}
+
+sub _parse_path {
+    my $path = shift;
 
     my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
 
+    my $created = _parse_created(\$name);
+    unless (defined $created) {
+        app->log->debug("Ignoring $path: wrong timestamp");
+        return ();
+    }
+
+    my $modified = (stat($path))[9];
+    $created ||= $modified;
+
+    return ($name, $created, $modified, $ext);
+}
+
+sub _parse_created {
+    my $name = shift;
+
     my ($year, $month, $day, $hour, $minute, $second);
-    if ($name =~ s/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?-//) {
+    if ($$name =~ s/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?-//) {
         ($year, $month, $day, $hour, $minute, $second) =
           ($1, $2, $3, ($4 || '00'), ($5 || '00'), ($6 || '00'));
 
         $second ||= 0;
         $minute ||= 0;
         $hour   ||= 0;
-    }
-    else {
-        ($second, $minute, $hour, $day, $month, $year) = gmtime($modified);
 
-        $year  += 1900;
-        $month += 1;
-    }
+        my $created = 0;
+        eval {
+            $created =
+              Time::Local::timegm($second, $minute, $hour, $day, $month - 1,
+                $year - 1900);
+        };
 
-    my $timestamp = sprintf('%d%02d%02dT%02d%02d%02d',
-        $year, $month, $day, $hour, $minute, $second);
+        return if $@ || $created < 0;
 
-    my $created = 0;
-    eval {
-        $created =
-          Time::Local::timegm($second, $minute, $hour, $day, $month - 1,
-            $year - 1900);
-    };
-    if ($@ || $created < 0) {
-        app->log->debug("Ignoring $path: wrong timestamp");
-        return;
+        return $created;
     }
 
-    my $string = _slurp_file($path);
-    return unless defined $string;
+    return 0;
+}
 
-    my $parser = _get_parser($ext);
-    return unless $parser;
+sub _parse_content {
+    my ($self, $parser, $string) = @_;
 
-    my $metadata = _parse_metadata(\$string);
-
-    my $cuttag = $config->{cuttag};
-    my ($head, $tail) = ($string, '');
-    my $preview_link = '';
-    if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
-        $tail = $3;
-        $preview_link = $2 || $config->{cuttext};
-    }
+    my ($head, $tail, $preview_link_text) = _parse_cuttag($string);
 
     $head = $parser->($self, $head);
-    app->log->debug('Error while parsing ' . $metadata->{title}), return
-      unless defined $head;
+    return () unless $head;
+
     $tail = $parser->($self, $tail) if $tail;
 
     my ($preview, $content);
@@ -736,24 +764,23 @@ sub _parse_article {
         $preview = '';
     }
 
-    return $_articles{$path} = {
-        path         => $path,
-        name         => $name,
-        created      => $created,
-        modified     => $modified,
-        timestamp    => $timestamp,
-        year         => $year,
-        month        => $month,
-        day          => $day,
-        title        => $metadata->{title} || $name,
-        description  => $metadata->{description} || '',
-        link         => $metadata->{link} || '',
-        tags         => $metadata->{tags} || [],
-        preview      => $preview,
-        preview_link => $preview_link,
-        content      => $content,
-        raw_content  => $string,
-    };
+    return ($preview, $preview_link_text, $content);
+}
+
+sub _parse_cuttag {
+    my $string = shift;
+
+    my $cuttag = $config->{cuttag};
+
+    my ($head, $tail) = ($string, '');
+
+    my $preview_link_text = '';
+    if ($head =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
+        $tail = $3;
+        $preview_link_text = $2 || $config->{cuttext};
+    }
+
+    return ($head, $tail, $preview_link_text);
 }
 
 sub _slurp_file {
