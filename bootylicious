@@ -353,8 +353,7 @@ get '/articles/:year/:month/:alias' =>
 
     $self->stash(article => $article, pager => $pager, layout => 'wrapper');
 
-    $self->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($article->{modified}));
+    _set_last_modified_header($self, $article);
   } => 'article';
 
 get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
@@ -369,8 +368,7 @@ get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
 
     $self->stash(layout => 'wrapper', page => $page);
 
-    $self->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($page->{modified}));
+    _set_last_modified_header($self, $page);
 } => 'page';
 
 get '/drafts/:draftid' => [draftid => $ALIAS_RE] => sub {
@@ -385,8 +383,7 @@ get '/drafts/:draftid' => [draftid => $ALIAS_RE] => sub {
 
     $self->stash(layout => 'wrapper', draft => $draft);
 
-    $self->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($draft->{modified}));
+    _set_last_modified_header($self, $draft);
 } => 'draft';
 
 sub theme {
@@ -465,6 +462,14 @@ sub _is_modified {
     $self->render_text('', status => 304);
 
     return 0;
+}
+
+sub _set_last_modified_header {
+    my $self = shift;
+    my ($object) = @_;
+
+    $self->res->headers->header(
+        'Last-Modified' => Mojo::Date->new($object->{modified}));
 }
 
 sub get_tags {
