@@ -136,6 +136,21 @@ app->renderer->add_helper(
     }
 );
 app->renderer->add_helper(
+    tags_links => sub {
+        my $self = shift;
+        my $article = shift;
+
+        my @links =
+          map { $self->helper(link_to_tag => $_) } @{$article->{tags}};
+
+        my $string = '<div class="tags">';
+        $string .= join ', ' => @links;
+        $string .= '</div>';
+
+        return Mojo::ByteStream->new($string);
+    }
+);
+app->renderer->add_helper(
     link_to_page => sub {
         my $self      = shift;
         my $timestamp = shift;
@@ -804,11 +819,7 @@ __DATA__
             <%= link_to_article $article %>
         </h1>
         <div class="created"><%= date $article->{created} %></div>
-        <div class="tags">
-%   foreach my $tag (@{$article->{tags}}) {
-            <%= link_to_tag $tag %>
-%   }
-        </div>
+        <%= tags_links $article %>
 %   if ($article->{preview}) {
         <%== $article->{preview} %>
         <div class="more"> &rarr;
@@ -938,11 +949,7 @@ __DATA__
 , modified <span class="modified"><%= date $article->{modified} %></span>
 % }
     </div>
-    <div class="tags">
-% foreach my $tag (@{$article->{tags}}) {
-        <%= link_to_tag $tag %>
-% }
-    </div>
+    <%= tags_links $article %>
 <%== $article->{content} %>
 %= include 'article-pager', pager => $pager;
 </div>
@@ -976,6 +983,7 @@ __DATA__
     <h1 class="title">
         <%= $draft->{title} %>
     </h1>
+    <%= tags_links $draft %>
     <%== $draft->{content} %>
 </div>
 
