@@ -110,25 +110,29 @@ sub index {
 
     my $timestamp = $self->stash('timestamp') || 0;
 
-    my $article = {};
-    my ($articles, $pager) = get_articles(
-        $self,
-        limit     => $config->{pagelimit},
-        timestamp => $timestamp
-    );
+    my ($prev, $articles_file_list, $next) =
+      _articles_file_list($config->{pagelimit}, $timestamp);
+    my $last_created  = _last_created_file($articles_file_list);
+    my $last_modified = _last_modified_file($articles_file_list);
 
-    my $last_created  = time;
-    my $last_modified = time;
-    if ($articles && @$articles) {
-        $article = $articles->[0];
+    return 1 unless _is_modified($self, $last_modified, 'index');
 
-        $last_created  = $articles->[0]->{created};
-        $last_modified = $article->{modified};
+    my $pager = {};
+    $pager->{prev} = $prev->{created} if $prev;
+    $pager->{next} = $next->{created} if $next;
 
-        return 1 unless _is_modified($self, $last_modified);
+    my $article  = {};
+    my $articles = [];
+    foreach my $file (@$articles_file_list) {
+        push @$articles, _parse_article($self, $file);
     }
+    $article = $articles->[0] if $articles->[0];
 
-    $self->stash(article => $article, articles => $articles || [], pager => $pager);
+    $self->stash(
+        article  => $article,
+        articles => $articles || [],
+        pager    => $pager
+    );
 
     $self->stash(template => 'index');
 
@@ -142,7 +146,8 @@ sub index {
         $self->stash(layout => 'wrapper', title => '');
     }
 
-    _set_last_modified_header($self, $articles && @$articles ? $articles->[0] : time);
+    _set_last_modified_header($self,
+        $articles && @$articles ? $articles->[0] : time);
 }
 
 get '/' => \&index => 'root';
@@ -180,7 +185,8 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     $articles = [
         grep {
-            grep {m/^\Q$tag\E$/} @{$_->{tags}}
+            grep {m/^\Q$tag\E$/}
+              @{$_->{tags}}
           } @$articles
     ];
 
@@ -227,7 +233,8 @@ get '/articles/:year/:month/:alias' =>
     my ($article, $pager) = get_article($self, $articleid);
     return $self->render_not_found unless $article;
 
-    return 1 unless _is_modified($self, $article->{modified});
+    return 1
+      unless _is_modified($self, $article->{modified}, $article->{filename});
 
     $self->stash(article => $article, pager => $pager, layout => 'wrapper');
 
@@ -309,6 +316,9 @@ sub _prepare_ourselves {
     app->log->level($config->{loglevel});
 
     app->renderer->default_handler($config->{'template_handler'});
+
+    app->plugins->add_hook(after_dispatch => \&_cache_response)
+      if $config->{cache};
 
     _load_plugins();
 }
@@ -409,7 +419,7 @@ sub _register_helpers {
     );
     app->helper(
         link_to_page => sub {
-            my $self      = shift;
+            my $self  = shift;
             my $epoch = shift;
 
             my $timestamp = _epoch_to_timestamp($epoch);
@@ -464,21 +474,75 @@ sub _load_plugins {
 
 sub _is_modified {
     my $self = shift;
-    my ($last_modified) = @_;
+    my ($last_modified, $filename) = @_;
+
+    my $req_last_modified;
 
     my $date = $self->req->headers->header('If-Modified-Since');
-    return 1 unless $date;
 
-    my $config_file = app->home->rel_file('bootylicious.conf');
-    my $last_modified_config = (stat($config_file))[9];
-    $last_modified = $last_modified_config
-      if $last_modified_config && $last_modified_config > $last_modified;
+    my $cache_file;
+    $cache_file = File::Spec->catfile($self->app->static->root,
+        'cache', $filename . '.html')
+      if defined $filename;
 
-    return 1 if $last_modified > Mojo::Date->new($date)->epoch;
+    if ($date) {
+        $req_last_modified = Mojo::Date->new($date)->epoch;
+    }
+    elsif ($filename && $config->{cache}) {
+        $req_last_modified = (stat($cache_file))[9];
+    }
+    else {
+        return 1;
+    }
 
-    $self->render_text('', status => 304);
+    if (my $last_modified_config = _config_file_is_modified_later($last_modified)) {
+        $last_modified = $last_modified_config;
+    }
+
+    if (!$req_last_modified || $last_modified > $req_last_modified) {
+        if ($filename && $config->{cache}) {
+            unlink $cache_file;
+            $self->stash(cache_file => $cache_file);
+        }
+        return 1;
+    }
+
+    if ($date) {
+        $self->render_text('', status => 304);
+    }
+    elsif ($filename && $config->{cache}) {
+        if (-e $cache_file) {
+            $self->render_static($cache_file);
+            delete $self->stash->{cache_file};
+        }
+        else {
+            $self->stash(cache_file => $cache_file);
+            return 1;
+        }
+    }
 
     return 0;
+}
+
+sub _config_file_is_modified_later {
+    my $last_modified = shift;
+
+    my $config_file          = app->home->rel_file('bootylicious.conf');
+    my $last_modified_config = (stat($config_file))[9];
+    return $last_modified_config
+      && $last_modified_config > $last_modified ? $last_modified : undef;
+}
+
+sub _cache_response {
+    my ($self, $c) = @_;
+
+    return unless $c->res->code && $c->res->code == 200;
+
+    my $file = $c->stash('cache_file');
+    return unless $file;
+
+    open my $fh, '>:encoding(UTF-8)', $file or return;
+    print $fh $c->res->body;
 }
 
 sub _set_last_modified_header {
@@ -563,7 +627,8 @@ sub _articles_file_list {
             $cursor++;
         }
 
-        $prev = $files[$cursor - $limit > 0 ? $cursor - $limit : 0] if $cursor;
+        $prev = $files[$cursor - $limit > 0 ? $cursor - $limit : 0]
+          if $cursor;
     }
 
     if ($cursor + $limit < @files) {
@@ -571,6 +636,36 @@ sub _articles_file_list {
     }
 
     return ($prev, [splice(@files, $cursor, $limit)], $next);
+}
+
+sub _last_created_file {
+    my $files = shift;
+
+    return time unless $files && @$files;
+
+    my $last_created = 0;
+
+    for my $file (@$files) {
+        $last_created = $file->{created}
+          if $file->{created} > $last_created;
+    }
+
+    return $last_created || time;
+}
+
+sub _last_modified_file {
+    my $files = shift;
+
+    return time unless $files && @$files;
+
+    my $last_modified = 0;
+
+    for my $file (@$files) {
+        $last_modified = $file->{modified}
+          if $file->{modified} > $last_modified;
+    }
+
+    return $last_modified || time;
 }
 
 sub get_article {
@@ -689,6 +784,7 @@ sub _parse_article {
         name              => $file->{name},
         created           => $file->{created},
         modified          => $file->{modified},
+        filename          => $file->{filename},
         title             => $metadata->{title} || $file->{name},
         description       => $metadata->{description} || '',
         link              => $metadata->{link} || '',
@@ -706,6 +802,8 @@ sub _parse_path {
 
     my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
 
+    my $filename = join '.' => $name, $ext;
+
     my $created;
     if ($name =~ s/^($TIMESTAMP_RE)-//) {
         $created = _timestamp_to_epoch($1);
@@ -717,6 +815,7 @@ sub _parse_path {
 
     return {
         name     => $name,
+        filename => $filename,
         created  => $created,
         modified => $modified,
         ext      => $ext,
@@ -750,6 +849,7 @@ sub _epoch_to_timestamp {
     my $t = Time::Piece->gmtime($epoch);
 
     return $t->strftime('%Y%m%dT%H:%M:%S');
+
     #return $t->strftime('%Y%m%dT%H:%M:%S');
 }
 
