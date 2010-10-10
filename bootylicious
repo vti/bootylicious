@@ -159,18 +159,19 @@ get '/archive' => sub {
 
     my $root = $self->app->home;
 
-    my $last_modified = Mojo::Date->new;
+    my $articles_file_list = _articles_file_list(0);
+    my $last_modified = _last_modified_file($articles_file_list);
 
-    my ($articles) = get_articles($self, limit => 0);
-    if (@$articles) {
-        $last_modified = $articles->[0]->{modified};
-
-        return 1 unless _is_modified($self, $last_modified, 'archive');
-    }
+    return 1 unless _is_modified($self, $last_modified, 'archive');
 
     my $years = {};
-    foreach my $article (@$articles) {
+    foreach my $file (@$articles_file_list) {
+        my $metadata = _parse_metadata($file);
+        $metadata->{title} ||= $file->{name};
+
+        my $article = {%$file, %$metadata};
         my $t = Time::Piece->gmtime($article->{created});
+
         $years->{$t->year} ||= [];
         push @{$years->{$t->year}}, $article;
     }
