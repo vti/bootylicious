@@ -160,7 +160,7 @@ get '/archive' => sub {
     my $root = $self->app->home;
 
     my $articles_file_list = _articles_file_list(0);
-    my $last_modified = _last_modified_file($articles_file_list);
+    my $last_modified      = _last_modified_file($articles_file_list);
 
     return 1 unless _is_modified($self, $last_modified, 'archive');
 
@@ -176,9 +176,10 @@ get '/archive' => sub {
         push @{$years->{$t->year}}, $article;
     }
 
-    my $archive =
-      [map { {year => $_, articles => $years->{$_}} }
-          sort { $b <=> $a } keys %$years];
+    my $archive = [
+        map { {year => $_, articles => $years->{$_}} }
+        sort { $b <=> $a } keys %$years
+    ];
 
     $self->stash(archive => $archive);
 
@@ -190,21 +191,21 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     my $tag = $self->stash('tag');
 
-    my ($articles) = get_articles($self, limit => 0);
+    my $articles_file_list = _articles_file_list(0);
+    my $last_created       = _last_created_file($articles_file_list);
+    my $last_modified      = _last_modified_file($articles_file_list);
 
-    $articles = [
-        grep {
-            grep {m/^\Q$tag\E$/}
-              @{$_->{tags}}
-          } @$articles
-    ];
+    return 1 unless _is_modified($self, $last_modified, "tag-$tag");
+
+    my $articles;
+    foreach my $file (@$articles_file_list) {
+        my $metadata = _parse_metadata($file);
+        next unless grep { $_ eq $tag } @{$metadata->{tags}};
+
+        push @$articles, {%$file, %$metadata};
+    }
 
     return $self->render_not_found unless @$articles;
-
-    my $last_modified = $articles->[0]->{modified};
-    return 1 unless _is_modified($self, $last_modified);
-
-    my $last_created = $articles->[0]->{created};
 
     $self->stash(articles => $articles);
 
@@ -217,14 +218,14 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
         );
     }
 
-    _set_last_modified_header($self, $articles->[0]);
+    _set_last_modified_header($self, $last_modified);
 } => 'tag';
 
 get '/tags' => sub {
     my $self = shift;
 
     my $articles_file_list = _articles_file_list(0);
-    my $last_modified = _last_modified_file($articles_file_list);
+    my $last_modified      = _last_modified_file($articles_file_list);
 
     return 1 unless _is_modified($self, $last_modified, 'tags');
 
@@ -568,7 +569,8 @@ sub _file_is_modified_later {
 
     my $last_modified_file = (stat($file))[9];
 
-    return undef if !$last_modified_file || $last_modified_file <= $last_modified;
+    return undef
+      if !$last_modified_file || $last_modified_file <= $last_modified;
 
     return $last_modified_file;
 }
@@ -595,7 +597,7 @@ sub _set_last_modified_header {
 }
 
 sub get_tags {
-    my $self = shift;
+    my $self               = shift;
     my $articles_file_list = shift;
 
     $articles_file_list = _articles_file_list(0)
@@ -805,14 +807,15 @@ sub get_page {
 }
 
 sub _parse_article {
-    my $self = shift;
-    my $file = shift;
+    my $self     = shift;
+    my $file     = shift;
+    my $metadata = shift;
 
     $file = _parse_path($file) unless ref $file;
-
     return unless $file;
 
-    my $metadata = _parse_metadata($file->{path});
+    $metadata ||= _parse_metadata($file->{path});
+    return unless $metadata;
 
     my $parser = _get_parser($file->{ext});
     app->log->error('No parser found'), return
@@ -841,7 +844,7 @@ sub _parse_article {
 sub _parse_path {
     my $path = shift;
 
-    return unless -e $path;
+    return unless $path && -e $path;
 
     my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
 
@@ -958,6 +961,7 @@ sub _parse_metadata {
     my $path = shift;
 
     $path = $path->{path} if ref $path;
+    return unless $path;
 
     open my $fh, '<:encoding(UTF-8)', $path or return;
 
