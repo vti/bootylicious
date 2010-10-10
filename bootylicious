@@ -509,6 +509,12 @@ sub _is_modified {
         $last_modified = $last_modified_config;
     }
 
+    if (my $last_modified_source =
+        _source_file_is_modified_later($last_modified))
+    {
+        $last_modified = $last_modified_source;
+    }
+
     if (!$req_last_modified || $last_modified > $req_last_modified) {
         if ($filename && $config->{cache}) {
             unlink $cache_file;
@@ -522,8 +528,10 @@ sub _is_modified {
     }
     elsif ($filename && $config->{cache}) {
         if (-e $cache_file) {
-            $self->render_static($cache_file);
             delete $self->stash->{cache_file};
+            my $root = $self->app->static->root;
+            $cache_file =~ s/^$root\/?//;
+            $self->render_static($cache_file);
         }
         else {
             $self->stash(cache_file => $cache_file);
@@ -537,10 +545,26 @@ sub _is_modified {
 sub _config_file_is_modified_later {
     my $last_modified = shift;
 
-    my $config_file          = app->home->rel_file('bootylicious.conf');
-    my $last_modified_config = (stat($config_file))[9];
-    return $last_modified_config
-      && $last_modified_config > $last_modified ? $last_modified : undef;
+    my $config_file = app->home->rel_file('bootylicious.conf');
+
+    return _file_is_modified_later($last_modified, $config_file);
+}
+
+sub _source_file_is_modified_later {
+    my $last_modified = shift;
+
+    return _file_is_modified_later($last_modified, app->home->rel_file($0));
+}
+
+sub _file_is_modified_later {
+    my $last_modified = shift;
+    my $file          = shift;
+
+    my $last_modified_file = (stat($file))[9];
+
+    return undef if $last_modified_file <= $last_modified;
+
+    return $last_modified_file;
 }
 
 sub _cache_response {
