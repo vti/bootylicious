@@ -757,11 +757,13 @@ sub _parse_content {
     my ($self, $parser, $path) = @_;
 
     open my $fh, '<:encoding(UTF-8)', $path or return;
+    while (my $line = <$fh>) {
+        last if $line eq '';
+        last if $line !~ m/^(.*?): /;
+    }
+
     my $string = '';
     while (my $line = <$fh>) {
-        next if $line =~ m/^(.*?): /;
-        last if $line eq '';
-
         $string .= $line;
     }
 
