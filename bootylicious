@@ -165,7 +165,7 @@ get '/archive' => sub {
     if (@$articles) {
         $last_modified = $articles->[0]->{modified};
 
-        return 1 unless _is_modified($self, $last_modified);
+        return 1 unless _is_modified($self, $last_modified, 'archive');
     }
 
     my $years = {};
@@ -222,7 +222,12 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 get '/tags' => sub {
     my $self = shift;
 
-    my $tags = get_tags($self);
+    my $articles_file_list = _articles_file_list(0);
+    my $last_modified = _last_modified_file($articles_file_list);
+
+    return 1 unless _is_modified($self, $last_modified, 'tags');
+
+    my $tags = get_tags($articles_file_list);
 
     $self->stash(tags => $tags);
 } => 'tags';
@@ -326,7 +331,7 @@ sub _prepare_ourselves {
     app->plugins->add_hook(after_dispatch => \&_cache_response)
       if $config->{cache};
 
-    app->defaults(layout => 'wrapper');
+    app->defaults(title => '', description => '', layout => 'wrapper');
 
     _load_plugins();
 }
@@ -590,13 +595,15 @@ sub _set_last_modified_header {
 
 sub get_tags {
     my $self = shift;
+    my $articles_file_list = shift;
+
+    $articles_file_list = _articles_file_list(0)
+      unless defined $articles_file_list;
 
     my $tags = {};
-
-    my ($articles) = get_articles($self, limit => 0);
-
-    foreach my $article (@$articles) {
-        foreach my $tag (@{$article->{tags}}) {
+    foreach my $article_file (@$articles_file_list) {
+        my $metadata = _parse_metadata($article_file);
+        foreach my $tag (@{$metadata->{tags}}) {
             $tags->{$tag}->{count} ||= 0;
             $tags->{$tag}->{count}++;
         }
@@ -648,7 +655,7 @@ sub _articles_file_list {
       map  { _parse_path($_) } glob($root . '/*.*');
     return unless @files;
 
-    return ($prev, \@files, $next) unless $limit;
+    return wantarray ? ($prev, \@files, $next) : \@files unless $limit;
 
     my $cursor = 0;
 
@@ -669,7 +676,8 @@ sub _articles_file_list {
         $next = $files[$cursor + $limit];
     }
 
-    return ($prev, [splice(@files, $cursor, $limit)], $next);
+    my $files = [splice(@files, $cursor, $limit)];
+    return wantarray ? ($prev, $files, $next) : $files;
 }
 
 sub _last_created_file {
@@ -947,6 +955,8 @@ sub _get_parser {
 
 sub _parse_metadata {
     my $path = shift;
+
+    $path = $path->{path} if ref $path;
 
     open my $fh, '<:encoding(UTF-8)', $path or return;
 
