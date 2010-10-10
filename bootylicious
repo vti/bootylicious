@@ -139,11 +139,12 @@ sub index {
     if ($self->stash('format') && $self->stash('format') eq 'rss') {
         $self->stash(
             last_created  => $last_created,
-            last_modified => $last_modified
+            last_modified => $last_modified,
+            layout        => undef
         );
     }
     else {
-        $self->stash(layout => 'wrapper', title => '');
+        $self->stash(title => '');
     }
 
     _set_last_modified_header($self,
@@ -167,13 +168,20 @@ get '/archive' => sub {
         return 1 unless _is_modified($self, $last_modified);
     }
 
-    $self->res->headers->header('Last-Modified' => $last_modified);
+    my $years = {};
+    foreach my $article (@$articles) {
+        my $t = Time::Piece->gmtime($article->{created});
+        $years->{$t->year} ||= [];
+        push @{$years->{$t->year}}, $article;
+    }
 
-    $self->stash(
-        layout        => 'wrapper',
-        articles      => $articles,
-        last_modified => $last_modified,
-    );
+    my $archive =
+      [map { {year => $_, articles => $years->{$_}} }
+          sort { $b <=> $a } keys %$years];
+
+    $self->stash(archive => $archive);
+
+    _set_last_modified_header($self, $last_modified);
 } => 'archive';
 
 get '/tags/:tag' => [tag => $TAG_RE] => sub {
@@ -203,11 +211,9 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
         $self->stash(
             last_modified => $last_modified,
             last_created  => $last_created,
-            template      => 'index'
+            template      => 'index',
+            layout        => undef
         );
-    }
-    else {
-        $self->stash(layout => 'wrapper');
     }
 
     _set_last_modified_header($self, $articles->[0]);
@@ -218,7 +224,7 @@ get '/tags' => sub {
 
     my $tags = get_tags($self);
 
-    $self->stash(layout => 'wrapper', tags => $tags);
+    $self->stash(tags => $tags);
 } => 'tags';
 
 get '/articles/:year/:month/:alias' =>
@@ -236,7 +242,7 @@ get '/articles/:year/:month/:alias' =>
     return 1
       unless _is_modified($self, $article->{modified}, $article->{filename});
 
-    $self->stash(article => $article, pager => $pager, layout => 'wrapper');
+    $self->stash(article => $article, pager => $pager);
 
     _set_last_modified_header($self, $article);
   } => 'article';
@@ -251,7 +257,7 @@ get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
 
     return 1 unless _is_modified($self, $page->{modified});
 
-    $self->stash(layout => 'wrapper', page => $page);
+    $self->stash(page => $page);
 
     _set_last_modified_header($self, $page);
 } => 'page';
@@ -266,7 +272,7 @@ get '/drafts/:draftid' => [draftid => $ALIAS_RE] => sub {
 
     return 1 unless _is_modified($self, $draft->{modified});
 
-    $self->stash(layout => 'wrapper', draft => $draft);
+    $self->stash(draft => $draft);
 
     _set_last_modified_header($self, $draft);
 } => 'draft';
@@ -319,6 +325,8 @@ sub _prepare_ourselves {
 
     app->plugins->add_hook(after_dispatch => \&_cache_response)
       if $config->{cache};
+
+    app->defaults(layout => 'wrapper');
 
     _load_plugins();
 }
@@ -495,7 +503,9 @@ sub _is_modified {
         return 1;
     }
 
-    if (my $last_modified_config = _config_file_is_modified_later($last_modified)) {
+    if (my $last_modified_config =
+        _config_file_is_modified_later($last_modified))
+    {
         $last_modified = $last_modified_config;
     }
 
@@ -604,7 +614,7 @@ sub _articles_file_list {
       : app->home->rel_dir($config->{articlesdir});
 
 
-    $limit ||= $config->{pagelimit};
+    $limit = $config->{pagelimit} unless defined $limit;
 
     my ($prev, $next);
 
@@ -849,8 +859,6 @@ sub _epoch_to_timestamp {
     my $t = Time::Piece->gmtime($epoch);
 
     return $t->strftime('%Y%m%dT%H:%M:%S');
-
-    #return $t->strftime('%Y%m%dT%H:%M:%S');
 }
 
 sub _parse_content {
@@ -998,26 +1006,22 @@ __DATA__
 
 @@ archive.html.ep
 % stash title => strings('archive'), description => strings('archive-description');
-% my $tmp;
-% my $new = 0;
 
 <div class="text">
     <h1><%= strings 'archive' %></h1>
     <br />
-% foreach my $article (@$articles) {
-%   if (!$tmp || $article->{year} ne $tmp->{year}) {
-    <%== "</ul>" if $tmp %>
-    <b><%= $article->{year} %></b>
+%   foreach my $year (@$archive) {
+    <h2><%= $year->{year} %></h2>
     <ul>
+    % foreach my $article (@{$year->{articles}}) {
+        <li>
+            <%= link_to_article $article %>
+            <br />
+            <div class="created"><%= date $article->{created} %></div>
+        </li>
+    % }
+    </ul>
 %   }
-    <li>
-        <%= link_to_article $article %>
-        <br />
-        <div class="created"><%= date $article->{created} %></div>
-    </li>
-
-%   $tmp = $article;
-% }
 </div>
 
 
@@ -1134,7 +1138,7 @@ __DATA__
 
 
 @@ not_found.html.ep
-% stash title => 'Not found', description => 'Not found', layout => 'wrapper';
+% stash title => 'Not found', description => 'Not found';
 <div class="error">
     <h1>404</h1>
     <br />
@@ -1143,7 +1147,7 @@ __DATA__
 
 
 @@ exception.html.ep
-% stash title => 'Not found', description => 'Not found', layout => 'wrapper';
+% stash title => 'Not found', description => 'Not found';
 <div class="error">
     <h1>500</h1>
     <br />
