@@ -18,8 +18,9 @@ $ENV{LC_ALL} = 'C';
 require Time::Piece;
 require Time::Local;
 
-my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
-my $TAG_RE   = qr/[a-zA-Z0-9]+/;
+my $ALIAS_RE     = qr/[a-zA-Z0-9-_]+/;
+my $TAG_RE       = qr/[a-zA-Z0-9]+/;
+my $TIMESTAMP_RE = qr/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?/;
 
 use constant MARKDOWN => eval { require Text::Markdown; 1 };
 
@@ -118,7 +119,7 @@ sub index {
 
     my $last_created  = time;
     my $last_modified = time;
-    if (@$articles) {
+    if ($articles && @$articles) {
         $article = $articles->[0];
 
         $last_created  = $articles->[0]->{created};
@@ -127,10 +128,7 @@ sub index {
         return 1 unless _is_modified($self, $last_modified);
     }
 
-    $self->stash(article => $article, articles => $articles, pager => $pager);
-
-    $self->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($last_modified));
+    $self->stash(article => $article, articles => $articles || [], pager => $pager);
 
     $self->stash(template => 'index');
 
@@ -144,7 +142,7 @@ sub index {
         $self->stash(layout => 'wrapper', title => '');
     }
 
-    _set_last_modified_header($self, @$articles ? $articles->[0] : time);
+    _set_last_modified_header($self, $articles && @$articles ? $articles->[0] : time);
 }
 
 get '/' => \&index => 'root';
@@ -411,7 +409,9 @@ sub _register_helpers {
     app->helper(
         link_to_page => sub {
             my $self      = shift;
-            my $timestamp = shift;
+            my $epoch = shift;
+
+            my $timestamp = _epoch_to_timestamp($epoch);
 
             return $self->link_to(
                 'index' => {timestamp => $timestamp, format => 'html'} => @_);
@@ -506,50 +506,16 @@ sub get_articles {
     my %params = @_;
     $params{limit} ||= 0;
 
-    my $root =
-      ($config->{articlesdir} =~ m/^\//)
-      ? $config->{articlesdir}
-      : app->home->rel_dir($config->{articlesdir});
+    my ($prev_file, $files, $next_file) =
+      _articles_file_list($params{limit}, $params{timestamp});
+    return () unless $files && @$files;
 
     my $pager = {};
-
-    my @files = sort { $b cmp $a } glob($root . '/*.*');
-
-    if ($params{limit}) {
-        my $min = 0;
-
-        if ($params{timestamp}) {
-            my $i = 0;
-            foreach my $file (@files) {
-                File::Basename::basename($file) =~ m/^([^\-]+)-/;
-
-                if ($1 le $params{timestamp}) {
-                    $min = $i;
-                    last;
-                }
-
-                $i++;
-            }
-        }
-
-        my $max = $min + $params{limit};
-
-        if ($min > $params{limit} - 1 && $files[$min - $params{limit}]) {
-            $pager->{prev} = $1
-              if File::Basename::basename($files[$min - $params{limit}])
-                  =~ m/^([^\-]+)-/;
-        }
-
-        if ($max < scalar(@files) && $files[$max]) {
-            $pager->{next} = $1
-              if File::Basename::basename($files[$max]) =~ m/^([^\-]+)-/;
-        }
-
-        @files = splice(@files, $min, $params{limit});
-    }
+    $pager->{prev} = $prev_file->{created} if $prev_file;
+    $pager->{next} = $next_file->{created} if $next_file;
 
     my @articles;
-    foreach my $file (@files) {
+    foreach my $file (@$files) {
         my $data = _parse_article($self, $file);
         next unless $data && %$data;
 
@@ -557,6 +523,48 @@ sub get_articles {
     }
 
     return (\@articles, $pager);
+}
+
+sub _articles_file_list {
+    my ($limit, $timestamp) = @_;
+
+    my $root =
+      ($config->{articlesdir} =~ m/^\//)
+      ? $config->{articlesdir}
+      : app->home->rel_dir($config->{articlesdir});
+
+
+    $limit ||= $config->{pagelimit};
+
+    my ($prev, $next);
+
+    my @files =
+      sort { $b->{created} <=> $a->{created} }
+      grep {defined}
+      map  { _parse_path($_) } glob($root . '/*.*');
+    return unless @files;
+
+    return ($prev, \@files, $next) unless $limit;
+
+    my $cursor = 0;
+
+    my $offset = $timestamp ? _timestamp_to_epoch($timestamp) : 0;
+    if ($offset) {
+        return () if $offset < $files[-1]->{created};
+
+        for (0 .. $#files) {
+            last if $files[$cursor]->{created} <= $offset;
+            $cursor++;
+        }
+
+        $prev = $files[$cursor - $limit > 0 ? $cursor - $limit : 0] if $cursor;
+    }
+
+    if ($cursor + $limit < @files) {
+        $next = $files[$cursor + $limit];
+    }
+
+    return ($prev, [splice(@files, $cursor, $limit)], $next);
 }
 
 sub get_article {
@@ -654,30 +662,28 @@ sub get_page {
 
 sub _parse_article {
     my $self = shift;
-    my $path = shift;
-    return unless $path;
+    my $file = shift;
 
-    my ($name, $created, $modified, $ext) = _parse_path($path);
+    $file = _parse_path($file) unless ref $file;
 
-    my $string = _slurp_file($path);
-    return unless defined $string;
+    return unless $file;
 
-    my $parser = _get_parser($ext);
+    my $metadata = _parse_metadata($file->{path});
+
+    my $parser = _get_parser($file->{ext});
     app->log->error('No parser found'), return
       unless defined $parser;
 
-    my $metadata = _parse_metadata(\$string);
-
     my ($preview, $preview_link_text, $content) =
-      _parse_content($self, $parser, $string);
+      _parse_content($self, $parser, $file->{path});
     app->log->error('Error while parsing ' . $metadata->{title}), return
       unless defined $preview;
 
     return {
-        name              => $name,
-        created           => $created,
-        modified          => $modified,
-        title             => $metadata->{title} || $name,
+        name              => $file->{name},
+        created           => $file->{created},
+        modified          => $file->{modified},
+        title             => $metadata->{title} || $file->{name},
         description       => $metadata->{description} || '',
         link              => $metadata->{link} || '',
         tags              => $metadata->{tags} || [],
@@ -690,49 +696,68 @@ sub _parse_article {
 sub _parse_path {
     my $path = shift;
 
+    return unless -e $path;
+
     my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
 
-    my $created = _parse_created(\$name);
-    unless (defined $created) {
-        app->log->debug("Ignoring $path: wrong timestamp");
-        return ();
+    my $created;
+    if ($name =~ s/^($TIMESTAMP_RE)-//) {
+        $created = _timestamp_to_epoch($1);
+        return unless defined $created;
     }
 
     my $modified = (stat($path))[9];
     $created ||= $modified;
 
-    return ($name, $created, $modified, $ext);
+    return {
+        name     => $name,
+        created  => $created,
+        modified => $modified,
+        ext      => $ext,
+        path     => $path
+    };
 }
 
-sub _parse_created {
-    my $name = shift;
+sub _timestamp_to_epoch {
+    my $timestamp = shift;
 
-    my ($year, $month, $day, $hour, $minute, $second);
-    if ($$name =~ s/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?-//) {
-        ($year, $month, $day, $hour, $minute, $second) =
-          ($1, $2, $3, ($4 || '00'), ($5 || '00'), ($6 || '00'));
+    return unless $timestamp =~ qr/^$TIMESTAMP_RE$/;
 
-        $second ||= 0;
-        $minute ||= 0;
-        $hour   ||= 0;
+    my ($year, $month, $day, $hour, $minute, $second) =
+      ($1, $2, $3, ($4 || 0), ($5 || 0), ($6 || 0));
 
-        my $created = 0;
-        eval {
-            $created =
-              Time::Local::timegm($second, $minute, $hour, $day, $month - 1,
-                $year - 1900);
-        };
+    my $epoch = 0;
+    eval {
+        $epoch =
+          Time::Local::timegm($second, $minute, $hour, $day, $month - 1,
+            $year - 1900);
+    };
 
-        return if $@ || $created < 0;
+    return if $@ || $epoch < 0;
 
-        return $created;
-    }
+    return $epoch;
+}
 
-    return 0;
+sub _epoch_to_timestamp {
+    my $epoch = shift;
+
+    my $t = Time::Piece->gmtime($epoch);
+
+    return $t->strftime('%Y%m%dT%H:%M:%S');
+    #return $t->strftime('%Y%m%dT%H:%M:%S');
 }
 
 sub _parse_content {
-    my ($self, $parser, $string) = @_;
+    my ($self, $parser, $path) = @_;
+
+    open my $fh, '<:encoding(UTF-8)', $path or return;
+    my $string = '';
+    while (my $line = <$fh>) {
+        next if $line =~ m/^(.*?): /;
+        last if $line eq '';
+
+        $string .= $line;
+    }
 
     my ($head, $tail, $preview_link_text) = _parse_cuttag(\$string);
 
@@ -770,13 +795,6 @@ sub _parse_cuttag {
     return ($$string, $tail, $preview_link_text);
 }
 
-sub _slurp_file {
-    my $file = shift;
-
-    open my $fh, '<:encoding(UTF-8)', $file or return;
-    return do { local $/; <$fh> };
-}
-
 sub _get_parser {
     my $ext = shift;
 
@@ -788,16 +806,15 @@ sub _get_parser {
 }
 
 sub _parse_metadata {
-    my $string = shift;
+    my $path = shift;
 
-    $$string =~ s/^((.*?)(?:\n\n|\n\r\n\r|\r\r))//s;
-    return {} unless $2;
-
-    my $original = $1;
-    my $data     = $2;
+    open my $fh, '<:encoding(UTF-8)', $path or return;
 
     my $metadata = {};
-    while ($data =~ s/^(.*?):\s*(.*?)(?:\n|\n\r|\r|$)//s) {
+    while (my $line = <$fh>) {
+        last unless $line;
+        last unless $line =~ m/^(.*?): (.*)/;
+
         my $key   = lc $1;
         my $value = $2;
 
@@ -808,10 +825,6 @@ sub _parse_metadata {
         }
 
         $metadata->{$key} = $value;
-    }
-
-    unless (%$metadata) {
-        $$string = $original . $$string;
     }
 
     return $metadata;
