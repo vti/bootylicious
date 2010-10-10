@@ -530,7 +530,7 @@ sub _is_modified {
     }
 
     if ($date) {
-        $self->render_text('', status => 304);
+        $self->render_text('', status => 304, layout => undef);
     }
     elsif ($filename && $config->{cache}) {
         if (-e $cache_file) {
@@ -568,7 +568,7 @@ sub _file_is_modified_later {
 
     my $last_modified_file = (stat($file))[9];
 
-    return undef if $last_modified_file <= $last_modified;
+    return undef if !$last_modified_file || $last_modified_file <= $last_modified;
 
     return $last_modified_file;
 }
