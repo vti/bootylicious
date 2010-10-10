@@ -281,7 +281,8 @@ sub _prepare_ourselves {
     plugin 'pod_renderer';
     plugin 'tag_helpers';
 
-    $config = plugin json_config => {default => $config};
+    $config = plugin json_config =>
+      {file => app->home->rel_file('bootylicious.conf'), default => $config};
 
     # Additional Perl modules
     if ($config->{perl5lib}) {
@@ -468,7 +469,12 @@ sub _is_modified {
     my $date = $self->req->headers->header('If-Modified-Since');
     return 1 unless $date;
 
-    return 1 unless Mojo::Date->new($date)->epoch >= $last_modified;
+    my $config_file = app->home->rel_file('bootylicious.conf');
+    my $last_modified_config = (stat($config_file))[9];
+    $last_modified = $last_modified_config
+      if $last_modified_config && $last_modified_config > $last_modified;
+
+    return 1 if $last_modified > Mojo::Date->new($date)->epoch;
 
     $self->render_text('', status => 304);
 

@@ -3,23 +3,29 @@
 use strict;
 use warnings;
 
-use Test::More tests => 39;
+use Test::More tests => 43;
 use Test::Mojo;
 
-BEGIN { require FindBin; $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/../"; }
+BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin"; }
 
 require "$FindBin::Bin/../bootylicious";
 
 my $app = app();
-$app->home->parse($FindBin::Bin);
-$app->log->level('error');
 
 my $t = Test::Mojo->new;
 
+my $time = time;
 # Index page
 $t->get_ok('/')->status_is(200)->content_like(qr/booty/);
-$t->get_ok('/' => {'If-Modified-Since' => time - 2})->status_is(304)
+
+$t->get_ok('/' => {'If-Modified-Since' => $time})->status_is(304)
   ->content_is('');
+sleep 1;
+system 'touch t/articles/20101010-foo.md';
+$t->get_ok('/' => {'If-Modified-Since' => $time})->status_is(200);
+system 'touch ' . $app->home->rel_file('bootylicious.conf');
+$t->get_ok('/' => {'If-Modified-Since' => $time})->status_is(200);
+
 $t->get_ok('/index')->status_is(302);
 $t->get_ok('/index.html')->status_is(200)->content_like(qr/booty/);
 
