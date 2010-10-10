@@ -301,6 +301,8 @@ sub _prepare_ourselves {
     plugin 'pod_renderer';
     plugin 'tag_helpers';
 
+    app->log->level('error');
+
     $config = plugin json_config =>
       {file => app->home->rel_file('bootylicious.conf'), default => $config};
 
