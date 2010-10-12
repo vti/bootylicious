@@ -28,6 +28,8 @@ sub _set_last_modified_header {
 sub _check_if_modified_since_header {
     my ($self, $c) = @_;
 
+    return if $c->res->code;
+
     my $date = $c->req->headers->header('If-Modified-Since');
     return unless $date;
 
