@@ -9,6 +9,7 @@ __PACKAGE__->attr('root');
 __PACKAGE__->attr('args' => sub { {} });
 
 use Bootylicious::Document;
+use Mojo::ByteStream 'b';
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -26,6 +27,8 @@ sub new {
     my @files = glob "$root/*.*";
     foreach my $file (@files) {
         my $document;
+
+        $file = b($file)->decode('UTF-8');
 
         local $@;
         eval {
