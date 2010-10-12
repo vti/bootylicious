@@ -69,9 +69,10 @@ sub register {
 
     $app->helper(
         get_articles_by_tag => sub {
-            my ($self, $tag) = @_;
+            my $self = shift;
+            my $tag  = shift;
+
             Bootylicious::ArticlePager->new(
-                limit    => $page_limit,
                 iterator => Bootylicious::ArticleByTagIterator->new(
                     Bootylicious::ArticleIterator->new(
                         root => $articles_root,
@@ -82,7 +83,9 @@ sub register {
                         }
                     ),
                     tag => $tag
-                )
+                ),
+                limit => $page_limit,
+                @_
             );
         }
     );

@@ -60,7 +60,7 @@ sub index {
 get '/archive' => sub {
     my $self = shift;
 
-    my $archive = $self->get_archive();
+    my $archive = $self->get_archive;
 
     $self->stash(booty => $archive);
 
@@ -72,7 +72,9 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     my $tag = $self->stash('tag');
 
-    my $pager = $self->get_articles_by_tag($tag);
+    my $timestamp = $self->param('timestamp');
+
+    my $pager = $self->get_articles_by_tag($tag, timestamp => $timestamp);
 
     return $self->render_not_found unless $pager->articles->size;
 
@@ -184,18 +186,8 @@ __DATA__
 
 @@ index-pager.html.ep
     <div id="pager">
-% if ($pager->prev_timestamp) {
-        &larr; <%= link_to_page $pager->prev_timestamp => {%><%= strings 'later' %><%}%>
-% }
-% else {
-        <span class="notactive">&larr; <%= strings 'later' %></span>
-% }
-% if ($pager->next_timestamp) {
-        <%= link_to_page $pager->next_timestamp => {%><%= strings 'earlier' %><%}%> &rarr;
-% }
-% else {
-        <span class="notactive"><%= strings 'earlier' %> &rarr;</span>
-% }
+        <%= link_to_page 'index', $pager->prev_timestamp => {%><span class="arrow">&larr; </span><%= strings 'later' %><%}%>
+        <%= link_to_page 'index', $pager->next_timestamp => {%><%= strings 'earlier' %><span class="arrow"> &rarr;</span><%}%>
     </div>
 
 
@@ -288,7 +280,14 @@ __DATA__
     <div class="created"><%= date $article->created %></div>
 % }
 </div>
-%= include 'index-pager', pager => $pager;
+%= include 'tag-pager', pager => $pager, tag => $tag;
+
+
+@@ tag-pager.html.ep
+    <div id="pager">
+        <%= link_to_page 'tag' => {tag => $tag} => $pager->prev_timestamp => {%><span class="arrow">&larr; </span><%= strings 'later' %><%}%>
+        <%= link_to_page 'tag' => {tag => $tag} => $pager->next_timestamp => {%><%= strings 'earlier' %><span class="arrow"> &rarr;</span><%}%>
+    </div>
 
 
 @@ tag.rss.ep
@@ -439,8 +438,9 @@ span#about {font-style:italic}
 .text h1.title {font-size:2.5em}
 .error {padding:2em;text-align:center}
 .more {margin-left:10px}
-#pager {text-align:center;padding:2em}
-#pager span.notactive {color:#ccc}
+#pager {text-align:center;padding:2em; color:#ccc}}
+#pager span.active {color:#000}
+#pager span.arrow {background:#fff}
 #subfooter {padding:2em;border-top:#000000 1px solid}
 #footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
 .center {text-align:center}
