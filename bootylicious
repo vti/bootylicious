@@ -230,27 +230,25 @@ __DATA__
         <pubDate><%= date_rss $pager->articles->last_created %></pubDate>
         <lastBuildDate><%= date_rss $pager->articles->last_created %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
-% while (my $article = $pager->articles->next) {
-    % my $link = href_to_article $article;
-    <item>
-      <title><%= $article->title %></title>
-      <link><%= $link %></link>
-      <description>
-        <%= $article->preview || $article->content %>
-        % if ($article->link) {
-            % my $permalink = qq|<a href="$link" title="| . strings('permalink-to') . qq| '$article->title'">&#x2605;</a>|;
-            <%= $permalink %>
+        % while (my $article = $pager->articles->next) {
+            % my $link = href_to_article $article;
+        <item>
+          <title><%== $article->title %></title>
+          <link><%= $link %></link>
+          <description>
+            <%= $article->preview || $article->content %>
+            % if ($article->link) {
+                <%= permalink_to($article->link) if $article->link %>
+            % }
+          </description>
+          % foreach my $tag (@{$article->tags}) {
+          <category><%= $tag %></category>
+          % }
+          <pubDate><%= date_rss $article->created %></pubDate>
+          <guid><%= $link %></guid>
+        </item>
         % }
-      </description>
-      % foreach my $tag (@{$article->tags}) {
-      <category><%= $tag %></category>
-      % }
-      <pubDate><%= date_rss $article->created %></pubDate>
-      <guid><%= $link %></guid>
-    </item>
-% }
     </channel>
-</rss>
 
 @@ layouts/wrapper.rss.ep
 <?xml version="1.0" encoding="UTF-8"?>

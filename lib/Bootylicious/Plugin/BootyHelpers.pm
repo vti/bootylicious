@@ -33,7 +33,8 @@ sub register {
             return b($date->strftime($fmt))->decode('utf-8');
         }
     );
-    $app->helper(date_rss => sub { Mojo::Date->new($_[1]->epoch)->to_string });
+    $app->helper(date_rss => sub { Mojo::Date->new($_[1]->epoch)->to_string }
+    );
     $app->helper(
         href_to_article => sub {
             my $self    = shift;
@@ -113,6 +114,15 @@ sub register {
 
             return $self->link_to(
                 'index' => {timestamp => $timestamp, format => 'html'} => @_);
+        }
+    );
+
+    $app->helper(
+        permalink_to => sub {
+            my $self = shift;
+            my $link = shift;
+
+            return $self->link_to($link => sub {'&#x2605;'});
         }
     );
 
