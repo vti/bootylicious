@@ -18,7 +18,7 @@ sub register {
 
             $app->plugins->run_hook(before_render => $self);
 
-            $self->render unless $self->res->code;
+            $self->render(@_) unless $self->res->code;
         }
     );
 
@@ -33,7 +33,7 @@ sub register {
             return b($date->strftime($fmt))->decode('utf-8');
         }
     );
-    $app->helper(date_rss => sub { Mojo::Date->new($_[1])->to_string });
+    $app->helper(date_rss => sub { Mojo::Date->new($_[1]->epoch)->to_string });
     $app->helper(
         href_to_article => sub {
             my $self    = shift;

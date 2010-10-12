@@ -43,7 +43,9 @@ under sub {
     return 0;
 };
 
-get '/' => sub {
+get '/'      => \&index => 'root';
+get '/index' => \&index => 'index';
+sub index {
     my $self = shift;
 
     my $timestamp = $self->param('timestamp');
@@ -52,8 +54,8 @@ get '/' => sub {
 
     $self->stash(booty => $pager->articles, pager => $pager);
 
-    $self->render_smart;
-} => 'index';
+    $self->render_smart('index');
+};
 
 get '/archive' => sub {
     my $self = shift;
@@ -243,7 +245,7 @@ __DATA__
       % foreach my $tag (@{$article->tags}) {
       <category><%= $tag %></category>
       % }
-      <pubDate><%= date_rss($article->created) %></pubDate>
+      <pubDate><%= date_rss $article->created %></pubDate>
       <guid><%= $link %></guid>
     </item>
 % }
