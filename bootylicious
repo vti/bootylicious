@@ -1,87 +1,24 @@
 #!/usr/bin/env perl
 
-BEGIN { use FindBin; unshift @INC, "$FindBin::Bin/mojo/lib" }
+BEGIN {
+    use FindBin;
+    unshift @INC, "$FindBin::Bin/lib";
+    unshift @INC, "$FindBin::Bin/mojo/lib";
+}
 
 use Mojolicious::Lite;
 
-use Mojo::ByteStream 'b';
-use Mojo::Command;
-use Mojo::Date;
-use Mojo::JSON;
-use Mojo::Loader;
-use Mojo::Template;
+push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
-require File::Basename;
+plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
+plugin 'booty_helpers';
+plugin 'markdown_parser';
+plugin 'model';
 
-# Don't use set locale unless it is explicitly specified via a config file
-$ENV{LC_ALL} = 'C';
-require Time::Piece;
-require Time::Local;
+my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
+my $TAG_RE   = qr/[a-zA-Z0-9]+/;
 
-my $ALIAS_RE     = qr/[a-zA-Z0-9-_]+/;
-my $TAG_RE       = qr/[a-zA-Z0-9]+/;
-my $TIMESTAMP_RE = qr/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?/;
-
-use constant MARKDOWN => eval { require Text::Markdown; 1 };
-
-our $VERSION = '0.910102';
-
-my $config = {
-    perl5lib     => '',
-    loglevel     => 'error',
-    author       => 'whoami',
-    email        => '',
-    title        => 'Just another blog',
-    about        => 'Perl hacker',
-    descr        => 'I do not know if I need this',
-    articlesdir  => 'articles',
-    pagesdir     => 'pages',
-    draftsdir    => 'drafts',
-    publicdir    => 'public',
-    templatesdir => 'templates',
-    footer =>
-      'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
-    menu => [
-        index   => '/index.html',
-        tags    => '/tags.html',
-        archive => '/archive.html'
-    ],
-    theme     => '',
-    cuttag    => '[cut]',
-    cuttext   => 'Keep reading',
-    pagelimit => 10,
-    meta      => [],
-    css       => [],
-    js        => [],
-    datefmt   => '%a, %d %b %Y',
-    strings   => {
-        'archive'             => 'Archive',
-        'archive-description' => 'Articles index',
-        'tags'                => 'Tags',
-        'tags-description'    => 'Tags overview',
-        'tag'                 => 'Tag',
-        'tag-description'     => 'Articles with tag [_1]',
-        'draft'               => 'Draft',
-        'permalink-to'        => 'Permalink to',
-        'later'               => 'Later',
-        'earlier'             => 'Earlier',
-        'not-found'           => 'The page you are looking for was not found',
-        'error'               => 'Internal error occuried :('
-    },
-    template_handler => 'ep',
-};
-
-sub config {
-    if (@_) {
-        return $config->{$_[0]} if @_ == 1;
-
-        $config = {%$config, @_};
-    }
-
-    return $config;
-}
-
-_prepare_ourselves();
+our $VERSION = '1.000000';
 
 under sub {
     my $self = shift;
@@ -105,85 +42,22 @@ under sub {
     return 0;
 };
 
-sub index {
+get '/' => sub {
     my $self = shift;
 
-    my $timestamp = $self->stash('timestamp') || 0;
+    my $timestamp = $self->param('timestamp');
 
-    my ($prev, $articles_file_list, $next) =
-      _articles_file_list($config->{pagelimit}, $timestamp);
-    my $last_created  = _last_created_file($articles_file_list);
-    my $last_modified = _last_modified_file($articles_file_list);
+    my $pager = $self->get_articles(timestamp => $timestamp);
 
-    return 1 unless _is_modified($self, $last_modified, 'index');
-
-    my $pager = {};
-    $pager->{prev} = $prev->{created} if $prev;
-    $pager->{next} = $next->{created} if $next;
-
-    my $article  = {};
-    my $articles = [];
-    foreach my $file (@$articles_file_list) {
-        push @$articles, _parse_article($self, $file);
-    }
-    $article = $articles->[0] if $articles->[0];
-
-    $self->stash(
-        article  => $article,
-        articles => $articles || [],
-        pager    => $pager
-    );
-
-    $self->stash(template => 'index');
-
-    if ($self->stash('format') && $self->stash('format') eq 'rss') {
-        $self->stash(
-            last_created  => $last_created,
-            last_modified => $last_modified,
-            layout        => undef
-        );
-    }
-    else {
-        $self->stash(title => '');
-    }
-
-    _set_last_modified_header($self,
-        $articles && @$articles ? $articles->[0] : time);
-}
-
-get '/' => \&index => 'root';
-get '/index/:timestamp' => {timestamp => ''} => \&index => 'index';
+    $self->stash(pager => $pager);
+} => 'index';
 
 get '/archive' => sub {
     my $self = shift;
 
-    my $root = $self->app->home;
-
-    my $articles_file_list = _articles_file_list(0);
-    my $last_modified      = _last_modified_file($articles_file_list);
-
-    return 1 unless _is_modified($self, $last_modified, 'archive');
-
-    my $years = {};
-    foreach my $file (@$articles_file_list) {
-        my $metadata = _parse_metadata($file);
-        $metadata->{title} ||= $file->{name};
-
-        my $article = {%$file, %$metadata};
-        my $t = Time::Piece->gmtime($article->{created});
-
-        $years->{$t->year} ||= [];
-        push @{$years->{$t->year}}, $article;
-    }
-
-    my $archive = [
-        map { {year => $_, articles => $years->{$_}} }
-        sort { $b <=> $a } keys %$years
-    ];
+    my $archive = $self->get_archive();
 
     $self->stash(archive => $archive);
-
-    _set_last_modified_header($self, $last_modified);
 } => 'archive';
 
 get '/tags/:tag' => [tag => $TAG_RE] => sub {
@@ -191,806 +65,66 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     my $tag = $self->stash('tag');
 
-    my $articles_file_list = _articles_file_list(0);
-    my $last_created       = _last_created_file($articles_file_list);
-    my $last_modified      = _last_modified_file($articles_file_list);
+    my $pager = $self->get_articles_by_tag($tag);
 
-    return 1 unless _is_modified($self, $last_modified, "tag-$tag");
+    return $self->render_not_found unless $pager->articles->size;
 
-    my $articles;
-    foreach my $file (@$articles_file_list) {
-        my $metadata = _parse_metadata($file);
-        next unless grep { $_ eq $tag } @{$metadata->{tags}};
-
-        push @$articles, {%$file, %$metadata};
-    }
-
-    return $self->render_not_found unless @$articles;
-
-    $self->stash(articles => $articles);
-
-    if ($self->stash('format') && $self->stash('format') eq 'rss') {
-        $self->stash(
-            last_modified => $last_modified,
-            last_created  => $last_created,
-            template      => 'index',
-            layout        => undef
-        );
-    }
-
-    _set_last_modified_header($self, $last_modified);
+    $self->stash(pager => $pager, articles => $pager->articles);
 } => 'tag';
 
 get '/tags' => sub {
     my $self = shift;
 
-    my $articles_file_list = _articles_file_list(0);
-    my $last_modified      = _last_modified_file($articles_file_list);
+    my $config  = $self->config;
+    my $parsers = $self->parsers;
 
-    return 1 unless _is_modified($self, $last_modified, 'tags');
+    my $cloud = $self->get_tag_cloud;
 
-    my $tags = get_tags($articles_file_list);
-
-    $self->stash(tags => $tags);
+    $self->stash(cloud => $cloud);
 } => 'tags';
 
 get '/articles/:year/:month/:alias' =>
   [year => qr/\d+/, month => qr/\d+/, alias => $ALIAS_RE] => sub {
     my $self = shift;
 
-    my $articleid =
-        $self->stash('year') . '/'
-      . $self->stash('month') . '/'
-      . $self->stash('alias');
+    my $year  = $self->stash('year');
+    my $month = $self->stash('month');
+    my $name  = $self->stash('alias');
 
-    my ($article, $pager) = get_article($self, $articleid);
+    my $article = $self->get_article($year, $month, $name);
+
     return $self->render_not_found unless $article;
 
-    return 1
-      unless _is_modified($self, $article->{modified}, $article->{filename});
-
-    $self->stash(article => $article, pager => $pager);
-
-    _set_last_modified_header($self, $article);
+    $self->stash(
+        article => $article,
+        prev    => $article->prev,
+        next    => $article->next
+    );
   } => 'article';
 
-get '/pages/:pageid' => [pageid => $ALIAS_RE] => sub {
+get '/pages/:name' => [name => $ALIAS_RE] => sub {
     my $self = shift;
 
-    my $pageid = $self->stash('pageid');
+    my $name = $self->stash('name');
 
-    my $page = get_page($self, $pageid);
+    my $page = $self->get_page($name);
+
     return $self->render_not_found unless $page;
 
-    return 1 unless _is_modified($self, $page->{modified});
-
     $self->stash(page => $page);
-
-    _set_last_modified_header($self, $page);
 } => 'page';
 
-get '/drafts/:draftid' => [draftid => $ALIAS_RE] => sub {
+get '/drafts/:name' => [name => $ALIAS_RE] => sub {
     my $self = shift;
 
-    my $draftid = $self->stash('draftid');
+    my $name = $self->stash('name');
 
-    my $draft = get_draft($self, $draftid);
+    my $draft = $self->get_draft($name);
+
     return $self->render_not_found unless $draft;
 
-    return 1 unless _is_modified($self, $draft->{modified});
-
     $self->stash(draft => $draft);
-
-    _set_last_modified_header($self, $draft);
 } => 'draft';
-
-sub theme {
-    my $publicdir = app->home->rel_dir($config->{publicdir});
-
-    # CSS, JS auto import
-    foreach my $type (qw/css js/) {
-        $config->{$type} =
-          [map { s/^$publicdir\///; $_ }
-              glob("$publicdir/bootylicious/themes/$config->{theme}/*.$type")
-          ];
-    }
-}
-
-sub _prepare_ourselves {
-    plugin 'charset' => {charset => 'utf-8'};
-    plugin 'pod_renderer';
-    plugin 'tag_helpers';
-
-    app->log->level('error');
-
-    $config = plugin json_config =>
-      {file => app->home->rel_file('bootylicious.conf'), default => $config};
-
-    # Additional Perl modules
-    if ($config->{perl5lib}) {
-        push @INC, $_
-          for (
-            ref $config->{perl5lib} eq 'ARRAY'
-            ? @{$config->{perl5lib}}
-            : $config->{perl5lib}
-          );
-    }
-
-    $ENV{SCRIPT_NAME} = $config->{base} if defined $config->{base};
-
-    # set proper templates base dir, if defined
-    app->renderer->root(app->home->rel_dir($config->{templatesdir}))
-      if defined $config->{templatesdir};
-
-    # set proper public base dir, if defined
-    app->static->root(app->home->rel_dir($config->{publicdir}))
-      if defined $config->{publicdir};
-
-    _register_helpers();
-
-    app->log->level($config->{loglevel});
-
-    app->renderer->default_handler($config->{'template_handler'});
-
-    app->plugins->add_hook(after_dispatch => \&_cache_response)
-      if $config->{cache};
-
-    app->defaults(title => '', description => '', layout => 'wrapper');
-
-    _load_plugins();
-}
-
-sub _register_helpers {
-    app->helper(config => sub { shift; config(@_) });
-    app->helper(
-        date => sub {
-            my $self  = shift;
-            my $epoch = shift;
-            my $fmt   = shift;
-
-            $fmt ||= $config->{'datefmt'};
-
-            my $t = Time::Piece->gmtime($epoch);
-
-            return b($t->strftime($fmt))->decode('utf-8');
-        }
-    );
-    app->helper(date_rss => sub { Mojo::Date->new($_[1])->to_string });
-    app->helper(
-        href_to_article => sub {
-            my $self    = shift;
-            my $article = shift;
-
-            my ($year, $month) = (gmtime($article->{created}))[5, 4];
-            $year  += 1900;
-            $month += 1;
-
-            return $self->url_for(
-                article => (
-                    year   => $year,
-                    month  => $month,
-                    alias  => $article->{name},
-                    format => 'html'
-                )
-            );
-        }
-    );
-    app->helper(
-        link_to_article => sub {
-            my $self    = shift;
-            my $article = shift;
-
-            my $href = $self->href_to_article($article);
-
-            if ($article->{link}) {
-                my $string = '';
-
-                $string .= $self->link_to($href => sub { $article->{title} });
-                $string .= '&nbsp;';
-                $string
-                  .= $self->link_to($article->{link} => sub {"&raquo;"});
-
-                return Mojo::ByteStream->new($string);
-            }
-
-            return $self->link_to($href => sub { $article->{title} });
-        }
-    );
-    app->helper(
-        link_to_full_content => sub {
-            my $self = shift;
-            my ($article) = @_;
-
-            my $href = $self->href_to_article($article);
-            $href->fragment('cut');
-
-            return $self->link_to(
-                $href => sub { $article->{preview_link_text} });
-        }
-    );
-    app->helper(
-        link_to_tag => sub {
-            my $self = shift;
-            my $tag  = shift;
-
-            my $cb = ref $_[-1] eq 'CODE' ? $_[-1] : sub {$tag};
-            my $args = ref $_[0] eq 'HASH' ? $_[0] : {};
-
-            return $self->link_to(
-                tag => {tag => $tag, format => 'html', %$args} => $cb);
-        }
-    );
-    app->helper(
-        tags_links => sub {
-            my $self    = shift;
-            my $article = shift;
-
-            my @links = map { $self->link_to_tag($_) } @{$article->{tags}};
-
-            my $string = '<div class="tags">';
-            $string .= join ', ' => @links;
-            $string .= '</div>';
-
-            return Mojo::ByteStream->new($string);
-        }
-    );
-    app->helper(
-        link_to_page => sub {
-            my $self  = shift;
-            my $epoch = shift;
-
-            my $timestamp = _epoch_to_timestamp($epoch);
-
-            return $self->link_to(
-                'index' => {timestamp => $timestamp, format => 'html'} => @_);
-        }
-    );
-
-    app->helper(
-        strings => sub {
-            my $self = shift;
-
-            my $string = $config->{'strings'}->{$_[0]};
-
-            for (my $i = 0; $i < @_; $i++) {
-                $string =~ s/\[_$i\]/$_[$i]/;
-            }
-
-            return $string;
-        }
-    );
-}
-
-sub _load_plugins {
-    my $plugins_arrayref = shift;
-
-    my $lib_dir = app->home->rel_dir('lib');
-    push @INC, $lib_dir;
-
-    my @plugins;
-
-    my $prev;
-    while (my $plugin = shift @{$config->{plugins}}) {
-        if (ref($plugin) eq 'HASH') {
-            next unless $plugins[-1];
-
-            $plugins[-1]->{args} = $plugin;
-        }
-        else {
-            push @plugins, {name => $plugin, args => {}};
-        }
-    }
-
-    push @{app->plugins->namespaces}, $_ for @{$config->{plugins_namespaces}};
-    push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
-
-    foreach my $plugin (@plugins) {
-        plugin($plugin->{name} => $plugin->{args});
-    }
-}
-
-sub _is_modified {
-    my $self = shift;
-    my ($last_modified, $filename) = @_;
-
-    my $req_last_modified;
-
-    my $date = $self->req->headers->header('If-Modified-Since');
-
-    my $cache_file;
-    $cache_file = File::Spec->catfile($self->app->static->root,
-        'cache', $filename . '.html')
-      if defined $filename;
-
-    if ($date) {
-        $req_last_modified = Mojo::Date->new($date)->epoch;
-    }
-    elsif ($filename && $config->{cache}) {
-        $req_last_modified = (stat($cache_file))[9];
-    }
-    else {
-        return 1;
-    }
-
-    if (my $last_modified_config =
-        _config_file_is_modified_later($last_modified))
-    {
-        $last_modified = $last_modified_config;
-    }
-
-    if (my $last_modified_source =
-        _source_file_is_modified_later($last_modified))
-    {
-        $last_modified = $last_modified_source;
-    }
-
-    if (!$req_last_modified || $last_modified > $req_last_modified) {
-        if ($filename && $config->{cache}) {
-            unlink $cache_file;
-            $self->stash(cache_file => $cache_file);
-        }
-        return 1;
-    }
-
-    if ($date) {
-        $self->render_text('', status => 304, layout => undef);
-    }
-    elsif ($filename && $config->{cache}) {
-        if (-e $cache_file) {
-            delete $self->stash->{cache_file};
-            my $root = $self->app->static->root;
-            $cache_file =~ s/^$root\/?//;
-            $self->render_static($cache_file);
-        }
-        else {
-            $self->stash(cache_file => $cache_file);
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-sub _config_file_is_modified_later {
-    my $last_modified = shift;
-
-    my $config_file = app->home->rel_file('bootylicious.conf');
-
-    return _file_is_modified_later($last_modified, $config_file);
-}
-
-sub _source_file_is_modified_later {
-    my $last_modified = shift;
-
-    return _file_is_modified_later($last_modified, app->home->rel_file($0));
-}
-
-sub _file_is_modified_later {
-    my $last_modified = shift;
-    my $file          = shift;
-
-    my $last_modified_file = (stat($file))[9];
-
-    return undef
-      if !$last_modified_file || $last_modified_file <= $last_modified;
-
-    return $last_modified_file;
-}
-
-sub _cache_response {
-    my ($self, $c) = @_;
-
-    return unless $c->res->code && $c->res->code == 200;
-
-    my $file = $c->stash('cache_file');
-    return unless $file;
-
-    open my $fh, '>:encoding(UTF-8)', $file or return;
-    print $fh $c->res->body;
-}
-
-sub _set_last_modified_header {
-    my $self = shift;
-    my $time = shift;
-
-    $time = $time->{modified} if ref $time;
-
-    $self->res->headers->header('Last-Modified' => Mojo::Date->new($time));
-}
-
-sub get_tags {
-    my $self               = shift;
-    my $articles_file_list = shift;
-
-    $articles_file_list = _articles_file_list(0)
-      unless defined $articles_file_list;
-
-    my $tags = {};
-    foreach my $article_file (@$articles_file_list) {
-        my $metadata = _parse_metadata($article_file);
-        foreach my $tag (@{$metadata->{tags}}) {
-            $tags->{$tag}->{count} ||= 0;
-            $tags->{$tag}->{count}++;
-        }
-    }
-
-    return $tags;
-}
-
-sub get_articles {
-    my $self   = shift;
-    my %params = @_;
-    $params{limit} ||= 0;
-
-    my ($prev_file, $files, $next_file) =
-      _articles_file_list($params{limit}, $params{timestamp});
-    return () unless $files && @$files;
-
-    my $pager = {};
-    $pager->{prev} = $prev_file->{created} if $prev_file;
-    $pager->{next} = $next_file->{created} if $next_file;
-
-    my @articles;
-    foreach my $file (@$files) {
-        my $data = _parse_article($self, $file);
-        next unless $data && %$data;
-
-        push @articles, $data;
-    }
-
-    return (\@articles, $pager);
-}
-
-sub _articles_file_list {
-    my ($limit, $timestamp) = @_;
-
-    my $root =
-      ($config->{articlesdir} =~ m/^\//)
-      ? $config->{articlesdir}
-      : app->home->rel_dir($config->{articlesdir});
-
-
-    $limit = $config->{pagelimit} unless defined $limit;
-
-    my ($prev, $next);
-
-    my @files =
-      sort { $b->{created} <=> $a->{created} }
-      grep {defined}
-      map  { _parse_path($_) } glob($root . '/*.*');
-    return unless @files;
-
-    return wantarray ? ($prev, \@files, $next) : \@files unless $limit;
-
-    my $cursor = 0;
-
-    my $offset = $timestamp ? _timestamp_to_epoch($timestamp) : 0;
-    if ($offset) {
-        return () if $offset < $files[-1]->{created};
-
-        for (0 .. $#files) {
-            last if $files[$cursor]->{created} <= $offset;
-            $cursor++;
-        }
-
-        $prev = $files[$cursor - $limit > 0 ? $cursor - $limit : 0]
-          if $cursor;
-    }
-
-    if ($cursor + $limit < @files) {
-        $next = $files[$cursor + $limit];
-    }
-
-    my $files = [splice(@files, $cursor, $limit)];
-    return wantarray ? ($prev, $files, $next) : $files;
-}
-
-sub _last_created_file {
-    my $files = shift;
-
-    return time unless $files && @$files;
-
-    my $last_created = 0;
-
-    for my $file (@$files) {
-        $last_created = $file->{created}
-          if $file->{created} > $last_created;
-    }
-
-    return $last_created || time;
-}
-
-sub _last_modified_file {
-    my $files = shift;
-
-    return time unless $files && @$files;
-
-    my $last_modified = 0;
-
-    for my $file (@$files) {
-        $last_modified = $file->{modified}
-          if $file->{modified} > $last_modified;
-    }
-
-    return $last_modified || time;
-}
-
-sub get_article {
-    my $self      = shift;
-    my $articleid = shift;
-    return unless $articleid;
-
-    my ($year, $month, $alias) = split('/', $articleid);
-    return unless $year && $month && $alias;
-
-    my $root =
-      ($config->{articlesdir} =~ m/^\//)
-      ? $config->{articlesdir}
-      : app->home->rel_dir($config->{articlesdir});
-
-    $month = sprintf("%02d", $month);
-
-    my $timestamp_re = qr/^$year$month\d\d(T.*?)?-\Q$alias\E\./;
-
-    my @files = sort { $b cmp $a } glob($root . '/*.*');
-
-    my $path;
-
-    my ($prev, $next);
-    for (my $i = 0; $i <= $#files; $i++) {
-        utf8::decode($files[$i]);
-        $prev = $files[$i - 1] if $i > 0;
-        $next = $files[$i + 1] if $i <= $#files;
-
-        my $basename = File::Basename::basename($files[$i]);
-        if ($basename =~ m/$timestamp_re/) {
-            $path = $files[$i];
-            last;
-        }
-    }
-
-    return unless $path && -r $path;
-
-    my $pager = {};
-
-    if ($next && $next ne $path) {
-        ($pager->{next}) = _parse_article($self, $next);
-    }
-
-    if ($prev && $prev ne $path) {
-        ($pager->{prev}) = _parse_article($self, $prev);
-    }
-
-    return (_parse_article($self, $path), $pager);
-}
-
-sub get_draft {
-    my $self  = shift;
-    my $alias = shift;
-    return unless $alias;
-
-    my $root =
-      ($config->{draftsdir} =~ m/^\//)
-      ? $config->{draftsdir}
-      : app->home->rel_dir($config->{draftsdir});
-
-    my @files = glob($root . '/' . '*' . $alias . ".*");
-
-    if (@files > 1) {
-        app->log->warn(
-            'More then one draft is available ' . 'with the same alias');
-    }
-    my $path = $files[0];
-    return unless $path && -r $path;
-
-    return _parse_article($self, $path);
-}
-
-sub get_page {
-    my $self   = shift;
-    my $pageid = shift;
-    return unless $pageid;
-
-    my $root =
-      ($config->{pagesdir} =~ m/^\//)
-      ? $config->{pagesdir}
-      : app->home->rel_dir($config->{pagesdir});
-
-    my @files = glob($root . '/' . $pageid . ".*");
-
-    if (@files > 1) {
-        app->log->warn(
-            'More then one page is available ' . 'with the same extension');
-    }
-    my $path = $files[0];
-    return unless $path && -r $path;
-
-    return _parse_article($self, $path);
-}
-
-sub _parse_article {
-    my $self     = shift;
-    my $file     = shift;
-    my $metadata = shift;
-
-    $file = _parse_path($file) unless ref $file;
-    return unless $file;
-
-    $metadata ||= _parse_metadata($file->{path});
-    return unless $metadata;
-
-    my $parser = _get_parser($file->{ext});
-    app->log->error('No parser found'), return
-      unless defined $parser;
-
-    my ($preview, $preview_link_text, $content) =
-      _parse_content($self, $parser, $file->{path});
-    app->log->error('Error while parsing ' . $metadata->{title}), return
-      unless defined $preview;
-
-    return {
-        name              => $file->{name},
-        created           => $file->{created},
-        modified          => $file->{modified},
-        filename          => $file->{filename},
-        title             => $metadata->{title} || $file->{name},
-        description       => $metadata->{description} || '',
-        link              => $metadata->{link} || '',
-        tags              => $metadata->{tags} || [],
-        preview           => $preview,
-        preview_link_text => $preview_link_text,
-        content           => $content
-    };
-}
-
-sub _parse_path {
-    my $path = shift;
-
-    return unless $path && -e $path;
-
-    my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
-
-    my $filename = join '.' => $name, $ext;
-
-    my $created;
-    if ($name =~ s/^($TIMESTAMP_RE)-//) {
-        $created = _timestamp_to_epoch($1);
-        return unless defined $created;
-    }
-
-    my $modified = (stat($path))[9];
-    $created ||= $modified;
-
-    return {
-        name     => $name,
-        filename => $filename,
-        created  => $created,
-        modified => $modified,
-        ext      => $ext,
-        path     => $path
-    };
-}
-
-sub _timestamp_to_epoch {
-    my $timestamp = shift;
-
-    return unless $timestamp =~ qr/^$TIMESTAMP_RE$/;
-
-    my ($year, $month, $day, $hour, $minute, $second) =
-      ($1, $2, $3, ($4 || 0), ($5 || 0), ($6 || 0));
-
-    my $epoch = 0;
-    eval {
-        $epoch =
-          Time::Local::timegm($second, $minute, $hour, $day, $month - 1,
-            $year - 1900);
-    };
-
-    return if $@ || $epoch < 0;
-
-    return $epoch;
-}
-
-sub _epoch_to_timestamp {
-    my $epoch = shift;
-
-    my $t = Time::Piece->gmtime($epoch);
-
-    return $t->strftime('%Y%m%dT%H:%M:%S');
-}
-
-sub _parse_content {
-    my ($self, $parser, $path) = @_;
-
-    open my $fh, '<:encoding(UTF-8)', $path or return;
-    while (my $line = <$fh>) {
-        last if $line eq '';
-        last if $line !~ m/^(.*?): /;
-    }
-
-    my $string = '';
-    while (my $line = <$fh>) {
-        $string .= $line;
-    }
-
-    my ($head, $tail, $preview_link_text) = _parse_cuttag(\$string);
-
-    $head = $parser->($self, $head);
-    return () unless $head;
-
-    $tail = $parser->($self, $tail) if $tail;
-
-    my ($preview, $content);
-
-    if ($tail) {
-        $content = $head . '<a name="cut"></a>' . $tail;
-        $preview = $head;
-    }
-    else {
-        $content = $head;
-        $preview = '';
-    }
-
-    return ($preview, $preview_link_text, $content);
-}
-
-sub _parse_cuttag {
-    my $string = shift;
-
-    my $cuttag = $config->{cuttag};
-
-    my $tail              = '';
-    my $preview_link_text = '';
-    if ($$string =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {
-        $tail = $3;
-        $preview_link_text = $2 || $config->{cuttext};
-    }
-
-    return ($$string, $tail, $preview_link_text);
-}
-
-sub _get_parser {
-    my $ext = shift;
-
-    return \&_parse_pod if $ext eq 'pod';
-
-    return \&_parse_md if $ext eq 'md' && MARKDOWN;
-
-    return;
-}
-
-sub _parse_metadata {
-    my $path = shift;
-
-    $path = $path->{path} if ref $path;
-    return unless $path;
-
-    open my $fh, '<:encoding(UTF-8)', $path or return;
-
-    my $metadata = {};
-    while (my $line = <$fh>) {
-        last unless $line;
-        last unless $line =~ m/^(.*?): (.*)/;
-
-        my $key   = lc $1;
-        my $value = $2;
-
-        if ($key eq 'tags') {
-            my $tmp = $value || '';
-            $value = [];
-            @$value = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $tmp);
-        }
-
-        $metadata->{$key} = $value;
-    }
-
-    return $metadata;
-}
-
-sub _parse_pod { $_[0]->pod_to_html($_[1]) }
-sub _parse_md  { Text::Markdown->new->markdown($_[1]) }
-
-theme if $config->{'theme'};
 
 app->start;
 
@@ -1000,12 +134,14 @@ __DATA__
 
 @@ index.html.ep
 % stash description => config('descr');
-% if (!@$articles) {
+% if ($pager->articles->size == 0) {
     <div class="text center">
         Nothing here yet :(
     </div>
 % }
-%= include 'index-item', article => $_ for @$articles;
+% while (my $article = $pager->articles->next) {
+    %= include 'index-item', article => $article;
+% }
 %= include 'index-pager', pager => $pager;
 
 
@@ -1014,30 +150,30 @@ __DATA__
         <h1 class="title">
             <%= link_to_article $article %>
         </h1>
-        <div class="created"><%= date $article->{created} %></div>
+        <div class="created"><%= date $article->created %></div>
         <%= tags_links $article %>
-%   if ($article->{preview}) {
-        <%== $article->{preview} %>
+%   if ($article->preview) {
+        <%== $article->preview %>
         <div class="more"> &rarr;
             <%= link_to_full_content $article %>
         </div>
 %   }
 %   else {
-        <%== $article->{content} %>
+        <%== $article->content %>
 %   }
     </div>
 
 
 @@ index-pager.html.ep
     <div id="pager">
-% if ($pager->{prev}) {
-        &larr; <%= link_to_page $pager->{prev} => {%><%= strings 'later' %><%}%>
+% if ($pager->prev_timestamp) {
+        &larr; <%= link_to_page $pager->prev_timestamp => {%><%= strings 'later' %><%}%>
 % }
 % else {
         <span class="notactive">&larr; <%= strings 'later' %></span>
 % }
-% if ($pager->{next}) {
-        <%= link_to_page $pager->{next} => {%><%= strings 'earlier' %><%}%> &rarr;
+% if ($pager->next_timestamp) {
+        <%= link_to_page $pager->next_timestamp => {%><%= strings 'earlier' %><%}%> &rarr;
 % }
 % else {
         <span class="notactive"><%= strings 'earlier' %> &rarr;</span>
@@ -1051,52 +187,56 @@ __DATA__
 <div class="text">
     <h1><%= strings 'archive' %></h1>
     <br />
-%   foreach my $year (@$archive) {
+    % while (my $year = $archive->next) {
     <h2><%= $year->{year} %></h2>
     <ul>
-    % foreach my $article (@{$year->{articles}}) {
+        % while (my $article = $year->{articles}->next) {
         <li>
             <%= link_to_article $article %>
             <br />
-            <div class="created"><%= date $article->{created} %></div>
+            <div class="created"><%= date $article->created %></div>
         </li>
-    % }
+        % }
     </ul>
-%   }
+    % }
 </div>
 
 
 @@ index.rss.ep
-<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xml:base="<%= url_for('root')->to_abs %>"
-    xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
         <title><%= config 'title' %></title>
-        <link><%= url_for('root')->to_abs %></link>
+        <link><%= url_for('index')->to_abs %></link>
         <description><%= config 'descr' %></description>
-        <pubDate><%= date_rss $last_created %></pubDate>
-        <lastBuildDate><%= date_rss $last_created %></lastBuildDate>
+        <pubDate><%= date_rss $pager->articles->last_created %></pubDate>
+        <lastBuildDate><%= date_rss $pager->articles->last_created %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
-% foreach my $article (@$articles) {
-% my $link = href_to_article $article;
+% while (my $article = $pager->articles->next) {
+    % my $link = href_to_article $article;
     <item>
-      <title><%= $article->{title} %></title>
+      <title><%= $article->title %></title>
       <link><%= $link %></link>
       <description>
-        <%= $article->{preview} || $article->{content} %>
-%     if ($article->{link}) {
-%     my $permalink = qq|<a href="$link" title="| . strings('permalink-to') . qq| '$article->{title}'">&#x2605;</a>|;
-      <%= $permalink %>
-%     }
+        <%= $article->preview || $article->content %>
+        % if ($article->link) {
+            % my $permalink = qq|<a href="$link" title="| . strings('permalink-to') . qq| '$article->title'">&#x2605;</a>|;
+            <%= $permalink %>
+        % }
       </description>
-% foreach my $tag (@{$article->{tags}}) {
+      % foreach my $tag (@{$article->tags}) {
       <category><%= $tag %></category>
-% }
-      <pubDate><%= date_rss($article->{created}) %></pubDate>
+      % }
+      <pubDate><%= date_rss($article->created) %></pubDate>
       <guid><%= $link %></guid>
     </item>
 % }
     </channel>
+</rss>
+
+@@ layouts/wrapper.rss.ep
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xml:base="<%= url_for('index')->to_abs %>"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <%= content %>
 </rss>
 
 
@@ -1106,9 +246,9 @@ __DATA__
     <h1><%= strings 'tags' %></h1>
     <br />
     <div class="tags">
-% foreach my $tag (keys %$tags) {
-        <%= link_to_tag $tag %>
-        <sub>(<%= $tags->{$tag}->{count} %>)</sub>
+% while (my $tag = $cloud->next) {
+        <%= link_to_tag $tag->{name} %>
+        <sub>(<%= $tag->{count} %>)</sub>
 % }
     </div>
 </div>
@@ -1122,48 +262,53 @@ __DATA__
 <%= link_to_tag $tag => { format => 'rss'} => {%><img src="/rss.png" alt="RSS" /><%}%></sup>
 </h1>
 <br />
-% foreach my $article (@$articles) {
+% while (my $article = $articles->next) {
     <%= link_to_article $article %>
     <br />
-    <div class="created"><%= date $article->{created} %></div>
+    <div class="created"><%= date $article->created %></div>
 % }
 </div>
+%= include 'index-pager', pager => $pager;
+
+
+@@ tag.rss.ep
+%= include 'index', format => 'rss';
 
 
 @@ article.html.ep
-% stash title => $article->{title}, description => $article->{description};
+% stash title => $article->title, description => $article->description;
 <div class="text">
     <h1 class="title"><%= link_to_article $article %></h1>
-    <div class="created"><%= date $article->{created} %>
-%   if ($article->{created} != $article->{modified}) {
-, modified <span class="modified"><%= date $article->{modified} %></span>
+    <div class="created"><%= date $article->created %>
+%   if ($article->is_modified) {
+, modified <span class="modified"><%= date $article->modified %></span>
 % }
     </div>
     <%= tags_links $article %>
-<%== $article->{content} %>
-%= include 'article-pager', pager => $pager;
+<%== $article->content %>
+%= include 'article-pager', next => $next, prev => $prev;
 </div>
 
 
 @@ article-pager.html.ep
     <div id="pager">
-%   if ($pager->{prev}) {
-        &larr; <%= link_to_article $pager->{prev} %> &nbsp;|
+%   if ($prev) {
+        &larr; <%= link_to_article $prev %> &nbsp;|
 %   }
         <a href="<%= url_for 'archive' %>"><%= strings('archive') %></a>
-%   if ($pager->{next}) {
-        |&nbsp;<%= link_to_article $pager->{next} %> &rarr;
+%   if ($next) {
+        |&nbsp;<%= link_to_article $next %> &rarr;
 %   }
     </div>
 
 
 @@ page.html.ep
-% stash title => $page->{title}, description => $page->{description};
+% stash title => $page->title, description => $page->description;
 <div class="text">
     <h1 class="title">
-        <%= $page->{title} %>
+        <%= $page->title %>
     </h1>
-    <%== $page->{content} %>
+    <%== $page->content %>
 </div>
 
 
@@ -1223,7 +368,7 @@ __DATA__
         <div id="body">
             <div id="header">
                 <h1 id="title">
-                <%= link_to 'root', {format => undef} => {%><%= config 'title' %><%}%>
+                <%= link_to 'index', {format => undef} => {%><%= config 'title' %><%}%>
                 <sup><a href="<%= url_for 'index', format => 'rss' %>"><img src="/rss.png" alt="RSS" /></a></sup>
                 </h1>
                 <h2 id="descr"><%= config 'descr' %></h2>
