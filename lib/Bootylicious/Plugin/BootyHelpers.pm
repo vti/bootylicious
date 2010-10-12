@@ -13,6 +13,16 @@ sub register {
     my $config = $app->renderer->helper->{config}->();
 
     $app->helper(
+        render_smart => sub {
+            my $self = shift;
+
+            $app->plugins->run_hook(before_render => $self);
+
+            $self->render unless $self->res->code;
+        }
+    );
+
+    $app->helper(
         date => sub {
             my $self = shift;
             my $date = shift;

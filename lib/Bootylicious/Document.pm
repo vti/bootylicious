@@ -13,6 +13,7 @@ __PACKAGE__->attr(cuttext => 'Keep reading');
 use Bootylicious::Timestamp;
 
 require Carp;
+use File::stat;
 
 my $TIMESTAMP_RE = qr/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?/;
 
@@ -90,7 +91,7 @@ sub _parse_path {
         return unless defined $created;
     }
 
-    my $modified = (stat($path))[9];
+    my $modified = stat($path)->mtime;
     $created ||= $modified;
 
     return {

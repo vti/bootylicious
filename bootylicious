@@ -14,6 +14,7 @@ plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
 plugin 'booty_helpers';
 plugin 'markdown_parser';
 plugin 'model';
+plugin 'http_cache';
 
 my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
 my $TAG_RE   = qr/[a-zA-Z0-9]+/;
@@ -49,7 +50,9 @@ get '/' => sub {
 
     my $pager = $self->get_articles(timestamp => $timestamp);
 
-    $self->stash(pager => $pager);
+    $self->stash(booty => $pager->articles, pager => $pager);
+
+    $self->render_smart;
 } => 'index';
 
 get '/archive' => sub {
@@ -57,7 +60,9 @@ get '/archive' => sub {
 
     my $archive = $self->get_archive();
 
-    $self->stash(archive => $archive);
+    $self->stash(booty => $archive);
+
+    $self->render_smart;
 } => 'archive';
 
 get '/tags/:tag' => [tag => $TAG_RE] => sub {
@@ -69,7 +74,9 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     return $self->render_not_found unless $pager->articles->size;
 
-    $self->stash(pager => $pager, articles => $pager->articles);
+    $self->stash(booty => $pager->articles, pager => $pager);
+
+    $self->render_smart;
 } => 'tag';
 
 get '/tags' => sub {
@@ -80,7 +87,9 @@ get '/tags' => sub {
 
     my $cloud = $self->get_tag_cloud;
 
-    $self->stash(cloud => $cloud);
+    $self->stash(booty => $cloud);
+
+    $self->render_smart;
 } => 'tags';
 
 get '/articles/:year/:month/:alias' =>
@@ -96,10 +105,12 @@ get '/articles/:year/:month/:alias' =>
     return $self->render_not_found unless $article;
 
     $self->stash(
-        article => $article,
-        prev    => $article->prev,
-        next    => $article->next
+        booty => $article,
+        prev  => $article->prev,
+        next  => $article->next
     );
+
+    $self->render_smart;
   } => 'article';
 
 get '/pages/:name' => [name => $ALIAS_RE] => sub {
@@ -111,7 +122,9 @@ get '/pages/:name' => [name => $ALIAS_RE] => sub {
 
     return $self->render_not_found unless $page;
 
-    $self->stash(page => $page);
+    $self->stash(booty => $page);
+
+    $self->render_smart;
 } => 'page';
 
 get '/drafts/:name' => [name => $ALIAS_RE] => sub {
@@ -123,7 +136,9 @@ get '/drafts/:name' => [name => $ALIAS_RE] => sub {
 
     return $self->render_not_found unless $draft;
 
-    $self->stash(draft => $draft);
+    $self->stash(booty => $draft);
+
+    $self->render_smart;
 } => 'draft';
 
 app->start;
@@ -134,12 +149,13 @@ __DATA__
 
 @@ index.html.ep
 % stash description => config('descr');
-% if ($pager->articles->size == 0) {
+% my $articles = stash 'booty';
+% if ($articles->size == 0) {
     <div class="text center">
         Nothing here yet :(
     </div>
 % }
-% while (my $article = $pager->articles->next) {
+% while (my $article = $articles->next) {
     %= include 'index-item', article => $article;
 % }
 %= include 'index-pager', pager => $pager;
@@ -183,6 +199,7 @@ __DATA__
 
 @@ archive.html.ep
 % stash title => strings('archive'), description => strings('archive-description');
+% my $archive = stash 'booty';
 
 <div class="text">
     <h1><%= strings 'archive' %></h1>
@@ -203,6 +220,7 @@ __DATA__
 
 
 @@ index.rss.ep
+% my $articles = stash 'booty';
     <channel>
         <title><%= config 'title' %></title>
         <link><%= url_for('index')->to_abs %></link>
@@ -242,6 +260,7 @@ __DATA__
 
 @@ tags.html.ep
 % stash title => strings('tags'), description => strings('tags-description');
+% my $cloud = stash 'booty';
 <div class="text">
     <h1><%= strings 'tags' %></h1>
     <br />
@@ -256,6 +275,7 @@ __DATA__
 
 @@ tag.html.ep
 % stash title => $tag, description => strings('tag-description', $tag);
+% my $articles = stash 'booty';
 <div class="text">
 <h1><%= strings 'tag' %> <%= $tag %>
 <sup>
@@ -277,6 +297,7 @@ __DATA__
 
 @@ article.html.ep
 % stash title => $article->title, description => $article->description;
+% my $article = stash 'booty';
 <div class="text">
     <h1 class="title"><%= link_to_article $article %></h1>
     <div class="created"><%= date $article->created %>
@@ -304,6 +325,7 @@ __DATA__
 
 @@ page.html.ep
 % stash title => $page->title, description => $page->description;
+% my $page = stash 'booty';
 <div class="text">
     <h1 class="title">
         <%= $page->title %>
@@ -314,6 +336,7 @@ __DATA__
 
 @@ draft.html.ep
 % stash title => $draft->{title}, description => strings('draft');
+% my $draft = stash 'booty';
 <div class="text">
     <h1 class="title">
         <%= $draft->{title} %>

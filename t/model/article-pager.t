@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 use FindBin;
 use Bootylicious::ArticleIterator;
@@ -38,4 +38,5 @@ ok not defined $pager->next_timestamp;
 $pager =
   Bootylicious::ArticlePager->new(iterator =>
       Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/pager"));
-is $pager->articles->size => 6;
+is $pager->articles->size                    => 6;
+is $pager->articles->last_created->timestamp => '20100106T00:00:00';
