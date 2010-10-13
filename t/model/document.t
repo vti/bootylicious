@@ -5,7 +5,7 @@ use warnings;
 
 use utf8;
 
-use Test::More tests => 25;
+use Test::More tests => 23;
 
 use FindBin;
 
@@ -15,11 +15,11 @@ my $document;
 
 eval {
     Bootylicious::Document->new(
-        path => "$FindBin::Bin/documents/unlikely-to-exist");
+        path => "$FindBin::Bin/documents/unlikely-to-exist")->name;
 };
 ok $@;
 
-eval { Bootylicious::Document->new(path => "$FindBin::Bin/documents/junk"); };
+eval { Bootylicious::Document->new(path => "$FindBin::Bin/documents/junk")->name; };
 ok $@;
 
 $document = Bootylicious::Document->new(
@@ -37,8 +37,7 @@ is $document->name        => 'foo-bar-baz';
 is $document->ext         => 'pod';
 is $document->title       => 'Foo bar baz!';
 is_deeply $document->tags => [qw/foo bar baz/];
-is $document->preview     => "Foo and bar.\n\n";
-is $document->content => qq/Foo and bar.\n\n<a name="cut"><\/a>\nAnd buzz!\n/;
+is $document->content => qq/Foo and bar.\n\nAnd buzz!\n/;
 
 $document = Bootylicious::Document->new(
     path    => "$FindBin::Bin/documents/20100601-привет.md",
@@ -55,6 +54,5 @@ is $document->name        => 'привет';
 is $document->ext         => 'md';
 is $document->title       => 'Заголовок';
 is_deeply $document->tags => [qw/раз два три/];
-is $document->preview     => "Это все юникод. Ляляля.\n\n";
 is $document->content =>
-  qq/Это все юникод. Ляляля.\n\n<a name="cut"><\/a>\nА вот и сказочки конец.\n/;
+  qq/Это все юникод. Ляляля.\nА вот и сказочки конец.\n/;
