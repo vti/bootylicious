@@ -20,7 +20,7 @@ $pager = Bootylicious::ArticlePager->new(
 is $pager->articles->size        => 3;
 is $pager->articles->first->name => 'zab';
 is $pager->articles->last->name  => 'oof';
-ok not defined $pager->prev_timestamp;
+ok !$pager->prev_timestamp;
 is $pager->next_timestamp => '20100103T00:00:00';
 
 $pager = Bootylicious::ArticlePager->new(
@@ -33,7 +33,7 @@ is $pager->articles->size        => 3;
 is $pager->articles->first->name => 'baz';
 is $pager->articles->last->name  => 'foo';
 is $pager->prev_timestamp        => '20100106T00:00:00';
-ok not defined $pager->next_timestamp;
+ok !$pager->next_timestamp;
 
 $pager =
   Bootylicious::ArticlePager->new(iterator =>
