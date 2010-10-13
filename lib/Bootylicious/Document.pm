@@ -73,7 +73,7 @@ sub _group {
         return $self;
     }
 
-    return $self->{$group}->{$method} if exists $self->{$group}->{$method};
+    return $self->{$group}->{$method} if exists $self->{$group};
 
     my $group_loader = "${group}_loader";
     $self->{$group} = $self->$group_loader->load;

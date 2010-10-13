@@ -64,6 +64,8 @@ sub _parse_cuttag {
 
     my $cuttag = $self->cuttag;
 
+    return ($$string, '', '') unless $cuttag;
+
     my $tail              = '';
     my $preview_link_text = '';
     if ($$string =~ s{(.*?)\Q$cuttag\E(?: (.*?))?(?:\n|\r|\n\r)(.*)}{$1}s) {

@@ -5,7 +5,7 @@ use warnings;
 
 use utf8;
 
-use Test::More tests => 23;
+use Test::More tests => 24;
 
 use FindBin;
 
@@ -56,3 +56,6 @@ is $document->title       => 'Заголовок';
 is_deeply $document->tags => [qw/раз два три/];
 is $document->content =>
   qq/Это все юникод. Ляляля.\nА вот и сказочки конец.\n/;
+
+$document->title('foo');
+is $document->title => 'foo';
