@@ -109,17 +109,18 @@ sub register {
     );
     $app->helper(
         link_to_page => sub {
-            my $self = shift;
-            my $name = shift;
+            my $self      = shift;
+            my $name      = shift;
+            my $timestamp = shift;
 
-            my @args = ref $_[0] eq 'HASH' ? %{shift @_} : ();
+            my %args = ref $_[0] eq 'HASH' ? %{shift @_} : ();
 
-            my $timestamp; $timestamp = ref $_[0] eq 'CODE' ? '' : shift;
+            my $query = delete $args{query} || {};
 
             if ($timestamp) {
                 return $self->link_to(
-                    $self->url_for($name, @args, format => 'html')
-                      ->query(timestamp => $timestamp) => @_);
+                    $self->url_for($name, %args, format => 'html')
+                      ->query(timestamp => $timestamp, %$query) => @_);
             }
             else {
                 return $self->tag('span' => @_);

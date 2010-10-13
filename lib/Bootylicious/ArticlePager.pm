@@ -32,7 +32,7 @@ sub prev_timestamp {
     my $self = shift;
 
     my $prev = $self->prev;
-    return unless $prev;
+    return '' unless $prev;
 
     return $prev->created->timestamp;
 }
@@ -56,7 +56,7 @@ sub next_timestamp {
     my $self = shift;
 
     my $next = $self->next;
-    return unless $next;
+    return '' unless $next;
 
     return $next->created->timestamp;
 }
