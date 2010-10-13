@@ -293,8 +293,8 @@ __DATA__
 
 
 @@ article.html.ep
-% stash title => $article->title, description => $article->description;
 % my $article = stash 'booty';
+% stash title => $article->title, description => $article->description;
 <div class="text">
     <h1 class="title"><%= link_to_article $article %></h1>
     <div class="created"><%= date $article->created %>
