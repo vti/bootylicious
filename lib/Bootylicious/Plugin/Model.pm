@@ -10,6 +10,7 @@ use Mojolicious::Controller;
 use Bootylicious::Article;
 use Bootylicious::ArticleArchive;
 use Bootylicious::ArticleByTagIterator;
+use Bootylicious::ArticleByQueryIterator;
 use Bootylicious::ArticleIterator;
 use Bootylicious::ArticleIteratorFinder;
 use Bootylicious::ArticlePager;
@@ -33,6 +34,18 @@ sub register {
     my $drafts_root   = $c->drafts_root;
 
     my $page_limit = $config->{pagelimit};
+
+    $app->helper(
+        get_pager => sub {
+            shift;
+            my $iterator = shift;
+            Bootylicious::ArticlePager->new(
+                limit    => $page_limit,
+                iterator => $iterator,
+                @_
+            );
+        }
+    );
 
     $app->helper(
         get_articles => sub {
@@ -86,6 +99,25 @@ sub register {
                 ),
                 limit => $page_limit,
                 @_
+            );
+        }
+    );
+
+    $app->helper(
+        get_articles_by_query => sub {
+            my $self  = shift;
+            my $query = shift;
+
+            return Bootylicious::ArticleByQueryIterator->new(
+                Bootylicious::ArticleIterator->new(
+                    root => $articles_root,
+                    args => {
+                        cuttag  => $config->{cuttag},
+                        cuttext => $config->{cuttext},
+                        parsers => $parsers
+                    }
+                ),
+                query => $query
             );
         }
     );
