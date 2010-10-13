@@ -39,4 +39,4 @@ $pager =
   Bootylicious::ArticlePager->new(iterator =>
       Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/pager"));
 is $pager->articles->size                    => 6;
-is $pager->articles->last_created->timestamp => '20100106T00:00:00';
+is $pager->articles->created->timestamp => '20100106T00:00:00';

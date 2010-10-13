@@ -10,19 +10,9 @@ use Mojo::Date;
 sub register {
     my ($self, $app) = @_;
 
-    $app->plugins->add_hook(after_dispatch => \&_set_last_modified_header);
     $app->plugins->add_hook(
         before_render => \&_check_if_modified_since_header);
-}
-
-sub _set_last_modified_header {
-    my ($self, $c) = @_;
-
-    my $last_modified = _last_modified($c);
-    return unless $last_modified;
-
-    $c->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($last_modified));
+    $app->plugins->add_hook(after_dispatch => \&_set_last_modified_header);
 }
 
 sub _check_if_modified_since_header {
@@ -43,20 +33,23 @@ sub _check_if_modified_since_header {
     }
 }
 
+sub _set_last_modified_header {
+    my ($self, $c) = @_;
+
+    my $last_modified = _last_modified($c);
+    return unless $last_modified;
+
+    $c->res->headers->header(
+        'Last-Modified' => Mojo::Date->new($last_modified));
+}
+
 sub _last_modified {
     my $self = shift;
 
-    my $object = $self->stash('booty');
-    return unless $object;
+    my $booty = $self->stash('booty');
+    return unless $booty;
 
-    if (ref $object) {
-        if ($object->can('last_modified')) {
-            return $object->last_modified->epoch;
-        }
-        elsif ($object->can('modified')) {
-            return $object->modified->epoch;
-        }
-    }
+    return $booty->modified->epoch if ref $booty;
 
     return;
 }

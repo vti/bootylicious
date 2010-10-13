@@ -217,8 +217,8 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= url_for('index')->to_abs %></link>
         <description><%= config 'descr' %></description>
-        <pubDate><%= date_rss $pager->articles->last_created %></pubDate>
-        <lastBuildDate><%= date_rss $pager->articles->last_created %></lastBuildDate>
+        <pubDate><%= date_rss $pager->articles->created %></pubDate>
+        <lastBuildDate><%= date_rss $pager->articles->created %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
         % while (my $article = $pager->articles->next) {
             % my $link = href_to_article $article;
@@ -256,8 +256,8 @@ __DATA__
     <br />
     <div class="tags">
 % while (my $tag = $cloud->next) {
-        <%= link_to_tag $tag->{name} %>
-        <sub>(<%= $tag->{count} %>)</sub>
+        <%= link_to_tag $tag->name %>
+        <sub>(<%= $tag->count %>)</sub>
 % }
     </div>
 </div>

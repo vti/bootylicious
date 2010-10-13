@@ -7,7 +7,7 @@ use base 'Mojo::Base';
 
 __PACKAGE__->attr('articles');
 
-use Bootylicious::Iterator;
+use Bootylicious::IteratorWithDates;
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -22,18 +22,46 @@ sub build {
 
     my $tags = {};
     while (my $article = $self->articles->next) {
-        foreach my $tag (@{$article->tags}) {
-            $tags->{$tag}->{count} ||= 0;
-            $tags->{$tag}->{count}++;
+        foreach my $name (@{$article->tags}) {
+            my $tag = $tags->{$name};
+
+            $tag->{count} ||= 0;
+            $tag->{count}++;
+
+            $tag->{created} = $article->created unless $tag->{created};
+            $tag->{created} = $article->created
+              if $article->created < $tag->{created};
+            $tag->{modified} ||= 0;
+            $tag->{modified} = $article->modified
+              if $article->modified > $tag->{modified};
+
+            $tags->{$name} = $tag;
         }
     }
 
     my @tags;
-    foreach my $tag (sort keys %$tags) {
-        push @tags, {name => $tag, count => $tags->{$tag}->{count}};
+    foreach my $name (sort keys %$tags) {
+        my $tag = $tags->{$name};
+
+        push @tags,
+          Bootylicious::Tag->new(
+            name     => $name,
+            count    => $tag->{count},
+            created  => $tag->{created},
+            modified => $tag->{modified}
+          );
     }
 
-    return Bootylicious::Iterator->new(elements => [@tags]);
+    return Bootylicious::IteratorWithDates->new(elements => [@tags]);
 }
+
+package Bootylicious::Tag;
+
+use strict;
+use warnings;
+
+use base 'Mojo::Base';
+
+__PACKAGE__->attr([qw/name count created modified/]);
 
 1;
