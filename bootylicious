@@ -170,15 +170,7 @@ __DATA__
         </h1>
         <div class="created"><%= date $article->created %></div>
         <%= tags_links $article %>
-%   if ($article->preview) {
-        <%== $article->preview %>
-        <div class="more"> &rarr;
-            <%= link_to_full_content $article %>
-        </div>
-%   }
-%   else {
-        <%== $article->content %>
-%   }
+        <%= render_article_or_preview $article %>
     </div>
 
 
@@ -226,7 +218,7 @@ __DATA__
           <title><%== $article->title %></title>
           <link><%= $link %></link>
           <description>
-            <%= $article->preview || $article->content %>
+            <%= render_article_or_preview $article %>
             % if ($article->link) {
                 <%= permalink_to($article->link) if $article->link %>
             % }
@@ -303,7 +295,7 @@ __DATA__
 % }
     </div>
     <%= tags_links $article %>
-<%== $article->content %>
+    <%= render_article $article %>
 %= include 'article-pager', next => $next, prev => $prev;
 </div>
 

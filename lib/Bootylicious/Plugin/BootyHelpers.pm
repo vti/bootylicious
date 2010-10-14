@@ -23,6 +23,65 @@ sub register {
     );
 
     $app->helper(
+        render_article_or_preview => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            my $parser = $self->parsers->{$article->format};
+            $parser ||= sub { $_[0] };
+
+            my $cuttag = quotemeta $self->config->{cuttag};
+
+            my $content = $article->content;
+
+            my ($preview, $preview_link);
+            if ($content =~ s{^(.*?)\n$cuttag(?: (.*?))?(?:\n|\r|\n\r)}{}s) {
+                $preview      = $1;
+                $preview_link = $2 || $self->config->{cuttext};
+                $content      = $3;
+            }
+
+            return Mojo::ByteStream->new(
+                $parser->($preview) . $self->tag(
+                    div => class => 'more' => sub {
+                        '&rarr; '
+                          . $self->link_to_full_content($article,
+                            $preview_link);
+                    }
+                )
+            ) if $preview;
+
+            return Mojo::ByteStream->new($parser->($content));
+        }
+    );
+
+    $app->helper(
+        render_article => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            my $parser = $self->parsers->{$article->format};
+            $parser ||= sub { $_[0] };
+
+            my $cuttag = quotemeta $self->config->{cuttag};
+
+            my $head = $article->content;
+            my $tail = '';
+            if ($head =~ s{(.*?)\n$cuttag.*?\n(.*)}{$1}s) {
+                $tail = $2;
+            }
+
+            my $cuttag_anchor = '<a name="cut"></a>';
+
+            my $string;
+            $string = $parser->($head);
+            $string .= $cuttag_anchor . $parser->($tail) if $tail;
+
+            return Mojo::ByteStream->new($string);
+        }
+    );
+
+    $app->helper(
         date => sub {
             my $self = shift;
             my $date = shift;
@@ -73,12 +132,12 @@ sub register {
     $app->helper(
         link_to_full_content => sub {
             my $self = shift;
-            my ($article) = @_;
+            my ($article, $preview_link) = @_;
 
             my $href = $self->href_to_article($article);
             $href->fragment('cut');
 
-            return $self->link_to($href => sub { $article->preview_link });
+            return $self->link_to($href => sub {$preview_link});
         }
     );
     $app->helper(

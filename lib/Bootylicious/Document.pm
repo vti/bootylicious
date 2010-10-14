@@ -12,7 +12,6 @@ use Bootylicious::DocumentContentLoader;
 require Carp;
 
 __PACKAGE__->attr('path');
-__PACKAGE__->attr(parsers => sub { {} });
 
 __PACKAGE__->attr(
     stat_loader => sub {
@@ -28,11 +27,7 @@ __PACKAGE__->attr(
 
 __PACKAGE__->attr(
     content_loader => sub {
-        Bootylicious::DocumentContentLoader->new(
-            path    => $_[0]->path,
-            parsers => $_[0]->parsers,
-            ext     => $_[0]->ext
-        );
+        Bootylicious::DocumentContentLoader->new(path => shift->path);
     }
 );
 
@@ -47,7 +42,7 @@ sub new {
 }
 
 sub name     { shift->_stat(name     => @_) }
-sub ext      { shift->_stat(ext      => @_) }
+sub format   { shift->_stat(format   => @_) }
 sub filename { shift->_stat(filename => @_) }
 sub created  { shift->_stat(created  => @_) }
 sub modified { shift->_stat(modified => @_) }

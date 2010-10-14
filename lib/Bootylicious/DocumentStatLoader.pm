@@ -20,11 +20,11 @@ sub load {
 
     Carp::croak qq/Can't load: $!/ unless $path && -e $path;
 
-    my ($name, $ext) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
+    my ($name, $format) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
 
-    Carp::croak qq/Bad file $path/ unless $name && $ext;
+    Carp::croak qq/Bad file $path/ unless $name && $format;
 
-    my $filename = join '.' => $name, $ext;
+    my $filename = join '.' => $name, $format;
 
     my $created;
     if ($name =~ s/^($TIMESTAMP_RE)-//) {
@@ -38,7 +38,7 @@ sub load {
     return {
         name     => $name,
         filename => $filename,
-        ext      => $ext,
+        format   => $format,
         created  => Bootylicious::Timestamp->new(epoch => $created),
         modified => Bootylicious::Timestamp->new(epoch => $modified)
     };

@@ -19,7 +19,9 @@ eval {
 };
 ok $@;
 
-eval { Bootylicious::Document->new(path => "$FindBin::Bin/documents/junk")->name; };
+eval {
+    Bootylicious::Document->new(path => "$FindBin::Bin/documents/junk")->name;
+};
 ok $@;
 
 $document = Bootylicious::Document->new(
@@ -34,24 +36,21 @@ is $document->created->year      => '2010';
 is $document->created->month     => '10';
 ok $document->modified;
 is $document->name        => 'foo-bar-baz';
-is $document->ext         => 'pod';
+is $document->format      => 'pod';
 is $document->title       => 'Foo bar baz!';
 is_deeply $document->tags => [qw/foo bar baz/];
-is $document->content => qq/Foo and bar.\n\nAnd buzz!\n/;
+is $document->content     => qq/Foo and bar.\n\nAnd buzz!\n/;
 
-$document = Bootylicious::Document->new(
-    path    => "$FindBin::Bin/documents/20100601-привет.md",
-    parsers => {
-        md => sub { $_[0] }
-    }
-);
+$document =
+  Bootylicious::Document->new(
+    path => "$FindBin::Bin/documents/20100601-привет.md");
 ok $document;
 is $document->created->timestamp => '20100601T00:00:00';
 is $document->created->year      => '2010';
 is $document->created->month     => '6';
 ok $document->modified;
 is $document->name        => 'привет';
-is $document->ext         => 'md';
+is $document->format      => 'md';
 is $document->title       => 'Заголовок';
 is_deeply $document->tags => [qw/раз два три/];
 is $document->content =>

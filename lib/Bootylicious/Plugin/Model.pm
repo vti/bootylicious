@@ -26,8 +26,7 @@ sub register {
 
     my $c = Mojolicious::Controller->new(app => $app);
 
-    my $config  = $c->config;
-    my $parsers = $c->parsers;
+    my $config = $c->config;
 
     my $articles_root = $c->articles_root;
     my $pages_root    = $c->pages_root;
@@ -51,14 +50,8 @@ sub register {
         get_articles => sub {
             shift;
             Bootylicious::ArticlePager->new(
-                iterator => Bootylicious::ArticleIterator->new(
-                    root => $articles_root,
-                    args => {
-                        cuttag  => $config->{cuttag},
-                        cuttext => $config->{cuttext},
-                        parsers => $parsers
-                    }
-                ),
+                iterator =>
+                  Bootylicious::ArticleIterator->new(root => $articles_root),
                 limit => $page_limit,
                 @_
             );
@@ -67,16 +60,8 @@ sub register {
 
     $app->helper(
         get_archive => sub {
-            Bootylicious::ArticleArchive->new(
-                articles => Bootylicious::ArticleIterator->new(
-                    root => $articles_root,
-                    args => {
-                        cuttag  => $config->{cuttag},
-                        cuttext => $config->{cuttext},
-                        parsers => $parsers
-                    }
-                )
-            );
+            Bootylicious::ArticleArchive->new(articles =>
+                  Bootylicious::ArticleIterator->new(root => $articles_root));
         }
     );
 
@@ -88,12 +73,7 @@ sub register {
             Bootylicious::ArticlePager->new(
                 iterator => Bootylicious::ArticleByTagIterator->new(
                     Bootylicious::ArticleIterator->new(
-                        root => $articles_root,
-                        args => {
-                            cuttag  => $config->{cuttag},
-                            cuttext => $config->{cuttext},
-                            parsers => $parsers
-                        }
+                        root => $articles_root
                     ),
                     tag => $tag
                 ),
@@ -109,16 +89,8 @@ sub register {
             my $query = shift;
 
             return Bootylicious::ArticleByQueryIterator->new(
-                Bootylicious::ArticleIterator->new(
-                    root => $articles_root,
-                    args => {
-                        cuttag  => $config->{cuttag},
-                        cuttext => $config->{cuttext},
-                        parsers => $parsers
-                    }
-                ),
-                query => $query
-            );
+                Bootylicious::ArticleIterator->new(root => $articles_root),
+                query => $query);
         }
     );
 
@@ -132,16 +104,9 @@ sub register {
     $app->helper(
         get_article => sub {
             my $self = shift;
-            Bootylicious::ArticleIteratorFinder->new(
-                iterator => Bootylicious::ArticleIterator->new(
-                    root => $articles_root,
-                    args => {
-                        cuttag  => $config->{cuttag},
-                        cuttext => $config->{cuttext},
-                        parsers => $parsers
-                    }
-                )
-            )->find(@_);
+            Bootylicious::ArticleIteratorFinder->new(iterator =>
+                  Bootylicious::ArticleIterator->new(root => $articles_root))
+              ->find(@_);
         }
     );
 
@@ -149,16 +114,9 @@ sub register {
         get_page => sub {
             my $self = shift;
             my $name = shift;
-            Bootylicious::PageIteratorFinder->new(
-                iterator => Bootylicious::PageIterator->new(
-                    root => $pages_root,
-                    args => {
-                        cuttag  => $config->{cuttag},
-                        cuttext => $config->{cuttext},
-                        parsers => $parsers
-                    }
-                )
-            )->find($name);
+            Bootylicious::PageIteratorFinder->new(iterator =>
+                  Bootylicious::PageIterator->new(root => $pages_root))
+              ->find($name);
         }
     );
 
@@ -169,12 +127,7 @@ sub register {
 
             Bootylicious::DraftIteratorFinder->new(
                 iterator => Bootylicious::DraftIterator->new(
-                    root => $self->drafts_root,
-                    args => {
-                        cuttag  => $config->{cuttag},
-                        cuttext => $config->{cuttext},
-                        parsers => $parsers
-                    }
+                    root => $self->drafts_root
                 ),
                 name => $name
             );
