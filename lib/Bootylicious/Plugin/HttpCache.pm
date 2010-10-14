@@ -49,6 +49,8 @@ sub _last_modified {
     my $booty = $self->stash('booty');
     return unless $booty;
 
+    return unless $booty->modified;
+
     return $booty->modified->epoch if ref $booty;
 
     return;

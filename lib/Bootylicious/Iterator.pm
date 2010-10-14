@@ -17,7 +17,7 @@ sub new {
 
 sub rewind { shift->{index} = 0 }
 
-sub size { scalar @{shift->{elements}} }
+sub size { scalar @{shift->{elements} || []} }
 
 sub first { shift->{elements}->[0] }
 sub last  { shift->{elements}->[-1] }

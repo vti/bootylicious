@@ -14,6 +14,8 @@ sub _max {
     my $self = shift;
     my ($method) = @_;
 
+    return unless $self->size;
+
     my $max = 0;
 
     $self->rewind;

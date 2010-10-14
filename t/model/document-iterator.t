@@ -5,7 +5,7 @@ use warnings;
 
 use utf8;
 
-use Test::More tests => 6;
+use Test::More tests => 7;
 
 use FindBin;
 
@@ -13,6 +13,10 @@ use_ok('Bootylicious::DocumentIterator');
 
 my $documents;
 my $document;
+
+$documents =
+  Bootylicious::DocumentIterator->new(root => "$FindBin::Bin/unlikelytoexist");
+is $documents->size => 0;
 
 $documents =
   Bootylicious::DocumentIterator->new(root => "$FindBin::Bin/documents");

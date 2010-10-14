@@ -14,13 +14,16 @@ use Mojo::ByteStream 'b';
 sub new {
     my $self = shift->SUPER::new(@_);
 
-    return $self if defined $self->elements;
+    return $self if $self->elements;
 
     my $root = $self->root;
 
     Carp::croak qq/'root' is a required parameter/ unless $root;
 
-    return unless -d $root;
+    unless (-d $root) {
+        warn qq/Warning: Directory '$root' does not exit/;
+        return $self;
+    }
 
     my @documents = ();
 

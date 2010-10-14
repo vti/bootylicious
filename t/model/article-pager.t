@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 13;
+use Test::More tests => 16;
 
 use FindBin;
 use Bootylicious::ArticleIterator;
@@ -11,6 +11,14 @@ use Bootylicious::ArticleIterator;
 use_ok('Bootylicious::ArticlePager');
 
 my $pager;
+
+$pager = Bootylicious::ArticlePager->new(
+    limit    => 3,
+    iterator => Bootylicious::Iterator->new(elements => [])
+);
+is $pager->articles->size => 0;
+ok !$pager->prev_timestamp;
+ok !$pager->next_timestamp;
 
 $pager = Bootylicious::ArticlePager->new(
     limit => 3,
