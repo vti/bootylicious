@@ -1,4 +1,4 @@
-# Copyright (C) 2009, Viacheslav Tykhanovskyi
+# Copyright (C) 2009-2010, Viacheslav Tykhanovskyi
 
 use 5.008001;
 
@@ -38,12 +38,13 @@ WriteMakefile(
 
     EXE_FILES => ['bootylicious'],
     PREREQ_PM => {
-        'File::Basename'    => 0,
-        'FindBin'           => 0,
-        'Mojo'              => 0.999914,
-        'Pod::Simple::HTML' => 0,
-        'Time::Local'       => 0,
-        'Time::Piece'       => 0,
+        'Carp'           => 0,
+        'File::Basename' => 0,
+        'File::stat'     => 0,
+        'FindBin'        => 0,
+        'Mojolicious'    => 0.999930,
+        'Time::Local'    => 0,
+        'Time::Piece'    => 0,
     },
     test => {TESTS => 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t'}
 );

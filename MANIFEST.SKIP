@@ -6,6 +6,13 @@
 mojo
 ^.perltidyrc$
 .json$
+.conf$
 ^articles\/
+^drafts\/
+^pages\/
 .bak$
 .tar.gz$
+.swp$
+^nytprof\/
+^nytprof.out$
+.DS_Store
