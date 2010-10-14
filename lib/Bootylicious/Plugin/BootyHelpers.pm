@@ -82,6 +82,15 @@ sub register {
     );
 
     $app->helper(
+        article_author => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            return $article->author || $config->{author};
+        }
+    );
+
+    $app->helper(
         date => sub {
             my $self = shift;
             my $date = shift;

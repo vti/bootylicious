@@ -168,7 +168,7 @@ __DATA__
         <h1 class="title">
             <%= link_to_article $article %>
         </h1>
-        <div class="created"><%= date $article->created %></div>
+        <div class="article-meta"><%= date $article->created %> by <%= article_author $article %></div>
         <%= tags_links $article %>
         <%= render_article_or_preview $article %>
     </div>
@@ -195,7 +195,7 @@ __DATA__
         <li>
             <%= link_to_article $article %>
             <br />
-            <div class="created"><%= date $article->created %></div>
+            <div class="article-meta"><%= date $article->created %> by <%= article_author $article %></div>
         </li>
         % }
     </ul>
@@ -216,6 +216,7 @@ __DATA__
             % my $link = href_to_article $article;
         <item>
           <title><%== $article->title %></title>
+          <author><%= article_author $article %></author>
           <link><%= $link %></link>
           <description>
             <%= render_article_or_preview $article %>
@@ -267,7 +268,7 @@ __DATA__
 % while (my $article = $articles->next) {
     <%= link_to_article $article %>
     <br />
-    <div class="created"><%= date $article->created %></div>
+    <div class="article-meta"><%= date $article->created %> by <%= article_author $article %></div>
 % }
 </div>
 %= include 'tag-pager', pager => $pager, tag => $tag;
@@ -289,10 +290,11 @@ __DATA__
 % stash title => $article->title, description => $article->description;
 <div class="text">
     <h1 class="title"><%= link_to_article $article %></h1>
-    <div class="created"><%= date $article->created %>
+    <div class="article-meta"><%= date $article->created %>
 %   if ($article->is_modified) {
 , modified <span class="modified"><%= date $article->modified %></span>
 % }
+    by <%= article_author $article %>
     </div>
     <%= tags_links $article %>
     <%= render_article $article %>
@@ -384,7 +386,10 @@ __DATA__
                 <sup><a href="<%= url_for 'index', format => 'rss' %>"><img src="/rss.png" alt="RSS" /></a></sup>
                 </h1>
                 <h2 id="descr"><%= config 'descr' %></h2>
-                <span id="author"><%= config 'author' %></span>, <span id="about"><%= config 'about' %></span>
+                % if (my $author = config 'author') {
+                <span id="author"><%= config 'author' %></span>,
+                % }
+                <span id="about"><%= config 'about' %></span>
                 <div id="menu">
 % for (my $i = 0; $i < @{config('menu')}; $i += 2) {
                     <a href="<%= config('menu')->[$i + 1] %>"><%== config('menu')->[$i] %></a>
@@ -421,7 +426,7 @@ span#author {font-weight:bold}
 span#about {font-style:italic}
 #menu {padding-top:1em;text-align:right}
 #content {background:#FFFFFF}
-.created, .modified {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
+.article-meta {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
 .modified {margin:0px}
 .tags{margin-left:10px;text-transform:uppercase;}
 .text {padding:2em;}

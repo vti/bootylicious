@@ -51,6 +51,7 @@ sub title       { shift->_metadata(title       => @_) }
 sub description { shift->_metadata(description => @_) }
 sub tags        { shift->_metadata(tags        => @_) }
 sub link        { shift->_metadata(link        => @_) }
+sub author      { shift->_metadata(author      => @_) }
 
 sub content { shift->_content(content => @_) }
 
