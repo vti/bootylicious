@@ -189,9 +189,9 @@ __DATA__
     <h1><%= strings 'archive' %></h1>
     <br />
     % while (my $year = $archive->next) {
-    <h2><%= $year->{year} %></h2>
+    <h2><%= $year->year %></h2>
     <ul>
-        % while (my $article = $year->{articles}->next) {
+        % while (my $article = $year->articles->next) {
         <li>
             <%= link_to_article $article %>
             <br />

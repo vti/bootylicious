@@ -29,12 +29,26 @@ sub build {
     my @years;
     foreach my $year (sort { $b <=> $a } keys %$years) {
         push @years,
-          { year     => $year,
-            articles => Bootylicious::Iterator->new(elements => $years->{$year})
-          };
+          Bootylicious::Year->new(
+            year => $year,
+            articles =>
+              Bootylicious::IteratorWithDates->new(elements => $years->{$year})
+          );
     }
 
-    return Bootylicious::Iterator->new(elements => [@years]);
+    return Bootylicious::IteratorWithDates->new(elements => [@years]);
 }
+
+package Bootylicious::Year;
+
+use strict;
+use warnings;
+
+use base 'Mojo::Base';
+
+__PACKAGE__->attr('year');
+__PACKAGE__->attr('articles');
+
+sub modified { shift->articles->modified }
 
 1;
