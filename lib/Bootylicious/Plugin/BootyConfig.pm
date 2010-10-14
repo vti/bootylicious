@@ -136,7 +136,7 @@ sub _default {
         menu => [
             index   => '/',
             tags    => '/tags.html',
-            archive => '/archive.html'
+            archive => '/articles.html'
         ],
         theme     => '',
         cuttag    => '[cut]',

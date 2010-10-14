@@ -8,6 +8,8 @@ use base 'Mojo::Base';
 use Bootylicious::Iterator;
 
 __PACKAGE__->attr('articles');
+__PACKAGE__->attr('year');
+__PACKAGE__->attr('month');
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -20,7 +22,11 @@ sub build {
 
     my $years = {};
     while (my $article = $self->articles->next) {
-        my $year = $article->created->year;
+        my $year  = $article->created->year;
+        my $month = $article->created->month;
+
+        next if $self->year  && $self->year != $year;
+        next if $self->month && $self->month != $month;
 
         $years->{$year} ||= [];
         push @{$years->{$year}}, $article;
@@ -30,9 +36,10 @@ sub build {
     foreach my $year (sort { $b <=> $a } keys %$years) {
         push @years,
           Bootylicious::Year->new(
-            year => $year,
-            articles =>
-              Bootylicious::IteratorWithDates->new(elements => $years->{$year})
+            year     => $year,
+            articles => Bootylicious::IteratorWithDates->new(
+                elements => $years->{$year}
+            )
           );
     }
 

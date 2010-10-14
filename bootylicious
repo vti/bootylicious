@@ -54,17 +54,7 @@ sub index {
     $self->stash(booty => $pager->articles, pager => $pager);
 
     $self->render_smart('index');
-};
-
-get '/archive' => sub {
-    my $self = shift;
-
-    my $archive = $self->get_archive;
-
-    $self->stash(booty => $archive);
-
-    $self->render_smart;
-} => 'archive';
+}
 
 get '/tags/:tag' => [tag => $TAG_RE] => sub {
     my $self = shift;
@@ -94,6 +84,20 @@ get '/tags' => sub {
 
     $self->render_smart;
 } => 'tags';
+
+get '/articles/:year/:month' => [year => qr/\d+/, month => qr/\d+/] =>
+  {year => undef, month => undef} => sub {
+    my $self = shift;
+
+    my $year  = $self->stash('year');
+    my $month = $self->stash('month');
+
+    my $archive = $self->get_archive(year => $year, month => $month);
+
+    $self->stash(booty => $archive);
+
+    $self->render_smart;
+  } => 'articles';
 
 get '/articles/:year/:month/:alias' =>
   [year => qr/\d+/, month => qr/\d+/, alias => $ALIAS_RE] => sub {
@@ -182,7 +186,7 @@ __DATA__
     </div>
 
 
-@@ archive.html.ep
+@@ articles.html.ep
 % stash title => strings('archive'), description => strings('archive-description');
 % my $archive = stash 'booty';
 

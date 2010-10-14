@@ -60,8 +60,12 @@ sub register {
 
     $app->helper(
         get_archive => sub {
-            Bootylicious::ArticleArchive->new(articles =>
-                  Bootylicious::ArticleIterator->new(root => $articles_root));
+            shift;
+            Bootylicious::ArticleArchive->new(
+                articles =>
+                  Bootylicious::ArticleIterator->new(root => $articles_root),
+                @_
+            );
         }
     );
 
