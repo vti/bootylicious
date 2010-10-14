@@ -168,11 +168,12 @@ sub register {
     );
     $app->helper(
         link_to_page => sub {
-            my $self      = shift;
-            my $name      = shift;
-            my $timestamp = shift;
+            my $self = shift;
+            my $name = shift;
 
             my %args = ref $_[0] eq 'HASH' ? %{shift @_} : ();
+
+            my $timestamp = shift;
 
             my $query = delete $args{query} || {};
 
