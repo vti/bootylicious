@@ -28,9 +28,9 @@ sub _check_if_modified_since_header {
     my $last_modified = _last_modified($c);
     return unless $last_modified;
 
-    if ($last_modified > $date) {
-        $c->render_text('', status => 304, layout => undef);
-    }
+    return if $last_modified > $date;
+
+    $c->render_text('', status => 304, layout => undef);
 }
 
 sub _set_last_modified_header {

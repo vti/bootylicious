@@ -43,6 +43,7 @@ under sub {
 
 get '/'      => \&index => 'root';
 get '/index' => \&index => 'index';
+
 sub index {
     my $self = shift;
 
@@ -249,7 +250,7 @@ __DATA__
     <br />
     <div class="tags">
 % while (my $tag = $cloud->next) {
-        <%= link_to_tag $tag->name %>
+        <%= link_to_tag $tag %>
         <sub>(<%= $tag->count %>)</sub>
 % }
     </div>
@@ -307,7 +308,7 @@ __DATA__
 %   if ($prev) {
         &larr; <%= link_to_article $prev %> &nbsp;|
 %   }
-        <a href="<%= url_for 'archive' %>"><%= strings('archive') %></a>
+        <a href="<%= url_for 'articles' %>"><%= strings('archive') %></a>
 %   if ($next) {
         |&nbsp;<%= link_to_article $next %> &rarr;
 %   }
@@ -360,41 +361,23 @@ __DATA__
     <head>
         <meta charset="UTF-8">
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
-% if ($description) {
-        <meta name="description" content="<%= $description %>" />
-% }
-% foreach my $meta (@{config('meta')}) {
-        <meta 
-% for my $key (keys %$meta) {
-<%== "$key=\"$meta->{$key}\" " %>
-% }
-/>
-% }
-% foreach my $file (@{config('css')}) {
-        <link rel="stylesheet" href="/<%= $file %>" type="text/css" />
-% }
-% if (!@{config('css')}) {
+        <%= meta %>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
-% }
-        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= url_for('index', format => 'rss')->to_abs %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
     </head>
     <body>
         <div id="body">
             <div id="header">
                 <h1 id="title">
-                <%= link_to 'index', {format => undef} => {%><%= config 'title' %><%}%>
-                <sup><a href="<%= url_for 'index', format => 'rss' %>"><img src="/rss.png" alt="RSS" /></a></sup>
+                    <%= link_to 'index', {format => 'html'} => {%><%= config 'title' %><%}%>
+                    <sup><a href="<%= href_to_rss %>"><img src="/rss.png" alt="RSS" /></a></sup>
                 </h1>
                 <h2 id="descr"><%= config 'descr' %></h2>
                 % if (my $author = config 'author') {
                 <span id="author"><%= config 'author' %></span>,
                 % }
                 <span id="about"><%= config 'about' %></span>
-                <div id="menu">
-% for (my $i = 0; $i < @{config('menu')}; $i += 2) {
-                    <a href="<%= config('menu')->[$i + 1] %>"><%== config('menu')->[$i] %></a>
-% }
-                </div>
+                <div id="menu"><%= menu %></div>
             </div>
             <div id="content">
             <%= content %>
@@ -402,9 +385,6 @@ __DATA__
             <div class="push"></div>
         </div>
         <div id="footer"><%== config 'footer' %></div>
-% foreach my $file (@{config('js')}) {
-        <script type="text/javascript" href="/<%= $file %>" />
-% }
     </body>
 </html>
 

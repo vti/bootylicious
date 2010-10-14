@@ -8,6 +8,7 @@ use base 'Mojo::Base';
 __PACKAGE__->attr('articles');
 
 use Bootylicious::IteratorWithDates;
+use Bootylicious::Tag;
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -54,14 +55,5 @@ sub build {
 
     return Bootylicious::IteratorWithDates->new(elements => [@tags]);
 }
-
-package Bootylicious::Tag;
-
-use strict;
-use warnings;
-
-use base 'Mojo::Base';
-
-__PACKAGE__->attr([qw/name count created modified/]);
 
 1;

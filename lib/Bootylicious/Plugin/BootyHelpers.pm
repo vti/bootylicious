@@ -154,11 +154,13 @@ sub register {
             my $self = shift;
             my $tag  = shift;
 
-            my $cb = ref $_[-1] eq 'CODE' ? $_[-1] : sub {$tag};
+            my $name = ref $tag ? $tag->name : $tag;
+
+            my $cb = ref $_[-1] eq 'CODE' ? $_[-1] : sub {$name};
             my $args = ref $_[0] eq 'HASH' ? $_[0] : {};
 
             return $self->link_to(
-                tag => {tag => $tag, format => 'html', %$args} => $cb);
+                tag => {tag => $name, format => 'html', %$args} => $cb);
         }
     );
     $app->helper(
@@ -230,6 +232,60 @@ sub register {
     }
 
     $app->helper(page_limit => sub { $config->{pagelimit} });
+
+    $app->helper(
+        meta => sub {
+            my $self = shift;
+
+            my $string = '';
+
+            if (my $description = $self->stash('description')) {
+                $string .= $self->tag(
+                    'meta',
+                    name    => 'description',
+                    content => $description
+                );
+            }
+
+            my $meta_from_config = $self->config('meta');
+            $meta_from_config = [$meta_from_config]
+              unless ref $meta_from_config eq 'ARRAY';
+
+            foreach my $meta (@$meta_from_config) {
+                $string .= $self->tag('meta' => %$meta);
+            }
+
+            return Mojo::ByteStream->new($string);
+        }
+    );
+
+    $app->helper(
+        href_to_rss => sub {
+            my $self = shift;
+
+            return $self->url_for('index', format => 'rss')->to_abs;
+        }
+    );
+
+    $app->helper(
+        menu => sub {
+            my $self = shift;
+
+            my @links;
+
+            my $menu = $self->config('menu');
+
+            for (my $i = 0; $i < @$menu; $i += 2) {
+                my $title = $menu->[$i];
+                my $href  = $menu->[$i + 1];
+
+                push @links, $self->link_to($href => sub {$title});
+
+            }
+
+            return Mojo::ByteStream->new(join ' ' => @links);
+        }
+    );
 }
 
 1;
