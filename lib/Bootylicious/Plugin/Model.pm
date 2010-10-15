@@ -16,6 +16,8 @@ use Bootylicious::ArticleIterator;
 use Bootylicious::ArticleIteratorFinder;
 use Bootylicious::ArticlePager;
 use Bootylicious::Draft;
+use Bootylicious::DraftIterator;
+use Bootylicious::DraftIteratorFinder;
 use Bootylicious::IteratorSearchable;
 use Bootylicious::Page;
 use Bootylicious::PageIterator;
@@ -156,8 +158,7 @@ sub register {
                 iterator => Bootylicious::DraftIterator->new(
                     root => $self->drafts_root
                 ),
-                name => $name
-            );
+            )->find($name);
         }
     );
 }
