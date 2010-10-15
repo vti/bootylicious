@@ -19,12 +19,15 @@ when you add new plugins, templates, css files etc.
     * filesystem-based storage
     * tags
     * RSS (articles and by tag)
-    * paging
     * static pages
     * drafts
-    * pages
+    * archive
     * themes
     * multi-parser support (POD, Markdown)
     * plugins
+
+    * lightweight
+    * clean code
+    * runs everywhere
 
 =back
