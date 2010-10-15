@@ -1,0 +1,30 @@
+=head1 Bootylicious
+
+Bootylicious is a minimalistic blogging application built on top of
+L<Mojolicious::Lite>. You start with just one file, but it is easily extendable
+when you add new plugins, templates, css files etc.
+
+=head2 Famous 5 seconds setup
+
+    $ git clone http://github.com/vti/bootylicious.git
+    $ cd bootylicious
+    $ git submodule update --init
+    $ perl bootylicious daemon
+    Server available at http://*:3000.
+
+=head2 Features
+
+=over
+
+    * filesystem-based storage
+    * tags
+    * RSS (articles and by tag)
+    * paging
+    * static pages
+    * drafts
+    * pages
+    * themes
+    * multi-parser support (POD, Markdown)
+    * plugins
+
+=back
