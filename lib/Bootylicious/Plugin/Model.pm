@@ -9,6 +9,7 @@ use Mojolicious::Controller;
 
 use Bootylicious::Article;
 use Bootylicious::ArticleArchive;
+use Bootylicious::ArticleArchiveSimple;
 use Bootylicious::ArticleByTagIterator;
 use Bootylicious::ArticleByQueryIterator;
 use Bootylicious::ArticleIterator;
@@ -59,12 +60,27 @@ sub register {
     );
 
     $app->helper(
+        get_recent_articles => sub {
+            Bootylicious::ArticleIterator->new(root => $articles_root)
+              ->next(5);
+        }
+    );
+
+    $app->helper(
         get_archive => sub {
             shift;
             Bootylicious::ArticleArchive->new(
                 articles =>
                   Bootylicious::ArticleIterator->new(root => $articles_root),
                 @_
+            );
+        }
+    );
+
+    $app->helper(
+        get_archive_simple => sub {
+            Bootylicious::ArticleArchiveSimple->new(articles =>
+                  Bootylicious::ArticleIterator->new(root => $articles_root),
             );
         }
     );
@@ -100,6 +116,13 @@ sub register {
 
     $app->helper(
         get_tag_cloud => sub {
+            Bootylicious::TagCloud->new(articles =>
+                  Bootylicious::ArticleIterator->new(root => $articles_root));
+        }
+    );
+
+    $app->helper(
+        get_tags => sub {
             Bootylicious::TagCloud->new(articles =>
                   Bootylicious::ArticleIterator->new(root => $articles_root));
         }

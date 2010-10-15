@@ -125,17 +125,19 @@ sub register {
 
             my $href = $self->href_to_article($article);
 
+            my $cb = ref $_[-1] eq 'CODE' ? pop : undef;
+
             if ($article->link) {
                 my $string = '';
 
-                $string .= $self->link_to($href => sub { $article->title });
+                $string .= $self->link_to($href => $cb || sub { $article->title });
                 $string .= '&nbsp;';
                 $string .= $self->link_to($article->link => sub {"&raquo;"});
 
                 return Mojo::ByteStream->new($string);
             }
 
-            return $self->link_to($href => sub { $article->title });
+            return $self->link_to($href => $cb || sub { $article->title });
         }
     );
     $app->helper(
@@ -170,9 +172,8 @@ sub register {
 
             my @links = map { $self->link_to_tag($_) } @{$article->tags};
 
-            my $string = '<div class="tags">';
+            my $string = '';
             $string .= join ', ' => @links;
-            $string .= '</div>';
 
             return Mojo::ByteStream->new($string);
         }
@@ -268,6 +269,14 @@ sub register {
     );
 
     $app->helper(
+        link_to_rss => sub {
+            my $self = shift;
+
+            return $self->link_to($self->href_to_rss => @_);
+        }
+    );
+
+    $app->helper(
         menu => sub {
             my $self = shift;
 
@@ -280,10 +289,63 @@ sub register {
                 my $href  = $menu->[$i + 1];
 
                 push @links, $self->link_to($href => sub {$title});
-
             }
 
             return Mojo::ByteStream->new(join ' ' => @links);
+        }
+    );
+
+    $app->helper(
+        link_to_home => sub {
+            my $self = shift;
+
+            return $self->link_to(
+                'index' => title  => $self->config('title'),
+                rel     => 'home' => sub { $self->config('title') }
+            );
+        }
+    );
+
+    $app->helper(
+        link_to_bootylicious => sub {
+            my $self = shift;
+
+            return $self->link_to('http://getbootylicious.org' => title =>
+                  'Powered by Bootylicious!' => sub {'Bootylicious'});
+        }
+    );
+
+    $app->helper(
+        powered_by => sub {
+            my $self = shift;
+
+            return $self->link_to('http://getbootylicious.org' =>
+                  sub {'Powered by Bootylicious'});
+
+        }
+    );
+
+    $app->helper(generator => sub {
+            my $self = shift;
+
+            return Mojo::ByteStream->new('Bootylicious ' .  $main::VERSION);
+        });
+
+    $app->helper(
+        link_to_archive => sub {
+            my $self = shift;
+            my ($year, $month) = @_;
+
+            my @months = (
+                qw/January February March April May July June August September October November December/
+            );
+            my $title = $months[$month - 1] . ' ' . $year;
+            return $self->link_to(
+                'articles',
+                {   year  => $year,
+                    month => $month
+                } => sub {$title}
+            );
         }
     );
 }

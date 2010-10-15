@@ -16,7 +16,7 @@ sub new {
     return $self->build;
 }
 
-sub last_modified { shift->articles->last_modified }
+sub modified { shift->articles->modified }
 
 sub build {
     my $self = shift;

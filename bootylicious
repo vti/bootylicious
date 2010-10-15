@@ -9,7 +9,6 @@ use Mojolicious::Lite;
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
-plugin 'booty_helpers';
 plugin 'markdown_parser';
 plugin 'model';
 plugin 'http_cache';
@@ -51,7 +50,7 @@ sub index {
 
     my $pager = $self->get_articles(timestamp => $timestamp);
 
-    $self->stash(booty => $pager->articles, pager => $pager);
+    $self->stash(booty => $pager->articles, articles => $pager->articles, pager => $pager);
 
     $self->render_smart('index');
 }
@@ -113,6 +112,7 @@ get '/articles/:year/:month/:alias' =>
 
     $self->stash(
         booty => $article,
+        article => $article,
         prev  => $article->prev,
         next  => $article->next
     );
@@ -156,7 +156,6 @@ __DATA__
 
 @@ index.html.ep
 % stash description => config('descr');
-% my $articles = stash 'booty';
 % if ($articles->size == 0) {
     <div class="text center">
         Nothing here yet :(
@@ -174,7 +173,7 @@ __DATA__
             <%= link_to_article $article %>
         </h1>
         <div class="article-meta"><%= date $article->created %> by <%= article_author $article %></div>
-        <%= tags_links $article %>
+        <div class="tags"><%= tags_links $article %></div>
         <%= render_article_or_preview $article %>
     </div>
 
@@ -291,7 +290,6 @@ __DATA__
 
 
 @@ article.html.ep
-% my $article = stash 'booty';
 % stash title => $article->title, description => $article->description;
 <div class="text">
     <h1 class="title"><%= link_to_article $article %></h1>
@@ -301,7 +299,7 @@ __DATA__
 % }
     by <%= article_author $article %>
     </div>
-    <%= tags_links $article %>
+    <div class="tags"><%= tags_links $article %></div>
     <%= render_article $article %>
 %= include 'article-pager', next => $next, prev => $prev;
 </div>
@@ -337,7 +335,7 @@ __DATA__
     <h1 class="title">
         <%= $draft->{title} %>
     </h1>
-    <%= tags_links $draft %>
+    <div class="tags"><%= tags_links $draft %></div>
     <%== $draft->{content} %>
 </div>
 

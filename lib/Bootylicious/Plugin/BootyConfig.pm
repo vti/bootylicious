@@ -73,7 +73,20 @@ sub register {
         }
     );
 
-    $c->add_parser(pod => sub { $app->renderer->helper->{pod_to_html}->(undef, @_) });
+    $app->plugin('booty_helpers');
+
+    $c->add_parser(
+        pod => sub { $app->renderer->helper->{pod_to_html}->(undef, @_) });
+
+    if (my $theme = $config->{theme}) {
+        my $theme_class = join '::' => 'Bootylicious::Theme',
+          Mojo::ByteStream->new($theme)->camelize;
+
+        $app->renderer->default_template_class($theme_class);
+        $app->static->default_static_class($theme_class);
+
+        $app->plugin($theme_class);
+    }
 
     # Load additional plugins
     $self->_load_plugins($app, $config->{plugins});
@@ -111,7 +124,7 @@ sub _load_plugins {
     }
 
     #push @{$app->plugins->namespaces}, $_
-      #for @{$config->{plugins_namespaces}};
+    #for @{$config->{plugins_namespaces}};
 
     foreach my $plugin (@plugins) {
         $app->plugin($plugin->{name} => $plugin->{args});
