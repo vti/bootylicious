@@ -9,7 +9,6 @@ use Mojolicious::Lite;
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
-plugin 'canonical_url';
 plugin 'markdown_parser';
 plugin 'model';
 

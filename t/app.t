@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 36;
+use Test::More tests => 43;
 use Test::Mojo;
 
 BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin"; }
@@ -17,7 +17,6 @@ my $t = Test::Mojo->new;
 # Index page
 $t->get_ok('/')->status_is(200)->content_like(qr/booty/);
 
-$t->get_ok('/index')->status_is(302);
 $t->get_ok('/index.html')->status_is(200)->content_like(qr/booty/);
 
 # Index rss page
@@ -25,9 +24,13 @@ $t->get_ok('/index.rss')->status_is(200)->content_like(qr/rss/);
 
 # Archive page
 $t->get_ok('/articles.html')->status_is(200)->content_like(qr/Archive/);
+$t->get_ok('/articles/2010.html')->status_is(200)->content_like(qr/Archive/);
+$t->get_ok('/articles/2010/10.html')->status_is(200)
+  ->content_like(qr/Archive/);
 
 # Tags page
 $t->get_ok('/tags.html')->status_is(200)->content_like(qr/Tags/);
+$t->get_ok('/tags/foo.html')->status_is(200)->content_like(qr/foo/);
 
 # Article Pages
 $t->get_ok('/articles/2010/10/foo.html')->status_is(200);

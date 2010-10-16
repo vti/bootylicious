@@ -19,6 +19,7 @@ sub _set_etag_header {
     return unless $c->req->method eq 'GET';
 
     my $body = $c->res->body;
+    return unless defined $body;
 
     my $our_etag = _calculate_etag($body);
     $c->res->headers->header('ETag' => $our_etag);
