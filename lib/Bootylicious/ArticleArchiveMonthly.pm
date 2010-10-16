@@ -5,7 +5,7 @@ use warnings;
 
 use base 'Bootylicious::ArticleArchiveBase';
 
-use Bootylicious::IteratorWithDates;
+use Bootylicious::DocumentIteratorWithDates;
 
 __PACKAGE__->attr('month');
 
@@ -24,7 +24,7 @@ sub build {
     }
 
     $self->articles(
-        Bootylicious::IteratorWithDates->new(elements => [@articles]));
+        Bootylicious::DocumentIteratorWithDates->new(elements => [@articles]));
 
     return $self;
 }

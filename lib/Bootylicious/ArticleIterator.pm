@@ -3,7 +3,7 @@ package Bootylicious::ArticleIterator;
 use strict;
 use warnings;
 
-use base 'Bootylicious::IteratorWithDates';
+use base 'Bootylicious::DocumentIteratorWithDates';
 
 use Bootylicious::Article;
 

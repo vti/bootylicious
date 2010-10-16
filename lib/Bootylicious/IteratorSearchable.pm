@@ -9,7 +9,9 @@ sub find_first {
     my $self = shift;
     my $cb   = shift;
 
-    while (my $el = $self->object->next) {
+    $self->rewind;
+
+    while (my $el = $self->next) {
         if (my $res = $cb->($self->object, $el)) {
             return $res;
         }

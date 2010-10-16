@@ -33,6 +33,8 @@ sub new {
 
         $file = b($file)->decode('UTF-8');
 
+        next if $file =~ m/(?:\..*?)\.(?:.*?)$/;
+
         local $@;
         eval {
             $document = $self->create_element(path => $file, %{$self->args});

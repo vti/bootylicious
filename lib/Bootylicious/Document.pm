@@ -47,7 +47,7 @@ sub filename { shift->_stat(filename => @_) }
 sub created  { shift->_stat(created  => @_) }
 sub modified { shift->_stat(modified => @_) }
 
-sub title       { shift->_metadata(title       => @_) }
+sub title       { my $self = shift;$self->_metadata(title       => @_) || $self->name}
 sub description { shift->_metadata(description => @_) }
 sub tags        { shift->_metadata(tags        => @_) }
 sub link        { shift->_metadata(link        => @_) }

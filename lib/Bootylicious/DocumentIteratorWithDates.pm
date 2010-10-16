@@ -1,4 +1,4 @@
-package Bootylicious::IteratorWithDates;
+package Bootylicious::DocumentIteratorWithDates;
 
 use strict;
 use warnings;

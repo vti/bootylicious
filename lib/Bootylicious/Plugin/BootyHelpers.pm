@@ -10,7 +10,7 @@ use Mojo::ByteStream 'b';
 sub register {
     my ($self, $app) = @_;
 
-    my $config = $app->renderer->helper->{config}->();
+    my $config = $app->config;
 
     $app->helper(
         render_smart => sub {
@@ -233,7 +233,7 @@ sub register {
     );
 
     foreach my $name (qw/articles pages drafts/) {
-        my $option = $config->{"${name}dir"};
+        my $option = $config->{"${name}dir"} || '';
         $app->helper(
             "${name}_root" => sub {
                 ($option =~ m/^\//) ? $option : $app->home->rel_dir($option);

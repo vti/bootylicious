@@ -291,19 +291,32 @@ __DATA__
     <div class="article->content">
         <%= render_article $article %>
     </div>
+%= include 'article-pingbacks', pingbacks => $article->pingbacks if $article->pingbacks->size;
 %= include 'article-pager', next => $next, prev => $prev;
 </div>
 
 
+@@ article-pingbacks.html.ep
+<h2>Pingbacks</h2>
+
+<ul>
+% while (my $pingback = $pingbacks->next) {
+    <li><%= date $pingback->created %> <%= link_to $pingback->source_uri %></li>
+% }
+</ul>
+
+
 @@ article-pager.html.ep
     <div id="pager">
+    <span class="active">
 %   if ($prev) {
-        &larr; <%= link_to_article $prev %> &nbsp;|
+        <span class="arrow">&larr; </span><%= link_to_article $prev %> &nbsp;
 %   }
-        <a href="<%= url_for 'articles' %>"><%= strings('archive') %></a>
+|
 %   if ($next) {
-        |&nbsp;<%= link_to_article $next %> &rarr;
+        &nbsp;<%= link_to_article $next %><span class="arrow"> &rarr;</span>
 %   }
+    </span>
     </div>
 
 
