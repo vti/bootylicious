@@ -5,55 +5,31 @@ use warnings;
 
 use base 'Mojolicious::Plugin';
 
-use Mojo::Date;
+use Mojo::ByteStream;
 
 sub register {
     my ($self, $app) = @_;
 
-    $app->plugins->add_hook(
-        before_render => \&_check_if_modified_since_header);
-    $app->plugins->add_hook(after_dispatch => \&_set_last_modified_header);
+    $app->plugins->add_hook(after_dispatch => \&_set_etag_header);
 }
 
-sub _check_if_modified_since_header {
+sub _set_etag_header {
     my ($self, $c) = @_;
 
-    return if $c->res->code;
+    return unless $c->req->method eq 'GET';
 
-    my $date = $c->req->headers->header('If-Modified-Since');
-    return unless $date;
+    my $body = $c->res->body;
 
-    $date = Mojo::Date->new($date)->epoch;
+    my $our_etag = _calculate_etag($body);
+    $c->res->headers->header('ETag' => $our_etag);
 
-    my $last_modified = _last_modified($c);
-    return unless $last_modified;
+    my $browser_etag = $c->req->headers->header('If-None-Match');
+    return unless $browser_etag && $browser_etag eq $our_etag;
 
-    return if $last_modified > $date;
-
-    $c->render_text('', status => 304, layout => undef);
+    $c->res->code(304);
+    $c->res->body('');
 }
 
-sub _set_last_modified_header {
-    my ($self, $c) = @_;
-
-    my $last_modified = _last_modified($c);
-    return unless $last_modified;
-
-    $c->res->headers->header(
-        'Last-Modified' => Mojo::Date->new($last_modified));
-}
-
-sub _last_modified {
-    my $self = shift;
-
-    my $booty = $self->stash('booty');
-    return unless $booty;
-
-    return unless $booty->modified;
-
-    return $booty->modified->epoch if ref $booty;
-
-    return;
-}
+sub _calculate_etag { Mojo::ByteStream->new(shift)->md5_sum }
 
 1;
