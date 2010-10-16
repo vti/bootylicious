@@ -33,7 +33,7 @@ sub new {
 
         $file = b($file)->decode('UTF-8');
 
-        next if $file =~ m/(?:\..*?)\.(?:.*?)$/;
+        next if scalar(split '.' => $file) > 1;
 
         local $@;
         eval {

@@ -169,3 +169,4 @@ $t->post_ok(
     </params>
 </methodCall>
 EOF
+unlink "$FindBin::Bin/../articles/20101010-foo.md.pingbacks";

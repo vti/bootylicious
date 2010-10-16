@@ -23,3 +23,5 @@ ok !$article->has_pingback('http://example.com/hello');
 $article->pingback('http://example.com/hello');
 is $article->pingbacks->size => 1;
 ok $article->has_pingback('http://example.com/hello');
+
+unlink "$FindBin::Bin/article/20101010-foo.md.pingbacks";
