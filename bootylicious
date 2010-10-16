@@ -354,6 +354,7 @@ __DATA__
         <%= meta %>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
+        <meta name="generator" content="<%= generator %>" />
     </head>
     <body>
         <div id="body">
