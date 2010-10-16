@@ -21,7 +21,7 @@ sub new {
     Carp::croak qq/'root' is a required parameter/ unless $root;
 
     unless (-d $root) {
-        warn qq/Warning: Directory '$root' does not exit/;
+        warn qq/Warning: Directory '$root' does not exist/;
         return $self;
     }
 
