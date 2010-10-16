@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 15;
+use Test::More tests => 19;
 
 use FindBin;
 use Bootylicious::ArticleIterator;
@@ -22,6 +22,8 @@ $archive =
   Bootylicious::ArticleArchive->new(articles =>
       Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/archive"));
 
+ok $archive->modified;
+ok $archive->is_yearly;
 is $archive->size => 2;
 
 $year = $archive->next;
@@ -38,6 +40,7 @@ $archive = Bootylicious::ArticleArchive->new(
     year => 2005
 );
 
+ok $archive->is_yearly;
 is $archive->size => 1;
 
 $year = $archive->next;
@@ -53,10 +56,11 @@ $archive = Bootylicious::ArticleArchive->new(
     month => 5
 );
 
+ok $archive->is_monthly;
 is $archive->size => 1;
+ok $archive->modified;
 
-$year = $archive->next;
-is $year->{year}           => 2005;
-is $year->{articles}->size => 1;
+my $article = $archive->next;
+is $article->created->month => 5;
 
 ok not defined $archive->next;

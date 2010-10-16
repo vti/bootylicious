@@ -130,7 +130,8 @@ sub register {
             if ($article->link) {
                 my $string = '';
 
-                $string .= $self->link_to($href => $cb || sub { $article->title });
+                $string
+                  .= $self->link_to($href => $cb || sub { $article->title });
                 $string .= '&nbsp;';
                 $string .= $self->link_to($article->link => sub {"&raquo;"});
 
@@ -197,6 +198,14 @@ sub register {
             else {
                 return $self->tag('span' => @_);
             }
+        }
+    );
+    $app->helper(
+        link_to_author => sub {
+            my $self   = shift;
+            my $author = shift;
+
+            return $author || $self->config('author');
         }
     );
 
@@ -325,11 +334,13 @@ sub register {
         }
     );
 
-    $app->helper(generator => sub {
+    $app->helper(
+        generator => sub {
             my $self = shift;
 
-            return Mojo::ByteStream->new('Bootylicious ' .  $main::VERSION);
-        });
+            return Mojo::ByteStream->new('Bootylicious ' . $main::VERSION);
+        }
+    );
 
     $app->helper(
         link_to_archive => sub {

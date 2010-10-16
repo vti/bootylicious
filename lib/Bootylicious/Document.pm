@@ -53,6 +53,8 @@ sub tags        { shift->_metadata(tags        => @_) }
 sub link        { shift->_metadata(link        => @_) }
 sub author      { shift->_metadata(author      => @_) }
 
+sub has_tags { @{shift->tags || []} }
+
 sub content { shift->_content(content => @_) }
 
 sub _stat     { shift->_group(stat     => @_) }

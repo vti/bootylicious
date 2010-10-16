@@ -9,36 +9,14 @@ use Mojolicious::Lite;
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
+plugin 'canonical_url';
 plugin 'markdown_parser';
 plugin 'model';
-plugin 'http_cache';
 
 my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
 my $TAG_RE   = qr/[a-zA-Z0-9]+/;
 
 our $VERSION = '1.000000';
-
-under sub {
-    my $self = shift;
-
-    my $path = $self->req->url->path->to_string;
-    return 1 unless $path;
-
-    return 1 if $path =~ m{/$};
-
-    return 1 if $path =~ m{\.(?:[a-z]+)$};
-
-    my $canonical_location =
-      $self->req->url->clone->path($path . '.html')->to_abs;
-
-    $self->app->log->debug("Path is not canonical: " . $self->req->url);
-    $self->app->log->debug("Redirecting to: " . $canonical_location);
-
-    $self->redirect_to($canonical_location);
-
-    # Stop
-    return 0;
-};
 
 get '/'      => \&index => 'root';
 get '/index' => \&index => 'index';
@@ -50,39 +28,10 @@ sub index {
 
     my $pager = $self->get_articles(timestamp => $timestamp);
 
-    $self->stash(booty => $pager->articles, articles => $pager->articles, pager => $pager);
+    $self->stash(articles => $pager->articles, pager => $pager);
 
     $self->render_smart('index');
 }
-
-get '/tags/:tag' => [tag => $TAG_RE] => sub {
-    my $self = shift;
-
-    my $tag = $self->stash('tag');
-
-    my $timestamp = $self->param('timestamp');
-
-    my $pager = $self->get_articles_by_tag($tag, timestamp => $timestamp);
-
-    return $self->render_not_found unless $pager->articles->size;
-
-    $self->stash(booty => $pager->articles, pager => $pager);
-
-    $self->render_smart;
-} => 'tag';
-
-get '/tags' => sub {
-    my $self = shift;
-
-    my $config  = $self->config;
-    my $parsers = $self->parsers;
-
-    my $cloud = $self->get_tag_cloud;
-
-    $self->stash(booty => $cloud);
-
-    $self->render_smart;
-} => 'tags';
 
 get '/articles/:year/:month' => [year => qr/\d+/, month => qr/\d+/] =>
   {year => undef, month => undef} => sub {
@@ -93,7 +42,7 @@ get '/articles/:year/:month' => [year => qr/\d+/, month => qr/\d+/] =>
 
     my $archive = $self->get_archive(year => $year, month => $month);
 
-    $self->stash(booty => $archive);
+    $self->stash(archive => $archive);
 
     $self->render_smart;
   } => 'articles';
@@ -111,14 +60,39 @@ get '/articles/:year/:month/:alias' =>
     return $self->render_not_found unless $article;
 
     $self->stash(
-        booty => $article,
         article => $article,
-        prev  => $article->prev,
-        next  => $article->next
+        prev    => $article->prev,
+        next    => $article->next
     );
 
     $self->render_smart;
   } => 'article';
+
+get '/tags/:tag' => [tag => $TAG_RE] => sub {
+    my $self = shift;
+
+    my $tag = $self->stash('tag');
+
+    my $timestamp = $self->param('timestamp');
+
+    my $pager = $self->get_articles_by_tag($tag, timestamp => $timestamp);
+
+    return $self->render_not_found unless $pager->articles->size;
+
+    $self->stash(articles => $pager->articles, pager => $pager);
+
+    $self->render_smart;
+} => 'tag';
+
+get '/tags' => sub {
+    my $self = shift;
+
+    my $cloud = $self->get_tag_cloud;
+
+    $self->stash(tags => $cloud);
+
+    $self->render_smart;
+} => 'tags';
 
 get '/pages/:name' => [name => $ALIAS_RE] => sub {
     my $self = shift;
@@ -129,7 +103,7 @@ get '/pages/:name' => [name => $ALIAS_RE] => sub {
 
     return $self->render_not_found unless $page;
 
-    $self->stash(booty => $page);
+    $self->stash(page => $page);
 
     $self->render_smart;
 } => 'page';
@@ -143,7 +117,7 @@ get '/drafts/:name' => [name => $ALIAS_RE] => sub {
 
     return $self->render_not_found unless $draft;
 
-    $self->stash(booty => $draft);
+    $self->stash(draft => $draft);
 
     $self->render_smart;
 } => 'draft';
@@ -172,9 +146,10 @@ __DATA__
         <h1 class="title">
             <%= link_to_article $article %>
         </h1>
-        <div class="article-meta"><%= date $article->created %> by <%= article_author $article %></div>
-        <div class="tags"><%= tags_links $article %></div>
-        <%= render_article_or_preview $article %>
+        <%= include 'article-meta', article => $article %>
+        <div class="article-content">
+            <%= render_article_or_preview $article %>
+        </div>
     </div>
 
 
@@ -187,11 +162,19 @@ __DATA__
 
 @@ articles.html.ep
 % stash title => strings('archive'), description => strings('archive-description');
-% my $archive = stash 'booty';
 
 <div class="text">
     <h1><%= strings 'archive' %></h1>
     <br />
+    % if ($archive->is_yearly) {
+        %= include 'archive-yearly', archive => $archive;
+    % }
+    % else {
+        %= include 'archive-monthly', articles => $archive->articles;
+    % }
+</div>
+
+@@ archive-yearly.html.ep
     % while (my $year = $archive->next) {
     <h2><%= $year->year %></h2>
     <ul>
@@ -199,16 +182,30 @@ __DATA__
         <li>
             <%= link_to_article $article %>
             <br />
-            <div class="article-meta"><%= date $article->created %> by <%= article_author $article %></div>
+            <%= include 'article-meta', article => $article;
         </li>
         % }
     </ul>
     % }
-</div>
+
+@@ archive-monthly.html.ep
+    % while (my $article = $articles->next) {
+    <li>
+        <%= link_to_article $article %>
+        <br />
+        <%= include 'article-meta', article => $article;
+    </li>
+    % }
+
+
+@@ article-meta.html.ep
+    <div class="article-meta">
+        <%= date $article->created %> by <%= article_author $article %>
+        <div class="tags"><%= tags_links $article %></div>
+    </div>
 
 
 @@ index.rss.ep
-% my $articles = stash 'booty';
     <channel>
         <title><%= config 'title' %></title>
         <link><%= url_for('index')->to_abs %></link>
@@ -247,12 +244,11 @@ __DATA__
 
 @@ tags.html.ep
 % stash title => strings('tags'), description => strings('tags-description');
-% my $cloud = stash 'booty';
 <div class="text">
     <h1><%= strings 'tags' %></h1>
     <br />
     <div class="tags">
-% while (my $tag = $cloud->next) {
+% while (my $tag = $tags->next) {
         <%= link_to_tag $tag %>
         <sub>(<%= $tag->count %>)</sub>
 % }
@@ -262,7 +258,6 @@ __DATA__
 
 @@ tag.html.ep
 % stash title => $tag, description => strings('tag-description', $tag);
-% my $articles = stash 'booty';
 <div class="text">
 <h1><%= strings 'tag' %> <%= $tag %>
 <sup>
@@ -272,7 +267,7 @@ __DATA__
 % while (my $article = $articles->next) {
     <%= link_to_article $article %>
     <br />
-    <div class="article-meta"><%= date $article->created %> by <%= article_author $article %></div>
+    %= include 'article-meta', article => $article;
 % }
 </div>
 %= include 'tag-pager', pager => $pager, tag => $tag;
@@ -293,14 +288,10 @@ __DATA__
 % stash title => $article->title, description => $article->description;
 <div class="text">
     <h1 class="title"><%= link_to_article $article %></h1>
-    <div class="article-meta"><%= date $article->created %>
-%   if ($article->is_modified) {
-, modified <span class="modified"><%= date $article->modified %></span>
-% }
-    by <%= article_author $article %>
+    <%= include 'article-meta', article => $article %>
+    <div class="article->content">
+        <%= render_article $article %>
     </div>
-    <div class="tags"><%= tags_links $article %></div>
-    <%= render_article $article %>
 %= include 'article-pager', next => $next, prev => $prev;
 </div>
 
@@ -319,7 +310,6 @@ __DATA__
 
 @@ page.html.ep
 % stash title => $page->title, description => $page->description;
-% my $page = stash 'booty';
 <div class="text">
     <h1 class="title">
         <%= $page->title %>
@@ -330,7 +320,6 @@ __DATA__
 
 @@ draft.html.ep
 % stash title => $draft->{title}, description => strings('draft');
-% my $draft = stash 'booty';
 <div class="text">
     <h1 class="title">
         <%= $draft->{title} %>
@@ -393,8 +382,8 @@ __DATA__
 
 @@ styles.css
 html, body {height: 100%;margin:0}
-body {background: #fff;font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;}
-h1,h2,h3,h4,h5 {font-family: times, "Times New Roman", times-roman, georgia, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
+body {background: #fff;font-family: Georgia, "Bitstream Charter", serif;line-height:25px}
+h1,h2,h3,h4,h5 {font-family: times, "Times New Roman", times-roman, serif; line-height: 40px; letter-spacing: -1px; color: #444; margin: 0 0 0 0; padding: 0 0 0 0; font-weight: 100;}
 a,a:active {color:#555}
 a:hover{color:#000}
 a:visited{color:#000}
@@ -408,9 +397,10 @@ span#author {font-weight:bold}
 span#about {font-style:italic}
 #menu {padding-top:1em;text-align:right}
 #content {background:#FFFFFF}
-.article-meta {color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
+.article-meta {line-height:18px;color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
+.artcle-content {}
 .modified {margin:0px}
-.tags{margin-left:10px;text-transform:uppercase;}
+.tags a{color:#999}
 .text {padding:2em;}
 .text h1.title {font-size:2.5em}
 .error {padding:2em;text-align:center}
