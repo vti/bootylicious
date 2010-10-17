@@ -170,3 +170,5 @@ $t->post_ok(
 </methodCall>
 EOF
 unlink "$FindBin::Bin/../articles/20101010-foo.md.pingbacks";
+
+undef $ENV{MOJO_HOME};

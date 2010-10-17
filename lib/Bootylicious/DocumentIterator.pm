@@ -10,6 +10,7 @@ __PACKAGE__->attr('args' => sub { {} });
 
 use Bootylicious::Document;
 use Mojo::ByteStream 'b';
+require File::Basename;
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -33,7 +34,8 @@ sub new {
 
         $file = b($file)->decode('UTF-8');
 
-        next if scalar(split m/\./ => $file) > 2;
+        my $name = File::Basename::basename($file);
+        next if scalar(split m/\./ => $name) > 2;
 
         local $@;
         eval {

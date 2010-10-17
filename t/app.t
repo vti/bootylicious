@@ -57,3 +57,5 @@ $t->get_ok('/../../etc/passwd')->status_is(404)
 
 # 404 Pages
 $t->get_ok("/articles/2010/10/e,cho.html")->status_is(404);
+
+undef $ENV{MOJO_HOME};
