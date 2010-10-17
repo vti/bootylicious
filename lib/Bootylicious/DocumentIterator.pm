@@ -33,7 +33,7 @@ sub new {
 
         $file = b($file)->decode('UTF-8');
 
-        next if scalar(split '.' => $file) > 1;
+        next if scalar split(/\./ => $file) > 2;
 
         local $@;
         eval {

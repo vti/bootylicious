@@ -58,14 +58,43 @@ get '/articles/:year/:month/:alias' =>
 
     return $self->render_not_found unless $article;
 
-    $self->stash(
-        article => $article,
-        prev    => $article->prev,
-        next    => $article->next
-    );
+    $self->stash(article => $article);
 
     $self->render_smart;
   } => 'article';
+
+post '/articles/:year/:month/:alias/comment' => sub {
+    my $self = shift;
+
+    my $article = $self->get_article(@{$self->stash}{qw/year month alias/});
+
+    return $self->render_not_found unless $article;
+
+    my %params = map { $_ => $self->param($_) } qw/author email url content/;
+
+    my $errors = {};
+
+    for my $name (qw/author content/) {
+        $errors->{$name} = 'Required!' if $params{$name} eq '';
+    }
+
+    if (my $email = $params{email}) {
+        $errors->{email} = "Does't look like email to me" unless $email =~ m/.*?\@.*\..*$/;
+    }
+
+    if (my $url = $params{url}) {
+        $errors->{url} = "Does't look like url to me" unless $url =~ m{https?://.*\..*$};
+    }
+
+    if (keys %$errors) {
+        return $self->render('article', article => $article,
+            errors => $errors);
+    }
+
+    $article->comment(%params);
+
+    return $self->redirect_to('article');
+} => 'comment';
 
 get '/tags/:tag' => [tag => $TAG_RE] => sub {
     my $self = shift;
@@ -288,22 +317,79 @@ __DATA__
 <div class="text">
     <h1 class="title"><%= link_to_article $article %></h1>
     <%= include 'article-meta', article => $article %>
-    <div class="article->content">
+    <div class="article-content">
         <%= render_article $article %>
     </div>
 %= include 'article-pingbacks', pingbacks => $article->pingbacks if $article->pingbacks->size;
-%= include 'article-pager', next => $next, prev => $prev;
+%= include 'article-comments', comments => $article->comments if $article->comments->size;
+%= include 'article-comment-form';
+%= include 'article-pager', next => $article->next, prev => $article->prev;
 </div>
 
 
 @@ article-pingbacks.html.ep
-<h2>Pingbacks</h2>
+<div id="pingbacks">
+    <h2>Pingbacks</h2>
+    <div class="content">
+        <ul>
+        % while (my $pingback = $pingbacks->next) {
+            <li><%= date $pingback->created %> <%= link_to $pingback->source_uri %></li>
+        % }
+        </ul>
+    </div>
+</div>
 
-<ul>
-% while (my $pingback = $pingbacks->next) {
-    <li><%= date $pingback->created %> <%= link_to $pingback->source_uri %></li>
-% }
-</ul>
+
+@@ article-comments.html.ep
+<div id="comments">
+    <h2>Comments (<%= $comments->size %>)</h2>
+    <div class="content">
+        % while (my $comment = $comments->next) {
+        <div class="comment">
+            <%= gravatar $comment->email %>
+
+            <span class="author"><%= $comment->author %></span> says:
+            <div class="meta">
+                <%= date $comment->created %>
+            </div>
+
+            <div class="content">
+            <%= $comment->content %>
+            </div>
+        </div>
+        % }
+    </div>
+</div>
+
+
+@@ article-comment-form.html.ep
+<div id="comment-form">
+    <h2>Add comment</h2>
+    <div class="content">
+        <div class="tip-required">Fields marked <span class="required">*</span> are required.</div>
+        %= form_for 'comment', method => 'post' => begin
+        <%= label 'author' => begin %>Name <span class="required">*</span><% end %><br />
+        <%= input 'author' %><br />
+        <%= error 'author' %>
+
+        <%= label 'email' => begin %>E-mail<% end %><br />
+        <%= input 'email' %>
+        <span class="tip"><%= link_to 'http://gravatar.com' => begin %>Gravatar<% end %>-friendly</span>
+        <br />
+        <%= error 'email' %>
+
+        <%= label 'url' => begin %>Website<% end %><br />
+        <%= input 'url' %><br />
+        <%= error 'url' %>
+
+        <%= label 'content' => begin %>Comment <span class="required">*</span><% end %><br />
+        <%= text_area 'content' %><br />
+        <%= error 'content' %>
+
+        <%= submit_button 'Post comment' %>
+        % end
+    </div>
+</div>
 
 
 @@ article-pager.html.ep
@@ -425,6 +511,21 @@ span#about {font-style:italic}
 #footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
 .center {text-align:center}
 .push {height:6em}
+input, textarea {font-size:150%;width:60%}
+input[type="submit"] {width:20%}
+textarea {height:200px}
+label {color:#999}
+.required {color:red}
+#pingbacks, #comments, #comment-form {padding:1em 0px}
+#pingbacks .content, #comments .content, #comment-form .content {padding-left:1em}
+#comments .comment .meta {line-height:18px;color:#999;margin-left:10px;font-size:small;font-style:italic;padding-bottom:0.5em}
+#comments .comment .author {font-weight:bold}
+#comments .comment .content {padding-bottom:2em}
+.tip {font-size:smaller;color:#bbb;font-style:italic;padding-left:1em}
+.tip a{color:#bbb}
+.tip-required {padding:2em 0px;}
+.content div.error {text-align:left;padding:0;color:red}
+img.gravatar {float:left; padding-right:0.5em}
 
 
 @@ rss.png (base64)
@@ -441,260 +542,3 @@ rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
 I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
 fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
 rkJggg==
-
-__END__
-
-=head1 NAME
-
-Bootylicious -- one-file blog on Mojo steroids!
-
-=head1 SYNOPSIS
-
-    $ bootylicious daemon
-
-=head1 DESCRIPTION
-
-Bootylicious is a minimalistic blogging application built on top of
-L<Mojolicious::Lite>. You start with just one file, but it is easily extendable
-when you add new plugins, templates, css files etc.
-
-=head1 FEATURES
-
-=over
-
-    * filesystem-based storage
-    * tags
-    * RSS (articles and by tag)
-    * paging
-    * static pages
-    * drafts
-    * themes
-    * multi-parser support (POD, Markdown)
-    * plugins
-
-=back
-
-=head1 CONFIGURATION
-
-Bootylicious can be configured through config file that is placed in the same
-directory as C<bootylicious> (or set via BOOTYLICIOUS_HOME env variable) file
-and is called C<bootylicious.json>. It is in JSON format.
-
-    {
-        "title" : "my blog title",
-        "descr" : "my blog description",
-        "author" : "myname",
-        "menu" : [
-            "item1", "link1",
-            "item2", "link2",
-            ...
-        ],
-        ...
-    }
-
-If you are using Bootylicious' default templates, there are a number of
-configuration options you can set to customize them without ever having to
-touch html or template files:
-
-=over 4
-
-=item * author - set the blog author's name. Can also be set via the
-BOOTYLICIOUS_AUTHOR environment variable. Default value is "whoami".
-
-=item * about - set the blog author's short description. Can also be set
-via the BOOTYLICIOUS_ABOUT environment valiable. Default value is
-"Perl hacker".
-
-=item * email - set the blog author's email. Can also be set via the
-BOOTYLICIOUS_EMAIL environment variable. Default value is "" (empty).
-
-=item * title - set the blog title. Can also be set via the BOOTYLICIOUS_TITLE
-environment variable. Default value is "Just another blog".
-
-=item * descr - set the blog's short description (subtitle). Can also be set
-via the BOOTYLICIOUS_DESCR environment variable. Default value is "I do not
-know if I need this".
-
-=item * menu - set the blog's menu content. Value should be an array, because
-the order matters:
-
-    "menu" : [
-        "item1", "link1",
-        "item2", "link2",
-        ...
-    ],
-
-=item * css - loads given css filename from BOOTYLICIOUS_PUBLICDIR/ (see below)
-and uses it instead of standard bootylicious css. To load more than one css
-file, in the same given order, just pass an array (e.g.:
-"css" : [ "foo.css", "bar.css", "baz.css" ]).
-
-=item * js - loads given javascript filename from BOOTYLICIOUS_PUBLICDIR/ (see
-below) and uses it on the templates. To load more than one js file, in the same
-given order, just pass an array (e.g.: "js" : [ "foo.js", "bar.js", "baz.js" ]).
-
-=item * theme - bootylicious can automatically import css and js files via
-themes. Just put those files under PUBLICDIR/bootylicious/themes/my-theme/ and
-set this option to "my-theme". Files are loaded in the same order as the
-filesystem gives them, usually alphabetic.
-
-=item * footer - sets each page's footer text, to appear in every page.
-
-=back
-
-Also, the following options can be set to change the way bootylicious behaves:
-
-=over 4
-
-=item * articlesdir - set the dir where articles should be fetched from
-Can also be set via the BOOTYLICIOUS_ARTICLESDIR environment variable
-Default value is "articles".
-
-=item * publicdir - set the dir where bootylicious looks for static objects,
-like images, css/js files, etc. Can also be set via the BOOTYLICIOUS_PUBLICDIR
-environment variable. Default value is "public".
-
-=item * templatesdir - set the dir where bootylicious looks for template files,
-in case you want to override the default ones. Can also be set via the
-BOOTYLICIOUS_TEMPLATESDIR environment variable. Default value is "templates".
-
-=item * pagesdir - set the dir where bootylicious looks for static pages.
-Default is 'pages'.
-
-=item * draftsdir - set the dir where bootylicious looks for draft pages.
-Default is 'drafts'.
-
-=item * cuttag - set the cuttag for parsing the articles. Default is "[cut]".
-
-=item * cuttext - set the link to full article view for articles with a cuttag.
-Default is 'Keep reading'.
-
-=item * perl5lib - set any additional lib folders the script should look
-into before trying to load Perl 5 modules (ideal for integrating with
-L<< local::lib >> and use inside shared hosting environments)
-
-=item * pagelimit - how many articles to show on index page. Default is 10.
-
-=item * meta - html meta tags configuration. Empty by default.
-
-=item * template_handler - what template engine to use and what template files to
-search while rendering pages. Default value is 'ep'.
-
-=item * datefmt - date formatting template (strftime). Default value is
-'%a, %d %b %Y';
-
-=back
-
-=head1 FILESYSTEM
-
-=head2 ARTICLES
-
-All the articles must be placed under the articlesdir with a name like
-20090730-my-new-article.EXTENSION. Based on EXTENSION they are parsed by
-different parsers. See parsers section for more information.
-
-The filename format must comply with either of the following:
-
-=over 4
-
-=item * YYYYMMDD-title.EXTENSION
-
-=item * YYYYMMDDTHH:MM:SS-title.EXTENSION
-
-=back
-
-The title may contain dots (".") or dashes ("-") freely.
-
-=head2 PAGES
-
-These are static pages that don't appear on articles page and can be used to
-show some static information like documentation, download area, author info etc.
-
-=head2 DRAFTS
-
-These are future articles that you are working on. Just place your drafts under
-the draftsdir and keep working. You can look at the preview by pointing your
-browser to the draft url. Noone is going to see it, because only you know the
-article's title.
-
-=head1 PLUGINS
-
-Bootylicious can be extended by using L<Mojolicious::Plugin> derived third party
-plugins.
-
-=head2 CONFIGURATION
-
-Configuration is done in bootylicious config file. Parameters are passed when
-loading a plugin.
-
-    # Without params (or with default ones)
-    "plugins" : [
-        "search",
-        "gallery"
-    ]
-
-    # With params
-    "plugins" : [
-        "search", {
-            "before_context" : 10
-        },
-        "gallery", {
-            "columns" : 3
-        }
-    ]
-
-See L<Mojolicious::Plugin> documentation for more details and
-L<Bootylicious::Plugin::Search> as an example plugin.
-
-=head1 TEMPLATES
-
-Embedded templates will work just fine, but when you want to have something more
-advanced just create a template in templates/ directory with the same name but
-optionally with a different extension.
-
-For example there is index.html.ep, thus templates/index.html.ep should be
-created with a new content. If you want to use a different base directory for the 
-templates, set the C<templatesdir> config option as explained above.
-
-=head1 SUPPORT
-
-=head2 Web
-
-    http://getbootylicious.org/
-
-=head1 DEVELOPMENT
-
-=head2 Repository
-
-    http://github.com/vti/bootylicious/commits/master
-
-=head1 SEE ALSO
-
-L<Mojo> L<Mojolicious> L<Mojolicious::Lite>
-
-=head1 CREDITS
-
-Breno G. de Oliveira
-
-Johannes 'fish' Ziemke
-
-Konstantin Kapitanov
-
-Mirko Westermeier
-
-Sebastian Riedel
-
-Slavik Komarov
-
-=head1 AUTHOR
-
-Viacheslav Tykhanovskyi, C<viacheslav.t@gmail.com>.
-
-=head1 COPYRIGHT
-
-Copyright (C) 2008-2010, Viacheslav Tykhanovskyi.
-
-This program is free software, you can redistribute it and/or modify it under
-the same terms as Perl 5.10.
-
-=cut

@@ -359,6 +359,37 @@ sub register {
             );
         }
     );
+
+    $app->helper(
+        error => sub {
+            my $self = shift;
+            my $name = shift;
+
+            return unless my $errors = $self->stash('errors');
+
+            return unless my $message = $errors->{$name};
+
+            return $self->tag(
+                'div' => class => 'error' => sub { $message });
+        }
+    );
+
+    $app->helper(
+        gravatar => sub {
+            my $self  = shift;
+            my $email = shift;
+
+            $email = lc $email;
+            $email =~ s/^\s+//;
+            $email =~ s/\s+$//;
+
+            my $hash = Mojo::ByteStream->new($email)->md5_sum;
+
+            my $url = "http://www.gravatar.com/avatar/$hash?s=40";
+
+            return $self->img($url, class => 'gravatar', width => 40, height => 40, @_);
+        }
+    );
 }
 
 1;

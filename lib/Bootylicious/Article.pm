@@ -9,6 +9,8 @@ use Bootylicious::Timestamp;
 use Bootylicious::Pingback;
 use Bootylicious::PingbackIterator;
 use Bootylicious::PingbackIteratorFinder;
+use Bootylicious::Comment;
+use Bootylicious::CommentIteratorLoader;
 
 sub pingbacks {
     my $self = shift;
@@ -36,6 +38,25 @@ sub pingback {
         source_uri => $source_uri
     );
     return $pingback->create($self->path . '.pingbacks');
+}
+
+sub comments {
+    my $self = shift;
+
+    my $path = $self->path;
+
+    return Bootylicious::CommentIteratorLoader->new(
+        glob => "$path.comment-*")->load(Bootylicious::Iterator->new);
+}
+
+sub comment {
+    my $self = shift;
+
+    my $number = $self->comments->size + 1;
+
+    my $path = $self->path . '.comment-' . $number;
+
+    return Bootylicious::Comment->new(@_)->create($path);
 }
 
 1;
