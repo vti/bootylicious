@@ -369,8 +369,7 @@ sub register {
 
             return unless my $message = $errors->{$name};
 
-            return $self->tag(
-                'div' => class => 'error' => sub { $message });
+            return $self->tag('div' => class => 'error' => sub {$message});
         }
     );
 
@@ -387,7 +386,37 @@ sub register {
 
             my $url = "http://www.gravatar.com/avatar/$hash?s=40";
 
-            return $self->img($url, class => 'gravatar', width => 40, height => 40, @_);
+            return $self->img(
+                $url,
+                class  => 'gravatar',
+                width  => 40,
+                height => 40,
+                @_
+            );
+        }
+    );
+
+    $app->helper(
+        link_to_comments => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            return $self->link_to(
+                $self->url_for('article')->fragment('comments') => sub {
+                    'Comments (' . $article->comments->size . ') ';
+                }
+            );
+        }
+    );
+
+    $app->helper(
+        link_to_add_comment => sub {
+            my $self = shift;
+            my $article = shift;
+
+            return $self->link_to(
+                $self->url_for('article')->fragment('comment-form') =>
+                  sub { 'No comments'; });
         }
     );
 }

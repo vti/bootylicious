@@ -178,6 +178,14 @@ __DATA__
         <div class="article-content">
             <%= render_article_or_preview $article %>
         </div>
+        <div class="comment-counter">
+        % if ($article->comments->size) {
+            <%= link_to_comments $article %>
+        % }
+        % else {
+            <%= link_to_add_comment $article %>
+        % }
+        </div>
     </div>
 
 
@@ -503,7 +511,7 @@ span#about {font-style:italic}
 .text {padding:2em;}
 .text h1.title {font-size:2.5em}
 .error {padding:2em;text-align:center}
-.more {margin-left:10px}
+.more {margin-left:10px;padding-bottom:1em;}
 #pager {text-align:center;padding:2em; color:#ccc}}
 #pager span.active {color:#000}
 #pager span.arrow {background:#fff}
@@ -526,6 +534,8 @@ label {color:#999}
 .tip-required {padding:2em 0px;}
 .content div.error {text-align:left;padding:0;color:red}
 img.gravatar {float:left; padding-right:0.5em}
+.comment-counter {color:#999;font-size:small;margin-left:10px}
+.comment-counter a {color:#999}
 
 
 @@ rss.png (base64)
