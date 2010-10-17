@@ -8,13 +8,15 @@ use base 'Mojo::Base';
 use Bootylicious::Timestamp;
 use File::stat;
 
-__PACKAGE__->attr([qw/created author email url content/]);
+__PACKAGE__->attr([qw/path created author email url content/]);
 
 sub create {
     my $self = shift;
     my $path = shift;
 
     open my $file, '>:encoding(UTF-8)', $path or return;
+
+    $self->path($path);
 
     print $file 'Author: ', $self->author || '', "\n";
     print $file 'Email: ',  $self->email  || '', "\n";
@@ -28,6 +30,8 @@ sub load {
     my $path = shift;
 
     open my $fh, '<:encoding(UTF-8)', $path or return;
+
+    $self->path($path);
 
     my $metadata = {};
     while (my $line = <$fh>) {

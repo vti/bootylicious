@@ -52,7 +52,12 @@ sub comments {
 sub comment {
     my $self = shift;
 
-    my $number = $self->comments->size + 1;
+    my $number = 1;
+
+    if (my $last = $self->comments->last) {
+        ($number) = ($last->path =~ m/\.comment-(\d+)/);
+        $number++;
+    }
 
     my $path = $self->path . '.comment-' . $number;
 

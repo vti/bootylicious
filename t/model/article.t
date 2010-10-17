@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 21;
 
 use FindBin;
 use Bootylicious::Timestamp;
@@ -29,14 +29,30 @@ ok -e $pingbacks_path;
 
 unlink $pingbacks_path;
 
-my $comment_path = "$FindBin::Bin/article/20101010-foo.md.comment-1";
+my $comment_path = "$FindBin::Bin/article/20101010-foo.md.comment";
 
 $article->comments->size => 0;
 
-unlink $comment_path;
+unlink $_ for glob("$comment_path-*");;
 
 ok $article->comment(author => 'foo', email => 'foo@example.com', content => 'foo bar baz');
-ok -e $comment_path;
+ok -e "$comment_path-1";
 is $article->comments->size => 1;
 
-#unlink $comment_path;
+ok $article->comment(author => 'foo', email => 'foo@example.com', content => 'foo bar baz');
+ok -e "$comment_path-2";
+is $article->comments->size => 2;
+
+ok $article->comment(author => 'foo', email => 'foo@example.com', content => 'foo bar baz');
+ok -e "$comment_path-3";
+is $article->comments->size => 3;
+
+unlink $_ for glob("$comment_path-2");;
+
+is $article->comments->size => 2;
+
+ok $article->comment(author => 'foo', email => 'foo@example.com', content => 'foo bar baz');
+ok -e "$comment_path-4";
+is $article->comments->size => 3;
+
+unlink $_ for glob("$comment_path-*");;
