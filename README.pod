@@ -17,11 +17,13 @@ when you add new plugins, templates, css files etc.
 =over
 
     * filesystem-based storage
+    * comments
     * tags
     * RSS (articles and by tag)
     * static pages
     * drafts
     * archive
+    * pingbacks
     * themes
     * multi-parser support (POD, Markdown)
     * plugins
