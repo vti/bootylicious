@@ -342,7 +342,7 @@ __DATA__
         <div class="comment">
             <%= gravatar $comment->email %>
 
-            <span class="author"><%= $comment->author %></span> says:
+            <span class="author"><%= comment_author $comment %></span> says:
             <div class="meta">
                 <%= date $comment->created %>
             </div>

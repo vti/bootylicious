@@ -91,6 +91,17 @@ sub register {
     );
 
     $app->helper(
+        comment_author => sub {
+            my $self    = shift;
+            my $comment = shift;
+
+            return $comment->author unless $comment->url;
+
+            return $self->link_to($comment->url => sub { $comment->author });
+        }
+    );
+
+    $app->helper(
         date => sub {
             my $self = shift;
             my $date = shift;
