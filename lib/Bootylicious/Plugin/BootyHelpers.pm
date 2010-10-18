@@ -366,6 +366,10 @@ sub register {
             my $self  = shift;
             my $email = shift;
 
+            return $self->img(
+                'http://www.gravatar.com/avatar/00000000000000000000000000000000?s=40'
+            ) unless $email;
+
             $email = lc $email;
             $email =~ s/^\s+//;
             $email =~ s/\s+$//;
