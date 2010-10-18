@@ -21,7 +21,7 @@ sub prev {
     $i->rewind;
     while (my $article = $i->next) {
         if ($article->created->epoch == $first->created->epoch) {
-            return $i->prev($self->limit)->first;
+            return $i->prev($self->limit)->last;
         }
     }
 

@@ -37,14 +37,14 @@ $pager = Bootylicious::ArticlePager->new(
     iterator =>
       Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/pager")
 );
-is $pager->articles->size        => 3;
-is $pager->articles->first->name => 'baz';
-is $pager->articles->last->name  => 'foo';
-is $pager->prev_timestamp        => '20100106T00:00:00';
-ok !$pager->next_timestamp;
+is $pager->articles->size           => 3;
+is $pager->articles->first->name    => 'baz';
+is $pager->articles->last->name     => 'foo';
+is $pager->prev->created->timestamp => '20100106T00:00:00';
+ok !$pager->next;
 
 $pager =
   Bootylicious::ArticlePager->new(iterator =>
       Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/pager"));
-is $pager->articles->size                    => 6;
+is $pager->articles->size               => 6;
 is $pager->articles->created->timestamp => '20100106T00:00:00';

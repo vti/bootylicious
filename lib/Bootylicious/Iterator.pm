@@ -77,18 +77,14 @@ sub next {
         return $self->{elements}->[$self->{index}++];
     }
 
-    my $offset = $self->{index};
+    my @elements;
+    while (my $element = $self->next) {
+        push @elements, $element;
 
-    if ($length + $offset > $self->size) {
-        $length = $self->size - $offset;
+        last if --$length <= 0;
     }
 
-    my $sliced_elements =
-      [@{$self->{elements}}[$offset .. $offset + $length - 1]];
-
-    $self->{index} += @$sliced_elements;
-
-    return $self->new(elements => $sliced_elements);
+    return $self->new(elements => [@elements]);
 }
 
 sub prev {
@@ -105,18 +101,14 @@ sub prev {
 
     $self->{index}--;
 
-    my $offset = $self->{index} - $length;
-    if ($offset < 0) {
-        $offset = 0;
-        $length = $self->{index};
+    my @elements;
+    while (my $element = $self->prev) {
+        push @elements, $element;
+
+        last if --$length <= 0;
     }
 
-    my $sliced_elements =
-      [@{$self->{elements}}[$offset .. $offset + $length - 1]];
-
-    $self->{index} -= @$sliced_elements;
-
-    return $self->new(elements => $sliced_elements);
+    return $self->new(elements => [@elements]);
 }
 
 1;
