@@ -164,6 +164,8 @@ sub _default {
           'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
         theme => '',
 
+        comments_enabled => 1,
+
         meta => [],
         css  => [],
         js   => [],

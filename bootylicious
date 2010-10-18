@@ -61,6 +61,8 @@ get '/articles/:year/:month/:alias' =>
 post '/articles/:year/:month/:alias/comment' => sub {
     my $self = shift;
 
+    return $self->render_not_found unless $self->comments_enabled;
+
     my $article = $self->get_article(@{$self->stash}{qw/year month alias/});
 
     return $self->render_not_found unless $article;
@@ -80,7 +82,13 @@ post '/articles/:year/:month/:alias/comment' => sub {
     return $self->redirect_to('article');
 } => 'comment';
 
-get '/comments' => sub { shift->render_smart } => 'comments';
+get '/comments' => sub {
+    my $self = shift;
+
+    return $self->render_not_found unless $self->comments_enabled;
+
+    $self->render_smart;
+} => 'comments';
 
 get '/tags/:tag' => [tag => $TAG_RE] => sub {
     my $self = shift;
@@ -164,9 +172,11 @@ __DATA__
         <div class="article-content">
             <%= render_article_or_preview $article %>
         </div>
+        % if (comments_enabled) {
         <div class="comment-counter">
             <%= link_to_comments $article %>
         </div>
+        % }
     </div>
 
 
@@ -244,7 +254,9 @@ __DATA__
           % foreach my $tag (@{$article->tags}) {
           <category><%= $tag %></category>
           % }
+          % if (comments_enabled) {
           <comments><%= href_to_comments($article)->to_abs %></comments>
+          % }
           <pubDate><%= date_rss $article->created %></pubDate>
           <guid><%= href_to_article($article)->to_abs %></guid>
         </item>
@@ -335,8 +347,8 @@ __DATA__
         <%= render_article $article %>
     </div>
 %= include 'article-pingbacks', pingbacks => $article->pingbacks if $article->pingbacks->size;
-%= include 'article-comments', comments => $article->comments if $article->comments->size;
-%= include 'article-comment-form';
+%= include 'article-comments', comments => $article->comments if comments_enabled && $article->comments->size;
+%= include 'article-comment-form' if comments_enabled;
 %= include 'article-pager', next => $article->next, prev => $article->prev;
 </div>
 
@@ -472,7 +484,9 @@ __DATA__
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
+        % if (comments_enabled) {
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %> Comments" href="<%= href_to_comments_rss %>" />
+        % }
         <meta name="generator" content="<%= generator %>" />
         <%= meta %>
     </head>

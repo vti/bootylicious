@@ -80,6 +80,17 @@ with an appropriate parser. POD format is available by default. Markdown format
 is available when L<Text::Markdown> is installed. Other formats are available as
 plugins.
 
+=head2 Enabling/disabling comments
+
+Comments can be disabled everywhere by setting C<comments_enabled> to C<false> in
+configuration file:
+
+    {
+        ...
+        "comments_enabled" : false,
+        ...
+    }
+
 =head2 Core plugins
 
 =head3 Bootylicious::Plugin::Pingback

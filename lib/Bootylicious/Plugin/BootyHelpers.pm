@@ -459,6 +459,12 @@ sub register {
                   sub { 'Comments (' . $article->comments->size . ') '; });
         }
     );
+
+    $app->helper(
+        comments_enabled => sub {
+            shift->config('comments_enabled') ? 1 : 0;
+        }
+    );
 }
 
 1;
