@@ -25,7 +25,7 @@ sub register {
             return unless $c->match->endpoint->name eq 'article';
 
             $c->res->headers->header(
-                'X-Pingback' => $c->url_for('pingback')->to_abs);
+                'X-Pingback' => $c->url_for('pingback', format => undef)->to_abs);
         }
     );
 }

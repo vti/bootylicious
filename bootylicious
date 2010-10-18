@@ -275,6 +275,7 @@ __DATA__
         % }
     </channel>
 
+
 @@ layouts/wrapper.rss.ep
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xml:base="<%= url_for('index')->to_abs %>"
@@ -379,7 +380,13 @@ __DATA__
 <div id="comment-form">
     <h2>Add comment</h2>
     <div class="content">
-        <div class="tip-required">Fields marked <span class="required">*</span> are required.</div>
+        <div class="tip-required">
+            Fields marked <span class="required">*</span> are required.<br />
+            <div class="tip-required-bot">
+            This form has a bot protection mechanism, that requires Cookies.<br />
+            Please, don't disable them.
+            </div>
+        </div>
         %= form_for 'comment', method => 'post' => begin
         <%= label 'author' => begin %>Name <span class="required">*</span><% end %><br />
         <%= input 'author' %><br />
@@ -536,7 +543,8 @@ label {color:#999}
 #comments .comment .content {padding-bottom:2em}
 .tip {font-size:smaller;color:#bbb;font-style:italic;padding-left:1em}
 .tip a{color:#bbb}
-.tip-required {padding:2em 0px;}
+.tip-required {padding:1em 0px;}
+.tip-required-bot {font-style:italic;font-size:small;color:#999;line-height:18px}
 .content div.error {text-align:left;padding:0;color:red}
 img.gravatar {float:left; padding-right:0.5em}
 .comment-counter {color:#999;font-size:small;margin-left:10px}
