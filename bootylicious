@@ -234,7 +234,7 @@ __DATA__
         <lastBuildDate><%= date_rss $pager->articles->created %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
         % while (my $article = $pager->articles->next) {
-            % my $link = href_to_article $article;
+            % my $link = href_to_article($article)->to_abs;
         <item>
           <title><%== $article->title %></title>
           <author><%= article_author $article %></author>
@@ -248,6 +248,7 @@ __DATA__
           % foreach my $tag (@{$article->tags}) {
           <category><%= $tag %></category>
           % }
+          <comments><%= href_to_comments($article)->to_abs %></comments>
           <pubDate><%= date_rss $article->created %></pubDate>
           <guid><%= $link %></guid>
         </item>

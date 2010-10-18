@@ -389,6 +389,15 @@ sub register {
     );
 
     $app->helper(
+        href_to_comments => sub {
+            my $self    = shift;
+            my $article = shift;
+
+            return $self->href_to_article($article)->fragment('comments');
+        }
+    );
+
+    $app->helper(
         link_to_comments => sub {
             my $self    = shift;
             my $article = shift;
