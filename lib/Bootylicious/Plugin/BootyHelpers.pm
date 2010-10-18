@@ -309,9 +309,9 @@ sub register {
             my $self = shift;
 
             return $self->link_to(
-                'root',
-                title => $self->config('title'),
-                rel   => 'home' => sub { $self->config('title') }
+                'root' => {layout => undef},
+                title  => $self->config('title'),
+                rel => 'home' => sub { $self->config('title') }
             );
         }
     );
@@ -411,7 +411,7 @@ sub register {
 
     $app->helper(
         link_to_add_comment => sub {
-            my $self = shift;
+            my $self    = shift;
             my $article = shift;
 
             my $href = $self->href_to_article($article);
