@@ -1,0 +1,48 @@
+%# Bootylicious configuration
+%#
+%# This configuration is in JSON format, that is preprocessed by Mojo::Template.
+%# Yes, you can use Perl here.
+%#
+
+{
+%#  Blog description settings
+%#    "author"       : "whoami",
+%#    "email"        : "",
+%#    "title"        : "Just another blog",
+%#    "about"        : "Perl hacker",
+%#    "description"  : "I do not know if I need this",
+
+%#  Article rendering settings
+%#    "cuttag"    : "[cut]",
+%#    "cuttext"   : "Keep reading",
+%#    "pagelimit" : 10,
+%#    "datefmt"   : "%a, %d %b %Y"
+
+%#  Appearence settings
+%#    "menu" : [
+%#        "index",   "/",
+%#        "tags",    "/tags.html",
+%#        "archive", "/articles.html"
+%#    ],
+%#    "footer" : "Powered by <a href=\"http://getbootylicious.org\">Bootylicious</a>",
+%#    "theme"     : "",
+
+%#  Additional HTML tags
+%#    "meta"      : [],
+%#    "css"       : [],
+%#    "js"        : [],
+
+%#  System settings
+%#    "perl5lib" : "",
+%#    "loglevel" : "error",
+
+%#  Path settings
+%#    "articles_directory" : "articles",
+%#    "pages_direrctory" : "pages",
+%#    "drafts_directory" : "drafts",
+%#    "public_directory" : "public",
+%#    "templates_directory" : "templates",
+
+%#  Don't worry about trailing comma
+    "ok" : true
+}

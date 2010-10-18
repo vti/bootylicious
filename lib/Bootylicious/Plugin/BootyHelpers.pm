@@ -233,7 +233,7 @@ sub register {
     );
 
     foreach my $name (qw/articles pages drafts/) {
-        my $option = $config->{"${name}dir"} || '';
+        my $option = $config->{"${name}_directory"} || '';
         $app->helper(
             "${name}_root" => sub {
                 ($option =~ m/^\//) ? $option : $app->home->rel_dir($option);

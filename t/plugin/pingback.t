@@ -20,7 +20,7 @@ app->log->level('fatal');
 
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
-app->helper(config => sub { {articlesdir => 'articles'} });
+app->helper(config => sub { {articles_directory => 'articles'} });
 
 plugin 'booty_helpers';
 plugin 'model';
@@ -110,14 +110,14 @@ $t->post_ok('/pingback' =>
 EOF
 
 #$t->post_ok('/pingback' =>
-      #<<"EOF")->status_is(200)->content_like(qr/The source URI does not exist./);
+#<<"EOF")->status_is(200)->content_like(qr/The source URI does not exist./);
 #<?xml version="1.0"?>
 #<methodCall>
-    #<methodName>pingback.ping</methodName>
-    #<params>
-        #<param><value><string>http://whathtefuckisgoingonhere123321.com</string></value></param>
-        #<param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
-    #</params>
+#<methodName>pingback.ping</methodName>
+#<params>
+#<param><value><string>http://whathtefuckisgoingonhere123321.com</string></value></param>
+#<param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
+#</params>
 #</methodCall>
 #EOF
 
@@ -158,8 +158,8 @@ $t->post_ok(
 </methodCall>
 EOF
 
-$t->post_ok(
-    '/pingback' => <<"EOF")->status_is(200)->content_like(qr/The pingback has already been registered./);
+$t->post_ok('/pingback' =>
+      <<"EOF")->status_is(200)->content_like(qr/The pingback has already been registered./);
 <?xml version="1.0"?>
 <methodCall>
     <methodName>pingback.ping</methodName>

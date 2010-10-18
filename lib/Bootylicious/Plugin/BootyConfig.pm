@@ -52,12 +52,12 @@ sub register {
     $ENV{LC_ALL} = 'C';
 
     # set proper templates base dir, if defined
-    $app->renderer->root($app->home->rel_dir($config->{templatesdir}))
-      if defined $config->{templatesdir};
+    $app->renderer->root($app->home->rel_dir($config->{templates_directory}))
+      if defined $config->{templates_directory};
 
     # set proper public base dir, if defined
-    $app->static->root($app->home->rel_dir($config->{publicdir}))
-      if defined $config->{publicdir};
+    $app->static->root($app->home->rel_dir($config->{public_directory}))
+      if defined $config->{public_directory};
 
     $app->defaults(title => '', description => '', layout => 'wrapper');
 
@@ -132,34 +132,31 @@ sub _load_plugins {
 }
 
 sub _default {
-    {   perl5lib     => '',
-        loglevel     => 'error',
-        author       => 'whoami',
-        email        => '',
-        title        => 'Just another blog',
-        about        => 'Perl hacker',
-        descr        => 'I do not know if I need this',
-        articlesdir  => 'articles',
-        pagesdir     => 'pages',
-        draftsdir    => 'drafts',
-        publicdir    => 'public',
-        templatesdir => 'templates',
-        footer =>
-          'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
+    {   author      => 'whoami',
+        email       => '',
+        title       => 'Just another blog',
+        about       => 'Perl hacker',
+        description => 'I do not know if I need this',
+
+        cuttag    => '[cut]',
+        cuttext   => 'Keep reading',
+        pagelimit => 10,
+        datefmt   => '%a, %d %b %Y',
+
         menu => [
             index   => '/',
             tags    => '/tags.html',
             archive => '/articles.html'
         ],
-        theme     => '',
-        cuttag    => '[cut]',
-        cuttext   => 'Keep reading',
-        pagelimit => 10,
-        meta      => [],
-        css       => [],
-        js        => [],
-        datefmt   => '%a, %d %b %Y',
-        strings   => {
+        footer =>
+          'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
+        theme => '',
+
+        meta => [],
+        css  => [],
+        js   => [],
+
+        strings => {
             'archive'             => 'Archive',
             'archive-description' => 'Articles index',
             'tags'                => 'Tags',
@@ -174,6 +171,15 @@ sub _default {
             'error'     => 'Internal error occuried :('
         },
         template_handler => 'ep',
+
+        perl5lib => '',
+        loglevel => 'error',
+
+        articles_directory  => 'articles',
+        pages_directory     => 'pages',
+        drafts_directory    => 'drafts',
+        public_directory    => 'public',
+        templates_directory => 'templates',
     };
 }
 

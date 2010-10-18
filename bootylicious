@@ -79,16 +79,21 @@ post '/articles/:year/:month/:alias/comment' => sub {
     }
 
     if (my $email = $params{email}) {
-        $errors->{email} = "Does't look like email to me" unless $email =~ m/.*?\@.*\..*$/;
+        $errors->{email} = "Does't look like email to me"
+          unless $email =~ m/.*?\@.*\..*$/;
     }
 
     if (my $url = $params{url}) {
-        $errors->{url} = "Does't look like url to me" unless $url =~ m{https?://.*\..*$};
+        $errors->{url} = "Does't look like url to me"
+          unless $url =~ m{https?://.*\..*$};
     }
 
     if (keys %$errors) {
-        return $self->render('article', article => $article,
-            errors => $errors);
+        return $self->render(
+            'article',
+            article => $article,
+            errors  => $errors
+        );
     }
 
     $article->comment(%params);
@@ -245,7 +250,7 @@ __DATA__
     <channel>
         <title><%= config 'title' %></title>
         <link><%= url_for('index')->to_abs %></link>
-        <description><%= config 'descr' %></description>
+        <description><%= config 'description' %></description>
         <pubDate><%= date_rss $pager->articles->created %></pubDate>
         <lastBuildDate><%= date_rss $pager->articles->created %></lastBuildDate>
         <generator>Mojolicious::Lite</generator>
@@ -445,7 +450,7 @@ __DATA__
 
 
 @@ exception.html.ep
-% stash title => 'Not found', description => 'Not found';
+% stash title => 'Error', description => 'Error';
 <div class="error">
     <h1>500</h1>
     <br />
@@ -458,10 +463,10 @@ __DATA__
     <head>
         <meta charset="UTF-8">
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
-        <%= meta %>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
         <meta name="generator" content="<%= generator %>" />
+        <%= meta %>
     </head>
     <body>
         <div id="body">
@@ -470,7 +475,7 @@ __DATA__
                     <%= link_to 'index', {format => 'html'} => {%><%= config 'title' %><%}%>
                     <sup><a href="<%= href_to_rss %>"><img src="/rss.png" alt="RSS" /></a></sup>
                 </h1>
-                <h2 id="descr"><%= config 'descr' %></h2>
+                <h2 id="description"><%= config 'description' %></h2>
                 % if (my $author = config 'author') {
                 <span id="author"><%= config 'author' %></span>,
                 % }
@@ -499,7 +504,7 @@ pre{border:2px solid #ccc;background:#eee;padding:2em;overflow:auto;overflow-y:v
 #body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
 #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
 h1#title{font-size:3em}
-h2#descr{font-size:1.5em;color:#999}
+h2#description{font-size:1.5em;color:#999}
 span#author {font-weight:bold}
 span#about {font-style:italic}
 #menu {padding-top:1em;text-align:right}
