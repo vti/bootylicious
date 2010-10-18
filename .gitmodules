@@ -7,3 +7,6 @@
 [submodule "contrib/mojox-validator"]
 	path = contrib/mojox-validator
 	url = http://github.com/vti/mojox-validator.git
+[submodule "contrib/mojolicious-plugin-bot_protection"]
+	path = contrib/mojolicious-plugin-bot_protection
+	url = http://github.com/vti/mojolicious-plugin-bot_protection.git

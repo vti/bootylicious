@@ -4,6 +4,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use lib "$FindBin::Bin/contrib/mojo/lib";
 use lib "$FindBin::Bin/contrib/mojox-validator/lib";
+use lib "$FindBin::Bin/contrib/mojolicious-plugin-bot_protection/lib";
 
 use Mojolicious::Lite;
 
@@ -365,7 +366,7 @@ __DATA__
             Please, don't disable them.
             </div>
         </div>
-        %= form_for 'comment', method => 'post' => begin
+        %= signed_form_for 'comment', method => 'post' => begin
         <%= label 'author' => begin %>Name <span class="required">*</span><% end %><br />
         <%= input 'author' %><br />
         <%= validator_error 'author' %>

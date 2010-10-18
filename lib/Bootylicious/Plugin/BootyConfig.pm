@@ -29,9 +29,12 @@ sub register {
             }
         }
     );
+    $app->plugin('bot_protection');
 
     $conf->{default} = $self->_default;
     my $config = $app->plugin('json_config' => $conf);
+
+    $app->secret($conf->{secret});
 
     # Config access
     $app->helper(
