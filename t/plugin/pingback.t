@@ -7,7 +7,7 @@ use Test::More;
 
 plan skip_all => 'working sockets required for this test!'
   unless Mojo::IOLoop->new->generate_port;
-plan tests => 33;
+plan tests => 36;
 
 BEGIN {
     use FindBin;
@@ -31,7 +31,7 @@ get '/source_uri_invalid' => sub { shift->render_text('foo') } => 'foo';
 get '/source_uri' => sub {
     my $self = shift;
 
-    $self->render_text('http://localhost:/articles/2010/10/foo');
+    $self->render_text('http://localhost:/articles/2010/10/foo.html');
 } => 'source';
 
 get '/articles/:year/:month/:name' => sub {
@@ -166,6 +166,18 @@ $t->post_ok('/pingback' =>
     <params>
         <param><value><string>/source_uri</string></value></param>
         <param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
+    </params>
+</methodCall>
+EOF
+
+$t->post_ok('/pingback' =>
+      <<"EOF")->status_is(200)->content_like(qr/The pingback has already been registered./);
+<?xml version="1.0"?>
+<methodCall>
+    <methodName>pingback.ping</methodName>
+    <params>
+        <param><value><string>/source_uri</string></value></param>
+        <param><value><string>http://localhost:$port/articles/2010/10/foo.html</string></value></param>
     </params>
 </methodCall>
 EOF

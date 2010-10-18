@@ -40,6 +40,7 @@ sub _pingback {
       unless $target_uri =~ m{^/articles/(\d+)/(\d+)/(.*)};
 
     my ($year, $month, $name) = ($1, $2, $3);
+    $name =~ s/\..*$//;
 
     my $article = $self->get_article($year, $month, $name);
     return _render_target_not_found($self) unless $article;
