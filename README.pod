@@ -4,14 +4,6 @@ Bootylicious is a minimalistic blogging application built on top of
 L<Mojolicious::Lite>. It is easily extendable with plugins, templates and
 themes.
 
-=head2 Famous 5 seconds setup
-
-    $ git clone http://github.com/vti/bootylicious.git
-    $ cd bootylicious
-    $ git submodule update --init
-    $ perl bootylicious daemon
-    Server available at http://*:3000.
-
 =head2 Features
 
 =over
@@ -36,7 +28,20 @@ themes.
 
 =back
 
-=head2 Quick start
+=head2 Famous 5 seconds setup
+
+    $ git clone http://github.com/vti/bootylicious.git
+    $ cd bootylicious
+    $ git submodule update --init
+    $ perl bootylicious daemon
+    Server available at http://*:3000.
+
+=head2 Configuration
+
+Copy C<bootylicious.conf.template> to C<bootylicious.conf> and change it to fit your
+needs.
+
+=head2 Writing articles
 
 Articles by default go into C<articles> directory.
 
