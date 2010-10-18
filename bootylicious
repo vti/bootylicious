@@ -80,6 +80,8 @@ post '/articles/:year/:month/:alias/comment' => sub {
     return $self->redirect_to('article');
 } => 'comment';
 
+get '/comments' => sub { shift->render_smart } => 'comments';
+
 get '/tags/:tag' => [tag => $TAG_RE] => sub {
     my $self = shift;
 
@@ -163,12 +165,7 @@ __DATA__
             <%= render_article_or_preview $article %>
         </div>
         <div class="comment-counter">
-        % if ($article->comments->size) {
             <%= link_to_comments $article %>
-        % }
-        % else {
-            <%= link_to_add_comment $article %>
-        % }
         </div>
     </div>
 
@@ -228,17 +225,16 @@ __DATA__
 @@ index.rss.ep
     <channel>
         <title><%= config 'title' %></title>
-        <link><%= url_for('index')->to_abs %></link>
+        <link><%= href_to_rss->to_abs %></link>
         <description><%= config 'description' %></description>
         <pubDate><%= date_rss $pager->articles->created %></pubDate>
         <lastBuildDate><%= date_rss $pager->articles->created %></lastBuildDate>
-        <generator>Mojolicious::Lite</generator>
+        <generator><%= generator %></generator>
         % while (my $article = $pager->articles->next) {
-            % my $link = href_to_article($article)->to_abs;
         <item>
-          <title><%== $article->title %></title>
+          <title><%= $article->title %></title>
           <author><%= article_author $article %></author>
-          <link><%= $link %></link>
+          <link><%= href_to_article($article)->to_abs %></link>
           <description>
             <%= render_article_or_preview $article %>
             % if ($article->link) {
@@ -250,7 +246,31 @@ __DATA__
           % }
           <comments><%= href_to_comments($article)->to_abs %></comments>
           <pubDate><%= date_rss $article->created %></pubDate>
-          <guid><%= $link %></guid>
+          <guid><%= href_to_article($article)->to_abs %></guid>
+        </item>
+        % }
+    </channel>
+
+
+@@ comments.rss.ep
+    % my $comments = get_recent_comments(10);
+    <channel>
+        <title><%= config 'title' %></title>
+        <link><%= href_to_comments_rss->to_abs %></link>
+        <description><%= config 'description' %></description>
+        <pubDate><%= date_rss $comments->first->created %></pubDate>
+        <lastBuildDate><%= date_rss $comments->first->created %></lastBuildDate>
+        <generator><%= generator %></generator>
+        % while (my $comment = $comments->next) {
+        <item>
+          <title><%= $comment->author %> on <%= $comment->article->title %></title>
+          <author><%= $comment->author %></author>
+          <link><%= href_to_comment($comment)->to_abs %></link>
+          <description>
+            <%= $comment->content %>
+          </description>
+          <pubDate><%= date_rss $comment->created %></pubDate>
+          <guid><%= href_to_comment($comment)->to_abs %></guid>
         </item>
         % }
     </channel>
@@ -339,7 +359,7 @@ __DATA__
     <h2>Comments (<%= $comments->size %>)</h2>
     <div class="content">
         % while (my $comment = $comments->next) {
-        <div class="comment">
+        <div id="comment-<%= $comment->number %>" class="comment">
             <%= gravatar $comment->email %>
 
             <span class="author"><%= comment_author $comment %></span> says:
@@ -452,6 +472,7 @@ __DATA__
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %> Comments" href="<%= href_to_comments_rss %>" />
         <meta name="generator" content="<%= generator %>" />
         <%= meta %>
     </head>

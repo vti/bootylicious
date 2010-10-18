@@ -5,6 +5,7 @@ use warnings;
 
 use base 'Mojo::Base';
 
+use Bootylicious::Article;
 use Bootylicious::Timestamp;
 use File::stat;
 
@@ -57,6 +58,25 @@ sub load {
     $self->content($content);
 
     return $self;
+}
+
+sub number {
+    my $self = shift;
+
+    my $path = $self->path;
+
+    my ($number) = ($path =~ m/-(\d+)$/);
+
+    return $number;
+}
+
+sub article {
+    my $self = shift;
+
+    my $path = $self->path;
+    $path =~ s/\.comment-(\d+)$//;
+
+    return Bootylicious::Article->new(path => $path);
 }
 
 1;

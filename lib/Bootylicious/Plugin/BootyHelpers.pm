@@ -297,6 +297,22 @@ sub register {
     );
 
     $app->helper(
+        href_to_comments_rss => sub {
+            my $self = shift;
+
+            return $self->url_for('comments', format => 'rss')->to_abs;
+        }
+    );
+
+    $app->helper(
+        link_to_comments_rss => sub {
+            my $self = shift;
+
+            return $self->link_to($self->href_to_comments_rss => @_);
+        }
+    );
+
+    $app->helper(
         menu => sub {
             my $self = shift;
 
@@ -409,26 +425,38 @@ sub register {
     );
 
     $app->helper(
+        href_to_comment => sub {
+            my $self    = shift;
+            my $comment = shift;
+
+            return $self->href_to_article($comment->article)
+              ->fragment('comment-' . $comment->number);
+        }
+    );
+
+    $app->helper(
+        link_to_comment => sub {
+            my $self    = shift;
+            my $comment = shift;
+
+            return $self->link_to($self->href_to_comment($comment) =>
+                  sub { $comment->article->title });
+        }
+    );
+
+    $app->helper(
         link_to_comments => sub {
             my $self    = shift;
             my $article = shift;
 
             my $href = $self->href_to_article($article);
 
+            return $self->link_to(
+                $href->fragment('comment-form') => sub {'No comments'})
+              unless $article->comments->size;
+
             return $self->link_to($href->fragment('comments') =>
                   sub { 'Comments (' . $article->comments->size . ') '; });
-        }
-    );
-
-    $app->helper(
-        link_to_add_comment => sub {
-            my $self    = shift;
-            my $article = shift;
-
-            my $href = $self->href_to_article($article);
-
-            return $self->link_to(
-                $href->fragment('comment-form') => sub {'No comments'});
         }
     );
 }

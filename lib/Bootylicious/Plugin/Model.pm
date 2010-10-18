@@ -69,6 +69,15 @@ sub register {
     );
 
     $app->helper(
+        get_recent_comments => sub {
+            my ($self, $limit) = @_;
+            my $iterator = Bootylicious::Iterator->new;
+            Bootylicious::CommentIteratorLoader->new(root => $articles_root)
+              ->load($iterator)->reverse->next($limit || 5);
+        }
+    );
+
+    $app->helper(
         get_archive => sub {
             shift;
             Bootylicious::ArticleArchive->new(

@@ -17,6 +17,14 @@ sub new {
 
 sub rewind { shift->{index} = 0 }
 
+sub reverse {
+    my $self = shift;
+
+    $self->{elements} = [reverse @{$self->{elements}}];
+
+    return $self;
+}
+
 sub size { scalar @{shift->{elements} || []} }
 
 sub first { shift->{elements}->[0] }

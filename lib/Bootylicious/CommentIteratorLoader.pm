@@ -5,19 +5,27 @@ use warnings;
 
 use base 'Mojo::Base';
 
-__PACKAGE__->attr('glob');
+__PACKAGE__->attr('root');
+__PACKAGE__->attr('path');
 
 use Bootylicious::Comment;
 use Mojo::ByteStream;
+
+sub files {
+    my $self = shift;
+
+    my $root = $self->root;
+    my $path = $self->path;
+
+    return $path ? glob "$path.comment-*" : glob "$root/*.comment-*";
+}
 
 sub load {
     my $self     = shift;
     my $iterator = shift;
 
     my @comments = ();
-
-    my @files = glob $self->glob;
-    foreach my $file (@files) {
+    foreach my $file ($self->files) {
         my $comment;
 
         $file = Mojo::ByteStream->new($file)->decode('UTF-8');

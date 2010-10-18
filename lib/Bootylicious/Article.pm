@@ -43,10 +43,8 @@ sub pingback {
 sub comments {
     my $self = shift;
 
-    my $path = $self->path;
-
     return Bootylicious::CommentIteratorLoader->new(
-        glob => "$path.comment-*")->load(Bootylicious::Iterator->new);
+        path => $self->path)->load(Bootylicious::Iterator->new);
 }
 
 sub comment {

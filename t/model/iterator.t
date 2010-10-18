@@ -24,8 +24,10 @@ ok not defined $i->next(10)->prev;
 ok not defined $i->prev(10)->prev;
 ok not defined $i->prev(10)->next;
 
-$i = Bootylicious::Iterator->new(elements => [{name => 1}, {name => 2}, {name => 3}]);
+$i = Bootylicious::Iterator->new(elements => [{name => 3}, {name => 2}, {name => 1}]);
 is $i->size => 3;
+
+$i->reverse;
 
 $element = $i->next;
 ok $element;
