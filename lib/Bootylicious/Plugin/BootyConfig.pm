@@ -20,6 +20,15 @@ sub register {
     $app->plugin('charset' => {charset => 'utf-8'});
     $app->plugin('pod_renderer');
     $app->plugin('tag_helpers');
+    $app->plugin(
+        validator => {
+            messages => {
+                REQUIRED                => 'Required',
+                EMAIL_CONSTRAINT_FAILED => "Doesn't look like an email to me",
+                URL_CONSTRAINT_FAILED   => "Doesn't look like an url to me"
+            }
+        }
+    );
 
     $conf->{default} = $self->_default;
     my $config = $app->plugin('json_config' => $conf);

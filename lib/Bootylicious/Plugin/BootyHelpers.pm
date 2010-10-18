@@ -362,19 +362,6 @@ sub register {
     );
 
     $app->helper(
-        error => sub {
-            my $self = shift;
-            my $name = shift;
-
-            return unless my $errors = $self->stash('errors');
-
-            return unless my $message = $errors->{$name};
-
-            return $self->tag('div' => class => 'error' => sub {$message});
-        }
-    );
-
-    $app->helper(
         gravatar => sub {
             my $self  = shift;
             my $email = shift;

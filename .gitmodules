@@ -1,3 +1,9 @@
 [submodule "mojo"]
-	path = mojo
+	path = contrib/mojo
 	url = git://github.com/kraih/mojo.git
+[submodule "contrib/mojo"]
+	path = contrib/mojo
+	url = http://github.com/kraih/mojo.git
+[submodule "contrib/mojox-validator"]
+	path = contrib/mojox-validator
+	url = http://github.com/vti/mojox-validator.git

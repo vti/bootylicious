@@ -2,7 +2,8 @@
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
-use lib "$FindBin::Bin/mojo/lib";
+use lib "$FindBin::Bin/contrib/mojo/lib";
+use lib "$FindBin::Bin/contrib/mojox-validator/lib";
 
 use Mojolicious::Lite;
 
@@ -36,10 +37,7 @@ get '/articles/:year/:month' => [year => qr/\d+/, month => qr/\d+/] =>
   {year => undef, month => undef} => sub {
     my $self = shift;
 
-    my $year  = $self->stash('year');
-    my $month = $self->stash('month');
-
-    my $archive = $self->get_archive(year => $year, month => $month);
+    my $archive = $self->get_archive(@{$self->stash}{qw/year month/});
 
     $self->stash(archive => $archive);
 
@@ -50,11 +48,7 @@ get '/articles/:year/:month/:alias' =>
   [year => qr/\d+/, month => qr/\d+/, alias => $ALIAS_RE] => sub {
     my $self = shift;
 
-    my $year  = $self->stash('year');
-    my $month = $self->stash('month');
-    my $name  = $self->stash('alias');
-
-    my $article = $self->get_article($year, $month, $name);
+    my $article = $self->get_article(@{$self->stash}{qw/year month alias/});
 
     return $self->render_not_found unless $article;
 
@@ -70,33 +64,17 @@ post '/articles/:year/:month/:alias/comment' => sub {
 
     return $self->render_not_found unless $article;
 
-    my %params = map { $_ => $self->param($_) } qw/author email url content/;
+    my $validator = $self->create_validator;
 
-    my $errors = {};
+    $validator->field('author')->required(1);
+    $validator->field('email')->email(1);
+    $validator->field('url')->url(1);
+    $validator->field('content')->required(1);
 
-    for my $name (qw/author content/) {
-        $errors->{$name} = 'Required!' if $params{$name} eq '';
-    }
+    return $self->render('article', article => $article)
+      unless $self->validate($validator);
 
-    if (my $email = $params{email}) {
-        $errors->{email} = "Does't look like email to me"
-          unless $email =~ m/.*?\@.*\..*$/;
-    }
-
-    if (my $url = $params{url}) {
-        $errors->{url} = "Does't look like url to me"
-          unless $url =~ m{https?://.*\..*$};
-    }
-
-    if (keys %$errors) {
-        return $self->render(
-            'article',
-            article => $article,
-            errors  => $errors
-        );
-    }
-
-    $article->comment(%params);
+    $article->comment(%{$validator->values});
 
     return $self->redirect_to('article');
 } => 'comment';
@@ -390,21 +368,21 @@ __DATA__
         %= form_for 'comment', method => 'post' => begin
         <%= label 'author' => begin %>Name <span class="required">*</span><% end %><br />
         <%= input 'author' %><br />
-        <%= error 'author' %>
+        <%= validator_error 'author' %>
 
         <%= label 'email' => begin %>E-mail<% end %><br />
         <%= input 'email' %>
         <span class="tip"><%= link_to 'http://gravatar.com' => begin %>Gravatar<% end %>-friendly</span>
         <br />
-        <%= error 'email' %>
+        <%= validator_error 'email' %>
 
         <%= label 'url' => begin %>Website<% end %><br />
         <%= input 'url' %><br />
-        <%= error 'url' %>
+        <%= validator_error 'url' %>
 
         <%= label 'content' => begin %>Comment <span class="required">*</span><% end %><br />
         <%= text_area 'content' %><br />
-        <%= error 'content' %>
+        <%= validator_error 'content' %>
 
         <%= submit_button 'Post comment' %>
         % end
