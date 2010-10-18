@@ -2,9 +2,11 @@
 %#
 %# This configuration is in JSON format, that is preprocessed by Mojo::Template.
 %# Yes, you can use Perl here.
-%#
 
 {
+%#  Change this to something not guessable
+%#    "secret" : "Unique string",
+
 %#  Blog description settings
 %#    "author"       : "whoami",
 %#    "email"        : "",
