@@ -309,7 +309,7 @@ sub register {
             my $self = shift;
 
             return $self->link_to(
-                'root' => {layout => undef},
+                'root' => {format => undef},
                 title  => $self->config('title'),
                 rel => 'home' => sub { $self->config('title') }
             );
