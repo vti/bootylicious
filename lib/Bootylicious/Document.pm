@@ -41,25 +41,25 @@ sub new {
     return $self;
 }
 
-sub name     { shift->_stat(name     => @_) }
-sub format   { shift->_stat(format   => @_) }
-sub filename { shift->_stat(filename => @_) }
-sub created  { shift->_stat(created  => @_) }
-sub modified { shift->_stat(modified => @_) }
+sub name     { shift->stat(name     => @_) }
+sub format   { shift->stat(format   => @_) }
+sub filename { shift->stat(filename => @_) }
+sub created  { shift->stat(created  => @_) }
+sub modified { shift->stat(modified => @_) }
 
-sub title       { my $self = shift;$self->_metadata(title       => @_) || $self->name}
-sub description { shift->_metadata(description => @_) }
-sub tags        { shift->_metadata(tags        => @_) }
-sub link        { shift->_metadata(link        => @_) }
-sub author      { shift->_metadata(author      => @_) }
+sub title { my $self = shift; $self->metadata(title => @_) || $self->name }
+sub description { shift->metadata(description => @_) }
+sub tags        { shift->metadata(tags        => @_) }
+sub link        { shift->metadata(link        => @_) }
+sub author      { shift->metadata(author      => @_) }
 
-sub has_tags { @{shift->tags || []} }
+sub has_tags { @{shift->tags || []} ? 1 : 0 }
 
 sub content { shift->_content(content => @_) }
 
-sub _stat     { shift->_group(stat     => @_) }
-sub _metadata { shift->_group(metadata => @_) }
-sub _content  { shift->_group(content  => @_) }
+sub stat     { shift->_group(stat     => @_) }
+sub metadata { shift->_group(metadata => @_) }
+sub _content { shift->_group(content  => @_) }
 
 sub _group {
     my $self   = shift;
@@ -71,12 +71,13 @@ sub _group {
         return $self;
     }
 
-    return $self->{$group}->{$method} if exists $self->{$group};
+    return $method ? $self->{$group}->{$method} : $self->{$group}
+      if exists $self->{$group};
 
     my $group_loader = "${group}_loader";
     $self->{$group} = $self->$group_loader->load;
 
-    return $self->{$group}->{$method};
+    return $method ? $self->{$group}->{$method} : $self->{$group};
 }
 
 sub is_modified {

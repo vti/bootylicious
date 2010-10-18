@@ -91,6 +91,13 @@ configuration file:
         ...
     }
 
+Or comments can be disabled on per article:
+
+    Title: Article with no comments allowed
+    Comments: false
+
+    This is an article...
+
 =head2 Core plugins
 
 =head3 Bootylicious::Plugin::Pingback

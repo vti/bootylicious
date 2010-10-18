@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 21;
+use Test::More tests => 23;
 
 use FindBin;
 use Bootylicious::Timestamp;
@@ -21,6 +21,7 @@ $article =
 ok($article);
 is $article->pingbacks->size => 0;
 ok !$article->has_pingback('http://example.com/hello');
+ok $article->comments_enabled;
 
 ok $article->pingback('http://example.com/hello');
 is $article->pingbacks->size => 1;
@@ -56,3 +57,6 @@ ok -e "$comment_path-4";
 is $article->comments->size => 3;
 
 unlink $_ for glob("$comment_path-*");;
+
+$article = Bootylicious::Article->new(path => "$FindBin::Bin/article/20101010-no-comments.md");
+ok !$article->comments_enabled;

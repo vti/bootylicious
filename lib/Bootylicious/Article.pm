@@ -12,6 +12,17 @@ use Bootylicious::PingbackIteratorFinder;
 use Bootylicious::Comment;
 use Bootylicious::CommentIteratorLoader;
 
+sub comments_enabled {
+    my $self = shift;
+
+    my $metadata = $self->metadata;
+    return 1 unless $metadata;
+
+    my $comments = $metadata->{comments};
+
+    return defined $comments && $comments =~ /^(no|false|disable)$/i ? 0 : 1;
+}
+
 sub pingbacks {
     my $self = shift;
 
@@ -43,8 +54,8 @@ sub pingback {
 sub comments {
     my $self = shift;
 
-    return Bootylicious::CommentIteratorLoader->new(
-        path => $self->path)->load(Bootylicious::Iterator->new);
+    return Bootylicious::CommentIteratorLoader->new(path => $self->path)
+      ->load(Bootylicious::Iterator->new);
 }
 
 sub comment {

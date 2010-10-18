@@ -63,8 +63,10 @@ sub register {
 
     $app->helper(
         get_recent_articles => sub {
+            my ($self, $limit) = @_;
+
             Bootylicious::ArticleIterator->new(root => $articles_root)
-              ->next(5);
+              ->next($limit || 5);
         }
     );
 

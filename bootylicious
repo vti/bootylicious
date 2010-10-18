@@ -65,7 +65,7 @@ post '/articles/:year/:month/:alias/comment' => sub {
 
     my $article = $self->get_article(@{$self->stash}{qw/year month alias/});
 
-    return $self->render_not_found unless $article;
+    return $self->render_not_found unless $article && $article->comments_enabled;
 
     my $validator = $self->create_validator;
 
@@ -237,8 +237,8 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_rss->to_abs %></link>
         <description><%= config 'description' %></description>
-        <pubDate><%= date_rss $pager->articles->created %></pubDate>
-        <lastBuildDate><%= date_rss $pager->articles->created %></lastBuildDate>
+        <pubDate><%= date_rss $articles->first->created %></pubDate>
+        <lastBuildDate><%= date_rss $articles->first->created %></lastBuildDate>
         <generator><%= generator %></generator>
         % while (my $article = $pager->articles->next) {
         <item>
@@ -390,6 +390,7 @@ __DATA__
 
 @@ article-comment-form.html.ep
 <div id="comment-form">
+% if ($article->comments_enabled) {
     <h2>Add comment</h2>
     <div class="content">
         <div class="tip-required">
@@ -421,6 +422,10 @@ __DATA__
         <%= submit_button 'Post comment' %>
         % end
     </div>
+% }
+% else {
+    <h2>Comments for this article has been disabled</h2>
+% }
 </div>
 
 
