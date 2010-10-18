@@ -309,8 +309,9 @@ sub register {
             my $self = shift;
 
             return $self->link_to(
-                'index' => title  => $self->config('title'),
-                rel     => 'home' => sub { $self->config('title') }
+                'root',
+                title => $self->config('title'),
+                rel   => 'home' => sub { $self->config('title') }
             );
         }
     );
@@ -401,11 +402,10 @@ sub register {
             my $self    = shift;
             my $article = shift;
 
-            return $self->link_to(
-                $self->url_for('article')->fragment('comments') => sub {
-                    'Comments (' . $article->comments->size . ') ';
-                }
-            );
+            my $href = $self->href_to_article($article);
+
+            return $self->link_to($href->fragment('comments') =>
+                  sub { 'Comments (' . $article->comments->size . ') '; });
         }
     );
 
@@ -414,9 +414,10 @@ sub register {
             my $self = shift;
             my $article = shift;
 
+            my $href = $self->href_to_article($article);
+
             return $self->link_to(
-                $self->url_for('article')->fragment('comment-form') =>
-                  sub { 'No comments'; });
+                $href->fragment('comment-form') => sub {'No comments'});
         }
     );
 }

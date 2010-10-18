@@ -196,8 +196,8 @@ __DATA__
 
 @@ index-pager.html.ep
     <div id="pager">
-        <%= link_to_page 'index', $pager->prev_timestamp => {%><span class="arrow">&larr; </span><%= strings 'later' %><%}%>
-        <%= link_to_page 'index', $pager->next_timestamp => {%><%= strings 'earlier' %><span class="arrow"> &rarr;</span><%}%>
+        <%= link_to_page 'index', $pager->prev_timestamp => begin %><span class="arrow">&larr; </span><%= strings 'later' %><% end %>
+        <%= link_to_page 'index', $pager->next_timestamp => begin %><%= strings 'earlier' %><span class="arrow"> &rarr;</span><% end %>
     </div>
 
 
@@ -302,7 +302,7 @@ __DATA__
 <div class="text">
 <h1><%= strings 'tag' %> <%= $tag %>
 <sup>
-<%= link_to_tag $tag => { format => 'rss'} => {%><img src="/rss.png" alt="RSS" /><%}%></sup>
+<%= link_to_tag $tag => { format => 'rss'} => begin %><img src="/rss.png" alt="RSS" /><% end %></sup>
 </h1>
 <br />
 % while (my $article = $articles->next) {
@@ -316,8 +316,8 @@ __DATA__
 
 @@ tag-pager.html.ep
     <div id="pager">
-        <%= link_to_page 'tag' => {tag => $tag} => $pager->prev_timestamp => {%><span class="arrow">&larr; </span><%= strings 'later' %><%}%>
-        <%= link_to_page 'tag' => {tag => $tag} => $pager->next_timestamp => {%><%= strings 'earlier' %><span class="arrow"> &rarr;</span><%}%>
+        <%= link_to_page 'tag' => {tag => $tag} => $pager->prev_timestamp => begin %><span class="arrow">&larr; </span><%= strings 'later' %><% end %>
+        <%= link_to_page 'tag' => {tag => $tag} => $pager->next_timestamp => begin %><%= strings 'earlier' %><span class="arrow"> &rarr;</span><% end %>
     </div>
 
 
@@ -472,7 +472,7 @@ __DATA__
         <div id="body">
             <div id="header">
                 <h1 id="title">
-                    <%= link_to 'index', {format => 'html'} => {%><%= config 'title' %><%}%>
+                    <%= link_to_home %>
                     <sup><a href="<%= href_to_rss %>"><img src="/rss.png" alt="RSS" /></a></sup>
                 </h1>
                 <h2 id="description"><%= config 'description' %></h2>
