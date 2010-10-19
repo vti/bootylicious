@@ -7,7 +7,7 @@ use Test::More tests => 6;
 
 use FindBin;
 
-use Bootylicious::ArticleIterator;
+use Bootylicious::ArticleIteratorLoader;
 
 use_ok('Bootylicious::ArticleByQueryIterator');
 
@@ -27,14 +27,9 @@ is $i->size => 1;
 
 sub _new_iterator {
     Bootylicious::ArticleByQueryIterator->new(
-        Bootylicious::ArticleIterator->new(
+        Bootylicious::ArticleIteratorLoader->new(
             root => "$FindBin::Bin/article-by-query-iterator",
-            args => {
-                parsers => {
-                    pod => sub { $_[0] }
-                }
-            }
-        ),
+          )->load,
         query => $_[0]
     );
 }

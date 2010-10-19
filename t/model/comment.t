@@ -30,8 +30,8 @@ $comment = Bootylicious::Comment->new;
 $comment->load($path);
 
 ok $comment->created;
-is $comment->author => 'foo';
-is $comment->email => 'foo@example.com';
+is $comment->author  => 'foo';
+is $comment->email   => 'foo@example.com';
 is $comment->content => 'foo bar baz';
 
 unlink $path;

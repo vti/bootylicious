@@ -7,7 +7,7 @@ use Test::More tests => 5;
 
 use FindBin;
 
-use Bootylicious::ArticleIterator;
+use Bootylicious::ArticleIteratorLoader;
 
 use_ok('Bootylicious::ArticleByTagIterator');
 
@@ -28,9 +28,9 @@ is $i->size => 1;
 
 sub _new_iterator {
     Bootylicious::ArticleByTagIterator->new(
-        Bootylicious::ArticleIterator->new(
+        Bootylicious::ArticleIteratorLoader->new(
             root => "$FindBin::Bin/article-by-tag-iterator"
-        ),
+          )->load,
         tag => $_[0]
     );
 }

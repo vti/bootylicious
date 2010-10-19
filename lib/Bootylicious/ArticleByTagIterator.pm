@@ -7,7 +7,7 @@ use base 'Bootylicious::Decorator';
 
 __PACKAGE__->attr('tag');
 
-use Bootylicious::ArticleIterator;
+use Bootylicious::IteratorSearchable;
 
 sub new {
     my $self = shift->SUPER::new(@_);
@@ -20,14 +20,15 @@ sub build {
 
     my $tag = $self->tag;
 
-    my @articles;
-    while (my $article = $self->object->next) {
-        if (scalar grep { $_ eq $tag } @{$article->tags}) {
-            push @articles, $article;
-        }
-    }
+    return Bootylicious::IteratorSearchable->new($self->object)->find_all(
+        sub {
+            my ($iterator, $elem) = @_;
 
-    return Bootylicious::ArticleIterator->new(elements => [@articles]);
+            return unless scalar grep { $_ eq $tag } @{$elem->tags};
+
+            return $elem;
+        }
+    );
 }
 
 1;

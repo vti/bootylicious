@@ -5,7 +5,7 @@ use warnings;
 
 use base 'Bootylicious::ArticleArchiveBase';
 
-use Bootylicious::DocumentIteratorWithDates;
+use Bootylicious::Iterator;
 use Bootylicious::Year;
 
 sub build {
@@ -26,14 +26,14 @@ sub build {
         push @years,
           Bootylicious::Year->new(
             year     => $year,
-            articles => Bootylicious::DocumentIteratorWithDates->new(
+            articles => Bootylicious::Iterator->new(
                 elements => $years->{$year}
             )
           );
     }
 
     $self->articles(
-        Bootylicious::DocumentIteratorWithDates->new(elements => [@years]));
+        Bootylicious::Iterator->new(elements => [@years]));
 
     return $self;
 }

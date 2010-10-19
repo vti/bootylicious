@@ -12,6 +12,12 @@ my @months = (
     qw/January February March April May July June August September October November December/
 );
 
+sub new {
+    my $self = shift->SUPER::new(@_);
+
+    return $self->build;
+}
+
 sub month_name {
     my $self = shift;
 
@@ -20,15 +26,7 @@ sub month_name {
     return $months[$self->month - 1];
 }
 
-sub new {
-    my $self = shift->SUPER::new(@_);
-
-    return $self->build;
-}
-
 sub next { shift->articles->next }
 sub size { shift->articles->size }
-
-sub modified { shift->articles->modified }
 
 1;

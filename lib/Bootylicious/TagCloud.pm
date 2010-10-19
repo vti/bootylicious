@@ -7,7 +7,7 @@ use base 'Mojo::Base';
 
 __PACKAGE__->attr('articles');
 
-use Bootylicious::DocumentIteratorWithDates;
+use Bootylicious::Iterator;
 use Bootylicious::Tag;
 
 sub new {
@@ -53,7 +53,7 @@ sub build {
           );
     }
 
-    return Bootylicious::DocumentIteratorWithDates->new(elements => [@tags]);
+    return Bootylicious::Iterator->new(elements => [@tags]);
 }
 
 1;

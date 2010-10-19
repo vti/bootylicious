@@ -3,10 +3,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 7;
 
 use FindBin;
-use Bootylicious::ArticleIterator;
+use Bootylicious::ArticleIteratorLoader;
 
 use_ok('Bootylicious::TagCloud');
 
@@ -15,10 +15,8 @@ my $tag;
 
 $cloud =
   Bootylicious::TagCloud->new(articles =>
-      Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/tags"));
-
-ok $cloud->created;
-ok $cloud->modified;
+      Bootylicious::ArticleIteratorLoader->new(root => "$FindBin::Bin/tags")
+      ->load);
 
 $tag = $cloud->next;
 is $tag->name  => 'bar';

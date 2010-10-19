@@ -6,14 +6,14 @@ use warnings;
 use Test::More tests => 14;
 
 use FindBin;
-use Bootylicious::ArticleIterator;
+use Bootylicious::ArticleIteratorLoader;
 
 use_ok('Bootylicious::ArticleIteratorFinder');
 
 my $article;
 
 my $iterator =
-  Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/finder");
+  Bootylicious::ArticleIteratorLoader->new(root => "$FindBin::Bin/finder")->load;
 
 $article =
   Bootylicious::ArticleIteratorFinder->new(iterator => $iterator)

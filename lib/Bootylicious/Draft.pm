@@ -3,6 +3,6 @@ package Bootylicious::Draft;
 use strict;
 use warnings;
 
-use base 'Bootylicious::Document';
+use base 'Bootylicious::Article';
 
 1;

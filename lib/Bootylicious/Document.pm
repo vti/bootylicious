@@ -26,17 +26,16 @@ __PACKAGE__->attr(
 );
 
 __PACKAGE__->attr(
-    content_loader => sub {
+    inner_loader => sub {
         Bootylicious::DocumentContentLoader->new(path => shift->path);
     }
 );
 
-sub new {
-    my $self = shift->SUPER::new(@_);
+sub load {
+    my $self = shift;
+    my $path = shift;
 
-    my $path = $self->path;
-
-    Carp::croak qq/path is a required parameter/ unless $path;
+    $self->path($path);
 
     return $self;
 }
@@ -47,19 +46,13 @@ sub filename { shift->stat(filename => @_) }
 sub created  { shift->stat(created  => @_) }
 sub modified { shift->stat(modified => @_) }
 
-sub title { my $self = shift; $self->metadata(title => @_) || $self->name }
-sub description { shift->metadata(description => @_) }
-sub tags        { shift->metadata(tags        => @_) }
-sub link        { shift->metadata(link        => @_) }
-sub author      { shift->metadata(author      => @_) }
+sub author { shift->metadata(author => @_) }
 
-sub has_tags { @{shift->tags || []} ? 1 : 0 }
-
-sub content { shift->_content(content => @_) }
+sub content { shift->inner(content => @_) }
 
 sub stat     { shift->_group(stat     => @_) }
 sub metadata { shift->_group(metadata => @_) }
-sub _content { shift->_group(content  => @_) }
+sub inner    { shift->_group(inner    => @_) }
 
 sub _group {
     my $self   = shift;

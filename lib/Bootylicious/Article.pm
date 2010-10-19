@@ -12,13 +12,16 @@ use Bootylicious::PingbackIteratorFinder;
 use Bootylicious::Comment;
 use Bootylicious::CommentIteratorLoader;
 
+sub title { my $self = shift; $self->metadata(title => @_) || $self->name }
+sub description { shift->metadata(description => @_) }
+sub tags        { shift->metadata(tags        => @_) }
+sub link        { shift->metadata(link        => @_) }
+sub has_tags { @{shift->tags || []} ? 1 : 0 }
+
 sub comments_enabled {
     my $self = shift;
 
-    my $metadata = $self->metadata;
-    return 1 unless $metadata;
-
-    my $comments = $metadata->{comments};
+    my $comments = $self->metadata('comments');
 
     return defined $comments && $comments =~ /^(no|false|disable)$/i ? 0 : 1;
 }
@@ -60,6 +63,7 @@ sub comments {
 
 sub comment {
     my $self = shift;
+    my %params = @_;
 
     my $number = 1;
 
@@ -70,7 +74,9 @@ sub comment {
 
     my $path = $self->path . '.comment-' . $number;
 
-    return Bootylicious::Comment->new(@_)->create($path);
+    my $comment = Bootylicious::Comment->new(@_);
+
+    return $comment->create($path);
 }
 
 1;

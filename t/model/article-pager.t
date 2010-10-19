@@ -6,7 +6,7 @@ use warnings;
 use Test::More tests => 16;
 
 use FindBin;
-use Bootylicious::ArticleIterator;
+use Bootylicious::ArticleIteratorLoader;
 
 use_ok('Bootylicious::ArticlePager');
 
@@ -23,7 +23,8 @@ ok !$pager->next_timestamp;
 $pager = Bootylicious::ArticlePager->new(
     limit => 3,
     iterator =>
-      Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/pager")
+      Bootylicious::ArticleIteratorLoader->new(root => "$FindBin::Bin/pager")
+      ->load
 );
 is $pager->articles->size        => 3;
 is $pager->articles->first->name => 'zab';
@@ -35,7 +36,8 @@ $pager = Bootylicious::ArticlePager->new(
     timestamp => '20100103T00:00:00',
     limit     => 3,
     iterator =>
-      Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/pager")
+      Bootylicious::ArticleIteratorLoader->new(root => "$FindBin::Bin/pager")
+      ->load
 );
 is $pager->articles->size           => 3;
 is $pager->articles->first->name    => 'baz';
@@ -45,6 +47,7 @@ ok !$pager->next;
 
 $pager =
   Bootylicious::ArticlePager->new(iterator =>
-      Bootylicious::ArticleIterator->new(root => "$FindBin::Bin/pager"));
+      Bootylicious::ArticleIteratorLoader->new(root => "$FindBin::Bin/pager")
+      ->load);
 is $pager->articles->size               => 6;
-is $pager->articles->created->timestamp => '20100106T00:00:00';
+is $pager->articles->first->created->timestamp => '20100106T00:00:00';

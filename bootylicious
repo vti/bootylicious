@@ -38,7 +38,9 @@ get '/articles/:year/:month' => [year => qr/\d+/, month => qr/\d+/] =>
   {year => undef, month => undef} => sub {
     my $self = shift;
 
-    my $archive = $self->get_archive(@{$self->stash}{qw/year month/});
+    my $year    = $self->stash('year');
+    my $month   = $self->stash('month');
+    my $archive = $self->get_archive(year => $year, month => $month);
 
     $self->stash(archive => $archive);
 
@@ -209,7 +211,7 @@ __DATA__
         <li>
             <%= link_to_article $article %>
             <br />
-            <%= include 'article-meta', article => $article;
+            <%= include 'article-meta', article => $article %>
         </li>
         % }
     </ul>
@@ -457,10 +459,10 @@ __DATA__
 % stash title => $draft->{title}, description => strings('draft');
 <div class="text">
     <h1 class="title">
-        <%= $draft->{title} %>
+        <%= $draft->title %>
     </h1>
     <div class="tags"><%= tags_links $draft %></div>
-    <%== $draft->{content} %>
+    <%== $draft->content %>
 </div>
 
 

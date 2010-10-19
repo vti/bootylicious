@@ -5,26 +5,29 @@ use warnings;
 
 use base 'Bootylicious::ArticleArchiveBase';
 
-use Bootylicious::DocumentIteratorWithDates;
+use Bootylicious::IteratorSearchable;
 
 __PACKAGE__->attr('month');
+__PACKAGE__->attr('iterator');
 
 sub build {
     my $self = shift;
 
-    my @articles;
-    while (my $article = $self->articles->next) {
-        my $year  = $article->created->year;
-        my $month = $article->created->month;
+    my $iterator = Bootylicious::IteratorSearchable->new($self->articles)->find_all(
+        sub {
+            my ($iterator, $article) = @_;
 
-        next if $self->year  && $self->year != $year;
-        next if $self->month && $self->month != $month;
+            my $year  = $article->created->year;
+            my $month = $article->created->month;
 
-        push @articles, $article;
-    }
+            return if $self->year  && $self->year != $year;
+            return if $self->month && $self->month != $month;
 
-    $self->articles(
-        Bootylicious::DocumentIteratorWithDates->new(elements => [@articles]));
+            return $article;
+        }
+    );
+
+    $self->articles($iterator);
 
     return $self;
 }

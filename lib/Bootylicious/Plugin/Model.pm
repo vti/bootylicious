@@ -12,17 +12,18 @@ use Bootylicious::ArticleArchive;
 use Bootylicious::ArticleArchiveSimple;
 use Bootylicious::ArticleByTagIterator;
 use Bootylicious::ArticleByQueryIterator;
-use Bootylicious::ArticleIterator;
 use Bootylicious::ArticleIteratorFinder;
 use Bootylicious::ArticlePager;
 use Bootylicious::Draft;
-use Bootylicious::DraftIterator;
+use Bootylicious::DraftIteratorLoader;
 use Bootylicious::DraftIteratorFinder;
 use Bootylicious::IteratorSearchable;
 use Bootylicious::Page;
-use Bootylicious::PageIterator;
+use Bootylicious::PageIteratorLoader;
 use Bootylicious::PageIteratorFinder;
 use Bootylicious::TagCloud;
+use Bootylicious::ArticleIteratorLoader;
+use Bootylicious::CommentIteratorLoader;
 
 sub register {
     my ($self, $app) = @_;
@@ -52,9 +53,11 @@ sub register {
     $app->helper(
         get_articles => sub {
             shift;
+
             Bootylicious::ArticlePager->new(
-                iterator =>
-                  Bootylicious::ArticleIterator->new(root => $articles_root),
+                iterator => Bootylicious::ArticleIteratorLoader->new(
+                    root => $articles_root
+                  )->load,
                 limit => $page_limit,
                 @_
             );
@@ -65,17 +68,16 @@ sub register {
         get_recent_articles => sub {
             my ($self, $limit) = @_;
 
-            Bootylicious::ArticleIterator->new(root => $articles_root)
-              ->next($limit || 5);
+            return Bootylicious::ArticleIteratorLoader->new(
+                root => $articles_root)->load->next($limit || 5);
         }
     );
 
     $app->helper(
         get_recent_comments => sub {
             my ($self, $limit) = @_;
-            my $iterator = Bootylicious::Iterator->new;
             Bootylicious::CommentIteratorLoader->new(root => $articles_root)
-              ->load($iterator)->reverse->next($limit || 5);
+              ->load->reverse->next($limit || 5);
         }
     );
 
@@ -83,8 +85,9 @@ sub register {
         get_archive => sub {
             shift;
             Bootylicious::ArticleArchive->new(
-                articles =>
-                  Bootylicious::ArticleIterator->new(root => $articles_root),
+                articles => Bootylicious::ArticleIteratorLoader->new(
+                    root => $articles_root
+                  )->load,
                 @_
             );
         }
@@ -92,8 +95,10 @@ sub register {
 
     $app->helper(
         get_archive_simple => sub {
-            Bootylicious::ArticleArchiveSimple->new(articles =>
-                  Bootylicious::ArticleIterator->new(root => $articles_root),
+            Bootylicious::ArticleArchiveSimple->new(
+                articles => Bootylicious::ArticleIteratorLoader->new(
+                    root => $articles_root
+                  )->load,
             );
         }
     );
@@ -105,9 +110,9 @@ sub register {
 
             Bootylicious::ArticlePager->new(
                 iterator => Bootylicious::ArticleByTagIterator->new(
-                    Bootylicious::ArticleIterator->new(
+                    Bootylicious::ArticleIteratorLoader->new(
                         root => $articles_root
-                    ),
+                      )->load,
                     tag => $tag
                 ),
                 limit => $page_limit,
@@ -122,31 +127,42 @@ sub register {
             my $query = shift;
 
             return Bootylicious::ArticleByQueryIterator->new(
-                Bootylicious::ArticleIterator->new(root => $articles_root),
-                query => $query);
+                Bootylicious::ArticleIteratorLoader->new(
+                    root => $articles_root
+                  )->load,
+                query => $query
+            );
         }
     );
 
     $app->helper(
         get_tag_cloud => sub {
-            Bootylicious::TagCloud->new(articles =>
-                  Bootylicious::ArticleIterator->new(root => $articles_root));
+            Bootylicious::TagCloud->new(
+                articles => Bootylicious::ArticleIteratorLoader->new(
+                    root => $articles_root
+                )->load
+            );
         }
     );
 
     $app->helper(
         get_tags => sub {
-            Bootylicious::TagCloud->new(articles =>
-                  Bootylicious::ArticleIterator->new(root => $articles_root));
+            Bootylicious::TagCloud->new(
+                articles => Bootylicious::ArticleIteratorLoader->new(
+                    root => $articles_root
+                )->load
+            );
         }
     );
 
     $app->helper(
         get_article => sub {
             my $self = shift;
-            Bootylicious::ArticleIteratorFinder->new(iterator =>
-                  Bootylicious::ArticleIterator->new(root => $articles_root))
-              ->find(@_);
+            Bootylicious::ArticleIteratorFinder->new(
+                iterator => Bootylicious::ArticleIteratorLoader->new(
+                    root => $articles_root
+                  )->load
+            )->find(@_);
         }
     );
 
@@ -155,8 +171,8 @@ sub register {
             my $self = shift;
             my $name = shift;
             Bootylicious::PageIteratorFinder->new(iterator =>
-                  Bootylicious::PageIterator->new(root => $pages_root))
-              ->find($name);
+                  Bootylicious::PageIteratorLoader->new(root => $pages_root)
+                  ->load)->find($name);
         }
     );
 
@@ -166,9 +182,9 @@ sub register {
             my $name = shift;
 
             Bootylicious::DraftIteratorFinder->new(
-                iterator => Bootylicious::DraftIterator->new(
+                iterator => Bootylicious::DraftIteratorLoader->new(
                     root => $self->drafts_root
-                ),
+                  )->load,
             )->find($name);
         }
     );
