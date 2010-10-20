@@ -1,0 +1,6 @@
+<% my $block = begin %>
+<% my $name = shift; =%>
+Hello <%= $name %>.
+<% end %>
+%= $block->('Baerbel')
+%= $block->('Wolfgang')

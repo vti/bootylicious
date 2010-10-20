@@ -1,0 +1,199 @@
+
+=head1 NAME
+
+Mojolicious::Guides::Cookbook - Cookbook
+
+=head1 OVERVIEW
+
+Cooking with L<Mojolicious>, recipes for every taste.
+
+=head1 DEPLOYMENT
+
+Getting L<Mojolicious> and L<Mojolicious::Lite> applications running on
+different platforms.
+
+=head2 Builtin Server
+
+L<Mojolicious> contains a very portable HTTP 1.1 compliant web server.
+It is usally used during development but is solid and fast enough for small
+to mid sized applications.
+
+    % ./script/myapp daemon
+    Server available at http://127.0.0.1:3000.
+
+It has many configuration options and is known to work on every platform
+Perl works on.
+
+    % ./script/myapp help daemon
+    ...List of available options...
+
+Another huge advantage is that it supports TLS and WebSockets out of the box.
+
+    % ./script/myapp daemon --listen https://*:3000
+    Server available at https://*:3000.
+
+A development certificate for testing purposes is built right in, so it just
+works.
+
+=head2 Apache/CGI
+
+C<CGI> is supported out of the box and your L<Mojolicious> application will
+automatically detect that it is executed as a C<CGI> script.
+
+    <VirtualHost *:80>
+        ServerName localhost
+        DocumentRoot /home/sri/myapp/public
+
+        ScriptAlias /myapp "/home/sri/myapp/script/myapp"
+    </VirtualHost>
+
+=head2 Apache/FastCGI
+
+C<FastCGI> is also supported out of the box and your L<Mojolicious>
+application will automatically detect that it is executed as a C<FastCGI>
+script.
+
+    <VirtualHost *:80>
+        ServerName localhost
+        DocumentRoot /home/sri/myapp/public
+
+        FastCgiServer /home/sri/myapp/script/myapp -processes 10
+        Alias /myapp /home/sri/myapp/script/myapp
+    </VirtualHost>
+
+=head2 PSGI/Plack
+
+L<PSGI> is an interface between Perl web frameworks and web servers, and
+L<Plack> is a Perl module and toolkit that contains PSGI middleware, helpers
+and adapters to web servers.
+L<PSGI> and L<Plack> are inspired by Python's WSGI and Ruby's Rack.
+L<Mojolicious> applications are ridiculously simple to deploy with L<Plack>.
+
+    % plackup ./script/myapp
+    HTTP::Server::PSGI: Accepting connections at http://0:5000/
+
+L<Plack> provides many server and protocol adapters for you to choose from
+such as C<FCGI>, C<SCGI> and C<mod_perl>.
+Make sure to run C<plackup> from your applications home directory, otherwise
+libraries might not be found.
+
+    % plackup ./script/myapp -s FCGI -l /tmp/myapp.sock
+
+Because C<plackup> uses a weird trick to load your script, L<Mojolicious> is
+not always able to detect the applications home directory, if thats the case
+you can simply use the C<MOJO_HOME> environment variable.
+Also note that C<app-E<gt>start> needs to be the last Perl statement in the
+application script for the same reason.
+
+    % MOJO_HOME=/home/sri/myapp plackup ./script/myapp
+    HTTP::Server::PSGI: Accepting connections at http://0:5000/
+
+Some server adapters might ask for a C<.psgi> file, if thats the case you can
+just point them at your application script because it will automatically
+act like one if it detects the presence of a C<PLACK_ENV> environment
+variable.
+
+=head2 Apache/mod_perl (PSGI/Plack)
+
+C<mod_perl> is a good example for a L<PSGI> adapter that is used without
+C<plackup>, note that setting the C<PLACK_ENV> environment variable is
+required for L<Mojolicious> L<PSGI> detection.
+
+    <VirtualHost *:80>
+        ServerName localhost
+        DocumentRoot /home/sri/myapp/public
+
+        <Perl>
+            $ENV{PLACK_ENV} = 'production';
+            $ENV{MOJO_HOME} = '/home/sri/myapp';
+        </Perl>
+
+        <Location /myapp>
+            SetHandler perl-script
+            PerlHandler Plack::Handler::Apache2
+            PerlSetVar psgi_app /home/sri/myapp/script/myapp
+        </Location>
+    </VirtualHost>
+
+=head2 IIS6.0/FastCGI
+
+We don't suggest using IIS, it is a horribly broken web server, avoid it if
+you can.
+There is nothing we can do to make this a pleasant experience for you, but
+maybe we can at least ease some of the pain.
+
+First you should make sure to get recent versions of C<Strawberry Perl> and
+L<Mojolicious> installed, C<Strawberry> is as good as a Windows version of
+Perl can be.
+
+Then you'll have to install IIS 6.0 and its FastCGI extension, which is not
+part of the standard installation.
+Create a new website with C<Control Panel> > C<Administrative Tools> >
+C<Internet Information Services Manager> > C<Action> > C<New> > C<Web Site>
+and finish the installation wizard.
+
+Open your newly created websites properties and select the tab C<Web Site>.
+Set the proper values for C<Site Description>, C<IP Address>, C<TCP Port>,
+C<SSL Port> etc.
+
+On the tab C<Home Directory> set C<Local Path> to C<c:\myapp\public>,
+C<Local Path Permission Flags> to C<Read> and C<Log Visits>,
+C<Execute Permissions> to C<Scripts Only>.
+
+Click on the C<Configuration> button and then C<Insert>
+(next to C<Wildcard Application Mappings>).
+In the next dialog set C<Executable> to
+C<c:\windows\system32\inetsrv\fcgiext.dll> and uncheck
+C<Verify That Files Exist>.
+
+Now put the following lines into C<c:\windows\system32\inetsrv\fcgiext.ini>
+or C<c:\windows\syswow64\inetsrv\fcgiext.ini> on 64-bit systems.
+
+    [Types]
+    *=MyApp
+
+    [MyApp]
+    ExePath=c:\strawberry\perl\bin\perl.exe
+    Arguments="c:\myapp\script\myapp fastcgi"
+
+    ; Let IIS serve static files
+    IgnoreExistingFiles=0
+    IgnoreDirectories=1
+
+There is one more thing, IIS sometimes clears your environment variables but
+Windows won't work without C<SYSTEMROOT>, so you might have to set it
+manually in your application.
+
+    # Application
+    package MyApp;
+    use base 'Mojolicious';
+
+    sub startup {
+        my $self = shift;
+
+        # Use plugin hook to set environment variable for every request
+        $self->plugins->add_hook(
+            before_dispatch => sub { $ENV{SYSTEMROOT} = 'c:\\winnt' }
+        );
+    }
+
+    1;
+
+=head1 FUN
+
+Hacks that might not be very useful but are fun! :)
+
+=head2 Hello World
+
+If every byte matters this is the smallest C<Hello World> application you can
+write with L<Mojolicious::Lite>.
+
+    use Mojolicious::Lite;
+    get '/' => {text => 'Hello World!'};
+    app->start;
+
+It works because automatic rendering kicks in even if no actual code gets
+executed by the router, the renderer just picks up the C<text> value from the
+stash and generates a response.
+
+=cut
