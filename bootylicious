@@ -4,7 +4,7 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 use lib "$FindBin::Bin/contrib/mojo/lib";
 use lib "$FindBin::Bin/contrib/mojox-validator/lib";
-use lib "$FindBin::Bin/contrib/mojolicious-plugin-bot_protection/lib";
+use lib "$FindBin::Bin/contrib/mojolicious-plugin-botprotection/lib";
 
 use Mojolicious::Lite;
 
