@@ -35,6 +35,8 @@ sub load {
     my $self = shift;
     my $path = shift;
 
+    return unless -e $path;
+
     $self->path($path);
 
     return $self;
@@ -77,6 +79,57 @@ sub is_modified {
     my $self = shift;
 
     return $self->created != $self->modified;
+}
+
+sub create {
+    my $self = shift;
+    my $path = shift;
+    my $hash = shift;
+
+    if ($hash && ref $hash eq 'HASH') {
+        foreach my $key (keys %$hash) {
+            $self->$key($hash->{$key});
+        }
+
+        $path .= '/'.
+            Bootylicious::Timestamp->new(epoch => time)->timestamp . '-'
+          . $self->name . '.'
+          . $self->format;
+    }
+
+    open my $file, '>:encoding(UTF-8)', $path or return;
+
+    $self->path($path);
+
+    my $metadata = '';
+    foreach my $key (sort keys %{$self->metadata}) {
+        my $value = $self->metadata->{$key};
+        next unless $value && $value ne '';
+        $metadata .= ucfirst $key . ': ' . $value;
+        $metadata .= "\n";
+    }
+
+    print $file $metadata;
+    print $file "\n";
+    print $file $self->content || '';
+}
+
+sub update {
+    my $self = shift;
+    my $hash = shift;
+
+    $hash ||= {};
+    foreach my $key (keys %$hash) {
+        $self->$key($hash->{$key});
+    }
+
+    return $self->create($self->path);
+}
+
+sub delete {
+    my $self = shift;
+
+    unlink $self->path;
 }
 
 1;

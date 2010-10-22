@@ -22,16 +22,8 @@ sub load {
         my $key   = lc $1;
         my $value = $2;
 
-        if ($key eq 'tags') {
-            my $tmp = $value || '';
-            $value = [];
-            @$value = map { s/^\s+//; s/\s+$//; $_ } split(/,/, $tmp);
-        }
-
         $metadata->{$key} = $value;
     }
-
-    $metadata->{tags} ||= [];
 
     return $metadata;
 }

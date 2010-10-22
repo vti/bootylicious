@@ -35,18 +35,19 @@
 %#    "js"        : [],
 
 %#  Plugins
-%#    "plugins" : [
+    "plugins" : [
+    "admin", {"username":"foo","password":"bar"}
 %#        "search",
 %#        "google_analytics", {"urchin" : "UA-12345"},
 %#        "pingback"
-%#    ],
+    ],
 
 %#  Enabling/disabling comments globbaly
 %#    "comments_enabled" : true,
 
 %#  System settings
 %#    "perl5lib" : "",
-%#    "loglevel" : "error",
+    "loglevel" : "debug",
 
 %#  Path settings
 %#    "articles_directory"  : "articles",

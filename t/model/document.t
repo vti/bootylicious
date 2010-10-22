@@ -5,7 +5,7 @@ use warnings;
 
 use utf8;
 
-use Test::More tests => 19;
+use Test::More tests => 29;
 
 use FindBin;
 
@@ -48,3 +48,40 @@ is $document->name   => 'привет';
 is $document->format => 'md';
 is $document->content =>
   qq/Это все юникод. Ляляля.\nА вот и сказочки конец.\n/;
+
+my $path = "$FindBin::Bin/documents/20101010-foo.md";
+unlink $path;
+
+$document = Bootylicious::Document->new;
+$document->author('foo');
+$document->content('foo bar baz');
+$document->create($path);
+ok(-e $path);
+
+my $content = do { local $/; open my $fh, '<', $path or die $!; <$fh> };
+is $content => "Author: foo\n\nfoo bar baz";
+
+$document = Bootylicious::Document->new;
+$document->load($path);
+
+ok $document->created;
+is $document->author  => 'foo';
+is $document->content => 'foo bar baz';
+
+$document->author('bar');
+$document->content('bar bar foo');
+
+$document->update;
+
+$document = Bootylicious::Document->new;
+$document->load($path);
+
+ok $document->created;
+is $document->author  => 'bar';
+is $document->content => 'bar bar foo';
+
+$document->delete;
+
+$document = Bootylicious::Document->new;
+ok not defined $document->load($path);
+ok !-e $path;

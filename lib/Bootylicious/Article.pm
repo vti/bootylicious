@@ -14,9 +14,28 @@ use Bootylicious::CommentIteratorLoader;
 
 sub title { my $self = shift; $self->metadata(title => @_) || $self->name }
 sub description { shift->metadata(description => @_) }
-sub tags        { shift->metadata(tags        => @_) }
 sub link        { shift->metadata(link        => @_) }
-sub has_tags { @{shift->tags || []} ? 1 : 0 }
+
+sub tags {
+    my $self = shift;
+    my $value = shift;
+
+    if (defined $value) {
+        $value = join ', ' => sort keys %{
+            {   map { $_ => 1 }
+                map { s/^\s+//; s/\s+$//; $_ }
+                grep { $_ ne '' } split ',' => $value
+            }
+          } if $value ne '';
+        return $self->metadata(tags => $value);
+    }
+
+    my $tags = $self->metadata('tags');
+
+    return [map { s/^\s+//; s/\s+$//; $_ } split ',' => $tags];
+}
+
+sub has_tags { shift->tags ? 1 : 0 }
 
 sub comments_enabled {
     my $self = shift;
