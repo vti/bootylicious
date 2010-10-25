@@ -1,9 +1,20 @@
 This file documents the revision history for Perl extension Mojolicious.
 
 0.999931 2010-10-19 00:00:00
+        - Removed tag helpers label and img.
+        - Renamed tag helper script to javascript and added CDATA support.
+        - Renamed tag helper input to input_tag.
+        - Added EXPERIMENTAL non-blocking DNS support to Mojo::IOLoop.
+          (und3f)
+        - Added EXPERIMENTAL support for IPv4 and IPv6 addess checks to
+          Mojo::URL.
+        - Added stylesheet tag helper.
         - Added before and after methods to Mojo::DOM.
         - Hide command overview from prove. (omega)
         - Default to silent tests in Test::Mojo.
+        - Fixed optional value support in Mojo::Cookie.
+        - Fixed shortcut methods in Mojo::Headers to not be context aware.
+        - Fixed url_for to not inherit captures for new endpoints.
 
 0.999930 2010-10-18 00:00:00
         - Code name "Hot Beverage", this is a major release.
@@ -198,7 +209,7 @@ This file documents the revision history for Perl extension Mojolicious.
           Mojo::Message.
         - Added EXPERIMENTAL idle_cb attribute to Mojo::IOLoop.
         - Added more perlish block syntax to Mojo::Template.
-        - Added non blocking TLS handshake support to Mojo::IOLoop.
+        - Added non-blocking TLS handshake support to Mojo::IOLoop.
         - Added proxy support to Mojo::Client.
         - Added the ability to have dispatch plugins.
         - Added "under" to Mojolicious::Lite.
