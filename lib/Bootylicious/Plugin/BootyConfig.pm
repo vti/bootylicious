@@ -31,7 +31,7 @@ sub register {
     );
     $app->plugin('bot_protection');
 
-    $conf->{default} = $self->_default;
+    $conf->{default} = $self->_default unless exists $conf->{default};
     my $config = $app->plugin('json_config' => $conf);
 
     $app->secret($conf->{secret});
@@ -134,9 +134,6 @@ sub _load_plugins {
             push @plugins, {name => $plugin, args => {}};
         }
     }
-
-    #push @{$app->plugins->namespaces}, $_
-    #for @{$config->{plugins_namespaces}};
 
     foreach my $plugin (@plugins) {
         $app->plugin($plugin->{name} => $plugin->{args});

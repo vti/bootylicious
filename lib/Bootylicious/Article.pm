@@ -31,6 +31,7 @@ sub tags {
     }
 
     my $tags = $self->metadata('tags');
+    return [] unless $tags;
 
     return [map { s/^\s+//; s/\s+$//; $_ } split ',' => $tags];
 }

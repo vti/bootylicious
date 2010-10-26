@@ -14,6 +14,10 @@ BEGIN {
     $ENV{MOJO_HOME} = "$FindBin::Bin/../";
 }
 
+use lib "$FindBin::Bin/../../contrib/mojo/lib";
+use lib "$FindBin::Bin/../../contrib/mojox-validator/lib";
+use lib "$FindBin::Bin/../../contrib/mojolicious-plugin-botprotection/lib";
+
 use Mojolicious::Lite;
 
 app->log->level('fatal');

@@ -42,7 +42,7 @@ WriteMakefile(
         'File::Basename'                     => 0,
         'File::stat'                         => 0,
         'FindBin'                            => 0,
-        'Mojolicious'                        => 0.999930,
+        'Mojolicious'                        => 0.999931,
         'MojoX::Validator'                   => 0,
         'Mojolicious::Plugin::BotProtection' => 0,
         'Time::Local'                        => 0,

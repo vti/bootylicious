@@ -6,17 +6,17 @@ use warnings;
 use Test::More tests => 49;
 use Test::Mojo;
 
-BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin/../"; }
+BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin/" }
+
+use lib "$FindBin::Bin/../contrib/mojolicious-plugin-botprotection/lib";
+use lib "$FindBin::Bin/../contrib/mojox-validator/lib";
+use lib "$FindBin::Bin/../contrib/mojo/lib";
 
 require "$FindBin::Bin/../bootylicious";
 
-#use lib "$FindBin::Bin/../contrib/mojo/lib";
-#use lib "$FindBin::Bin/../contrib/mojox-validator/lib";
-#use lib "$FindBin::Bin/../contrib/mojolicious-plugin-botprotection/lib";
-
 my $app = app();
 
-#$app->log->level('debug');
+$app->log->level('debug');
 
 my $t = Test::Mojo->new;
 

@@ -17,23 +17,15 @@ use lib "$FindBin::Bin/../../contrib/mojolicious-plugin-botprotection/lib";
 
 use Mojolicious::Lite;
 
-#app->log->level('fatal');
-
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
-app->helper(
-    config => sub {
-        {   articles_directory => 'articles',
-            admin              => {username => 'foo', password => 'bar'}
-        };
+plugin 'booty_config' => {
+    default => {
+        articles_directory => 'articles',
+        plugins => [admin => {username => 'foo', password => 'bar'}]
     }
-);
-
-plugin 'booty_helpers';
+};
 plugin 'model';
-plugin 'validator';
-plugin 'bot_protection';
-plugin 'admin';
 
 use Test::Mojo;
 

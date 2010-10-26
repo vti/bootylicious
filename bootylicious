@@ -8,6 +8,8 @@ use lib "$FindBin::Bin/contrib/mojolicious-plugin-botprotection/lib";
 
 use Mojolicious::Lite;
 
+app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
+
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
@@ -403,21 +405,21 @@ __DATA__
             </div>
         </div>
         %= signed_form_for 'comment', method => 'post' => begin
-        <%= label 'author' => begin %>Name <span class="required">*</span><% end %><br />
-        <%= input 'author' %><br />
+        <label for="author">Name <span class="required">*</span></label><br />
+        <%= input_tag 'author' %><br />
         <%= validator_error 'author' %>
 
-        <%= label 'email' => begin %>E-mail<% end %><br />
-        <%= input 'email' %>
+        <label for="email">E-mail</label><br />
+        <%= input_tag 'email' %>
         <span class="tip"><%= link_to 'http://gravatar.com' => begin %>Gravatar<% end %>-friendly</span>
         <br />
         <%= validator_error 'email' %>
 
-        <%= label 'url' => begin %>Website<% end %><br />
-        <%= input 'url' %><br />
+        <label for="url">Website</label><br />
+        <%= input_tag 'url' %><br />
         <%= validator_error 'url' %>
 
-        <%= label 'content' => begin %>Comment <span class="required">*</span><% end %><br />
+        <label for="content">Comment <span class="required">*</span></label><br />
         <%= text_area 'content' %><br />
         <%= validator_error 'content' %>
 
@@ -490,6 +492,7 @@ __DATA__
         <meta charset="UTF-8">
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
+        <%= stylesheet '/styles.css' %>
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
         % if (comments_enabled) {
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %> Comments" href="<%= href_to_comments_rss %>" />
