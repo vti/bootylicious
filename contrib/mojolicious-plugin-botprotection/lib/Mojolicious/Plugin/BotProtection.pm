@@ -19,7 +19,7 @@ sub register {
 
     $app->renderer->add_helper(
         dummy_input => sub {
-            shift->helper('input' => $dummy_input => value => '' => style =>
+            shift->helper('input_tag' => $dummy_input => value => '' => style =>
                   'display:none');
         }
     );

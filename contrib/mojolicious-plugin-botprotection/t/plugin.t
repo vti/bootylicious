@@ -15,7 +15,7 @@ use Mojolicious::Lite;
 use Test::Mojo;
 
 # Silence
-app->log->level('fatal');
+#app->log->level('fatal');
 
 # Load plugin
 plugin 'bot_protection';
@@ -87,7 +87,7 @@ __DATA__
 
 @@ index.html.ep
 <%= signed_form_for 'index' => {%>
-<%= input 'a', value => 'b' %>
+<%= input_tag 'a', value => 'b' %>
 <%}%>
 
 @@ helpers.html.ep
