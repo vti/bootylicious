@@ -5,7 +5,7 @@ use warnings;
 
 use base 'Mojo::Base';
 
-our $VERSION = '0.0005';
+our $VERSION = '0.0007';
 
 use MojoX::Validator::Bulk;
 use MojoX::Validator::Condition;
@@ -247,6 +247,14 @@ generation, B<NO> other stuff that does something else. Only data validation!
 =back
 
 =head1 ATTRIBUTES
+
+=head2 C<messages>
+
+    my $validator =
+      MojoX::Validator->new(
+        messages => {REQUIRED => 'This field is required'});
+
+Replace default messages.
 
 =head2 C<trim>
 

@@ -41,7 +41,7 @@ __DATA__
 
 @@ form.html.ep
 %= form_for 'form', method => 'post' => begin
-    <%= input 'foo' %>
+    <%= input_tag 'foo' %>
     <%= validator_error 'foo' %>
 %= end
 

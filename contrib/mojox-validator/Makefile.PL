@@ -24,7 +24,7 @@ WriteMakefile(
         : ( META_MERGE => {
                 requires  => {perl => '5.008007'},
                 resources => {
-                    license  => 'http://dev.perl.org/licenses/',
+                    license    => 'http://dev.perl.org/licenses/',
                     repository => 'http://github.com/vti/mojox-validator'
                 },
                 no_index => {directory => [qw/t/]}
@@ -36,8 +36,6 @@ WriteMakefile(
         )
     ),
 
-    PREREQ_PM => {
-        'Mojo' => '0.999926',
-    },
-    test => {TESTS => 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t'}
+    PREREQ_PM => {'Mojolicious' => '0.999931'},
+    test      => {TESTS         => 't/*.t t/*/*.t t/*/*/*.t t/*/*/*/*.t'}
 );

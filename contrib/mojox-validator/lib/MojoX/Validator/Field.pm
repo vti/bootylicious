@@ -170,6 +170,10 @@ Field object. Used internally.
 
 =head1 ATTRIBUTES
 
+=head2 C<messages>
+
+Error messages.
+
 =head2 C<error>
 
     $field->error('Invalid input');
@@ -248,18 +252,6 @@ Clears field's value.
 
 Adds a new field's constraint.
 
-=head2 C<email>
-
-Shortcut
-
-    $field->constraint(email => @_);
-
-=head2 C<in>
-
-Shortcut
-
-    $field->constraint(in => @_);
-
 =head2 C<is_defined>
 
     my $defined = $field->is_defined;
@@ -276,17 +268,9 @@ Checks whether field's value is empty.
 
 Checks whether all field's constraints are valid.
 
-=head2 C<length>
+=head2 C<message>
 
-Shortcut
-
-    $field->constraint(length => @_);
-
-=head2 C<regexp>
-
-Shortcut
-
-    $field->constraint(regexp => @_);
+Holds error message.
 
 =head2 C<value>
 
@@ -297,6 +281,6 @@ Set or get field's value.
 
 =head1 SEE ALSO
 
-L<MojoX::Validator>, L<MojoX::Validator::Constraint>
+L<MojoX::Validator>, L<MojoX::Validator::Constraint>.
 
 =cut

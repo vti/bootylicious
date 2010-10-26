@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 13;
+use Test::More tests => 15;
 
 use MojoX::Validator;
 
@@ -42,3 +42,8 @@ $validator = MojoX::Validator->new(messages => {REQUIRED => 'Required!'});
 $validator->field('firstname')->required(1);
 ok(!$validator->validate());
 is($validator->errors->{firstname}, 'Required!');
+
+$validator = MojoX::Validator->new;
+$validator->field('firstname');
+ok($validator->validate({firstname => ''}));
+is_deeply($validator->values, {firstname => ''});

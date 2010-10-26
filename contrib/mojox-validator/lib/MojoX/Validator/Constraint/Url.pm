@@ -5,9 +5,6 @@ use warnings;
 
 use base 'MojoX::Validator::Constraint';
 
-use constant NAME_MAX_LENGTH   => 64;
-use constant DOMAIN_MAX_LENGTH => 255;
-
 use Mojo::URL;
 
 sub is_valid {
@@ -23,3 +20,28 @@ sub is_valid {
 }
 
 1;
+__END__
+
+=head1 NAME
+
+MojoX::Validator::Constraint::Url - Url constraint
+
+=head1 SYNOPSIS
+
+    $validator->field('url')->url;
+
+=head1 DESCRIPTION
+
+Checks whether a value looks like an url address.
+
+=head1 METHODS
+
+=head2 C<is_valid>
+
+Validates the constraint.
+
+=head1 SEE ALSO
+
+L<MojoX::Validator>, L<MojoX::Constraint>.
+
+=cut
