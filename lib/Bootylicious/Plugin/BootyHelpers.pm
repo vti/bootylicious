@@ -405,8 +405,9 @@ sub register {
 
             my $url = "http://www.gravatar.com/avatar/$hash?s=40";
 
-            return $self->img(
-                $url,
+            return $self->tag(
+                'img',
+                src    => $url,
                 class  => 'gravatar',
                 width  => 40,
                 height => 40,
