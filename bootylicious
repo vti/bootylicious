@@ -81,9 +81,10 @@ post '/articles/:year/:month/:alias/comment' => sub {
     return $self->render('article', article => $article)
       unless $self->validate($validator);
 
-    $article->comment(%{$validator->values});
+    my $comment = $article->comment(%{$validator->values});
 
-    return $self->redirect_to('article');
+    return $self->redirect_to($self->href_to_article($article)
+          ->fragment('comment-' . $comment->number));
 } => 'comment';
 
 get '/comments' => sub {
@@ -398,7 +399,7 @@ __DATA__
             Please, don't disable them.
             </div>
         </div>
-        %= signed_form_for 'comment', method => 'post' => begin
+        %= signed_form_for 'comment' => {year => $article->created->year, month => $article->created->month, alias => $article->name}, method => 'post' => begin
         <label for="author">Name <span class="required">*</span></label><br />
         <%= input_tag 'author' %><br />
         <%= validator_error 'author' %>

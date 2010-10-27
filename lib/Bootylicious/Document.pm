@@ -112,6 +112,8 @@ sub create {
     print $file $metadata;
     print $file "\n";
     print $file $self->content || '';
+
+    return $self;
 }
 
 sub update {
