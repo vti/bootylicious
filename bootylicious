@@ -241,20 +241,17 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_rss->to_abs %></link>
         <description><%= config 'description' %></description>
-        <pubDate><%= date_rss $articles->first->created %></pubDate>
-        <lastBuildDate><%= date_rss $articles->first->created %></lastBuildDate>
         <generator><%= generator %></generator>
         % while (my $article = $pager->articles->next) {
         <item>
           <title><%= $article->title %></title>
-          <author><%= article_author $article %></author>
           <link><%= href_to_article($article)->to_abs %></link>
-          <description>
+          <description><![CDATA[
             <%= render_article_or_preview $article %>
             % if ($article->link) {
                 <%= permalink_to($article->link) if $article->link %>
             % }
-          </description>
+          ]]></description>
           % foreach my $tag (@{$article->tags}) {
           <category><%= $tag %></category>
           % }
@@ -274,17 +271,14 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_comments_rss->to_abs %></link>
         <description><%= config 'description' %></description>
-        <pubDate><%= date_rss $comments->first->created %></pubDate>
-        <lastBuildDate><%= date_rss $comments->first->created %></lastBuildDate>
         <generator><%= generator %></generator>
         % while (my $comment = $comments->next) {
         <item>
           <title><%= $comment->author %> on <%= $comment->article->title %></title>
-          <author><%= $comment->author %></author>
           <link><%= href_to_comment($comment)->to_abs %></link>
-          <description>
+          <description><![CDATA[
             <%= $comment->content %>
-          </description>
+          ]]></description>
           <pubDate><%= date_rss $comment->created %></pubDate>
           <guid><%= href_to_comment($comment)->to_abs %></guid>
         </item>
