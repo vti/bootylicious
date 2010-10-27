@@ -107,6 +107,8 @@ sub register {
             my $date = shift;
             my $fmt  = shift;
 
+            return '' unless $date;
+
             $fmt ||= $config->{'datefmt'};
 
             return b($date->strftime($fmt))->decode('utf-8');
@@ -393,8 +395,17 @@ sub register {
             my $self  = shift;
             my $email = shift;
 
-            return $self->img(
-                'http://www.gravatar.com/avatar/00000000000000000000000000000000?s=40'
+            my %attrs = (
+                class  => 'gravatar',
+                width  => 40,
+                height => 40
+            );
+
+            return $self->tag(
+                'img',
+                src =>
+                  'http://www.gravatar.com/avatar/00000000000000000000000000000000?s=40',
+                %attrs
             ) unless $email;
 
             $email = lc $email;
@@ -407,10 +418,8 @@ sub register {
 
             return $self->tag(
                 'img',
-                src    => $url,
-                class  => 'gravatar',
-                width  => 40,
-                height => 40,
+                src => $url,
+                %attrs,
                 @_
             );
         }
