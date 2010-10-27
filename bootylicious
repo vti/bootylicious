@@ -242,6 +242,7 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_rss->to_abs %></link>
         <description><%= config 'description' %></description>
+        <pubDate><%= date_rss $pager->articles->first->created %></pubDate>
         <generator><%= generator %></generator>
         % while (my $article = $pager->articles->next) {
         <item>
@@ -272,6 +273,7 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_comments_rss->to_abs %></link>
         <description><%= config 'description' %></description>
+        <pubDate><%= date_rss $comments->first->created %></pubDate>
         <generator><%= generator %></generator>
         % while (my $comment = $comments->next) {
         <item>
