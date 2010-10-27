@@ -464,7 +464,7 @@ __DATA__
         <%= $draft->title %>
     </h1>
     <div class="tags"><%= tags_links $draft %></div>
-    <%== $draft->content %>
+    <%== render_article $draft %>
 </div>
 
 

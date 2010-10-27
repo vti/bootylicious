@@ -5,6 +5,11 @@ use warnings;
 
 use Test::More tests => 3;
 
+use FindBin;
+use lib "$FindBin::Bin/../../contrib/mojo/lib";
+use lib "$FindBin::Bin/../../contrib/mojox-validator/lib";
+use lib "$FindBin::Bin/../../contrib/mojolicious-plugin-botprotection/lib";
+
 use Mojolicious::Lite;
 use Test::Mojo;
 

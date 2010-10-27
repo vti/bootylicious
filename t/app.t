@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Test::More tests => 49;
-use Test::Mojo;
 
 BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin/" }
 
@@ -13,6 +12,8 @@ use lib "$FindBin::Bin/../contrib/mojox-validator/lib";
 use lib "$FindBin::Bin/../contrib/mojo/lib";
 
 require "$FindBin::Bin/../bootylicious";
+
+use Test::Mojo;
 
 my $app = app();
 
