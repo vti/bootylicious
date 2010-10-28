@@ -546,7 +546,7 @@ connection in progress.
     $c = $c->redirect_to('/path');
     $c = $c->redirect_to('http://127.0.0.1/foo/bar');
 
-Prepare a redirect response.
+Prepare a C<302> redirect response.
 
 =head2 C<render>
 
@@ -638,8 +638,7 @@ See C<render_data> for an alternative without encoding.
 
     $c->rendered;
 
-Disable automatic rendering for response and run C<after_dispatch> plugin
-hook.
+Finalize response and run C<after_dispatch> plugin hook.
 Note that this method is EXPERIMENTAL and might change without warning!
 
 =head2 C<send_message>

@@ -31,9 +31,6 @@ use Test::Mojo;
 # Mojolicious::Lite and ojo
 use ojo;
 
-# Test with lite templates
-app->renderer->default_handler('epl');
-
 # Header condition plugin
 plugin 'header_condition';
 
@@ -408,12 +405,7 @@ get '/subrequest_sync' => sub {
 };
 
 # Make sure hook runs async
-app->plugins->add_hook(
-    after_dispatch => sub {
-        my ($self, $c) = @_;
-        $c->stash->{async} = 'broken!';
-    }
-);
+app->hook(after_dispatch => sub { shift->stash->{async} = 'broken!' });
 
 # GET /subrequest_async
 my $async;
