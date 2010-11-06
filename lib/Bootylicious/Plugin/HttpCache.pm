@@ -10,23 +10,23 @@ use Mojo::ByteStream;
 sub register {
     my ($self, $app) = @_;
 
-    $app->plugins->add_hook(
+    $app->hook(
         after_dispatch => sub {
-            my ($self, $c) = @_;
+            my $self = shift;
 
-            return unless $c->req->method eq 'GET';
+            return unless $self->req->method eq 'GET';
 
-            my $body = $c->res->body;
+            my $body = $self->res->body;
             return unless defined $body;
 
             my $our_etag = Mojo::ByteStream->new($body)->md5_sum;
-            $c->res->headers->header('ETag' => $our_etag);
+            $self->res->headers->header('ETag' => $our_etag);
 
-            my $browser_etag = $c->req->headers->header('If-None-Match');
+            my $browser_etag = $self->req->headers->header('If-None-Match');
             return unless $browser_etag && $browser_etag eq $our_etag;
 
-            $c->res->code(304);
-            $c->res->body('');
+            $self->res->code(304);
+            $self->res->body('');
         }
     );
 }
