@@ -403,17 +403,17 @@ __DATA__
         </div>
         %= signed_form_for 'comment' => {year => $article->created->year, month => $article->created->month, alias => $article->name}, method => 'post' => begin
         <label for="author">Name <span class="required">*</span></label><br />
-        <%= input_tag 'author' %><br />
+        <%= input_tag 'author', class => 'comment' %><br />
         <%= validator_error 'author' %>
 
         <label for="email">E-mail</label><br />
-        <%= input_tag 'email' %>
+        <%= input_tag 'email', class => 'comment' %>
         <span class="tip"><%= link_to 'http://gravatar.com' => begin %>Gravatar<% end %>-friendly</span>
         <br />
         <%= validator_error 'email' %>
 
         <label for="url">Website</label><br />
-        <%= input_tag 'url' %><br />
+        <%= input_tag 'url', class => 'comment' %><br />
         <%= validator_error 'url' %>
 
         <label for="content">Comment <span class="required">*</span></label><br />
@@ -556,8 +556,7 @@ span#about {font-style:italic}
 #footer{width:65%;margin:auto;font-size:80%;text-align:center;padding:2em 0em 2em 0em;border-top:#000000 1px solid;height:2em;}
 .center {text-align:center}
 .push {height:6em}
-input, textarea {font-size:150%;width:60%}
-input[type="submit"] {width:20%;font-size:100%}
+input.comment, textarea {font-size:150%;width:60%}
 textarea {height:200px}
 label {color:#999}
 .required {color:red}
