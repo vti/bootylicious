@@ -420,7 +420,7 @@ __DATA__
         <%= text_area 'content' %><br />
         <%= validator_error 'content' %>
 
-        <div class="comment-tags">Paragraphs are created automatically. For quoting use [quote]quote[/quote].</div>
+        <div class="comment-tags">Paragraphs are created automatically. Available tags: [quote], [code].</div>
 
         <%= submit_button 'Post comment' %>
         % end

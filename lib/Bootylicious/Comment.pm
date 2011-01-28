@@ -52,12 +52,24 @@ sub content {
 
     $content = Mojo::ByteStream->new($content)->html_escape;
 
-    $content =~ s{\s*\[quote\]\s*}{<blockquote>}xmsg;
-    $content =~ s{\s*\[/quote\]\s*}{</blockquote>}xmsg;
+    $self->_parse_tag(\$content, 'quote' => 'blockquote');
+    $self->_parse_tag(\$content, 'code');
 
     $content =~ s{\n}{<br />}xmsg;
 
     return Mojo::ByteStream->new($content);
+}
+
+sub _parse_tag {
+    my $self = shift;
+    my $content_ref = shift;
+    my ($tag, $html) = @_;
+
+    $html ||= $tag;
+
+    my $tags = $$content_ref =~ s{\s*\[$tag\]\s*}{<$html>}xmsg;
+    $tags -= $$content_ref =~ s{\s*\[/$tag\]\s*}{</$html>}xmsg;
+    $$content_ref .= "</$html>" while $tags--;
 }
 
 1;
