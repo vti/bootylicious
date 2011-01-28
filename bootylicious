@@ -349,7 +349,7 @@ __DATA__
     </div>
 %= include 'article-pingbacks', pingbacks => $article->pingbacks if $article->pingbacks->size;
 %= include 'article-comments', comments => $article->comments if comments_enabled && $article->comments->size;
-%= include 'article-comment-form' if comments_enabled;
+%= include 'article-comment-form' if $article->comments_enabled;
 %= include 'article-pager', next => $article->next, prev => $article->prev;
 </div>
 
