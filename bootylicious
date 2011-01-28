@@ -420,6 +420,8 @@ __DATA__
         <%= text_area 'content' %><br />
         <%= validator_error 'content' %>
 
+        <div class="comment-tags">Paragraphs are created automatically. For quoting use [quote]quote[/quote].</div>
+
         <%= submit_button 'Post comment' %>
         % end
     </div>
@@ -530,6 +532,7 @@ a:hover{color:#000}
 a:visited{color:#000}
 img{border:0px}
 pre{line-height:18px;border:2px solid #ccc;background:#eee;padding:1em;overflow:auto;overflow-y:visible;width:600px;}
+blockquote{border:2px solid #ccc;background:#eee;padding:1em}
 #body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
 #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
 h1#title{font-size:3em}
@@ -554,7 +557,7 @@ span#about {font-style:italic}
 .center {text-align:center}
 .push {height:6em}
 input, textarea {font-size:150%;width:60%}
-input[type="submit"] {width:20%}
+input[type="submit"] {width:20%;font-size:100%}
 textarea {height:200px}
 label {color:#999}
 .required {color:red}
@@ -567,6 +570,7 @@ label {color:#999}
 .tip a{color:#bbb}
 .tip-required {padding:1em 0px;}
 .tip-required-bot {font-style:italic;font-size:small;color:#999;line-height:18px}
+.comment-tags {font-style:italic;font-size:small;color:#999;line-height:18px;margin-bottom:1em}
 .content div.error {text-align:left;padding:0;color:red}
 img.gravatar {float:left; padding-right:0.5em}
 .comment-counter {color:#999;font-size:small;margin-left:10px}

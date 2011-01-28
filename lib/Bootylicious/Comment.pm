@@ -45,4 +45,19 @@ sub article {
     return Bootylicious::Article->new(path => $path);
 }
 
+sub content {
+    my $self = shift;
+
+    my $content = $self->inner(content => @_);
+
+    $content = Mojo::ByteStream->new($content)->html_escape;
+
+    $content =~ s{\s*\[quote\]\s*}{<blockquote>}xmsg;
+    $content =~ s{\s*\[/quote\]\s*}{</blockquote>}xmsg;
+
+    $content =~ s{\n}{<br />}xmsg;
+
+    return Mojo::ByteStream->new($content);
+}
+
 1;
