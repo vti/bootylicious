@@ -82,6 +82,24 @@ sub register {
     );
 
     $app->helper(
+        render_comment => sub {
+            my $self    = shift;
+            my $comment = shift;
+
+            my $content = $comment->content;
+
+            $content = Mojo::ByteStream->new($content)->html_escape;
+
+            _parse_tag(\$content, 'quote' => 'blockquote');
+            _parse_tag(\$content, 'code');
+
+            $content =~ s{\n}{<br />}xmsg;
+
+            return Mojo::ByteStream->new($content);
+        }
+    );
+
+    $app->helper(
         article_author => sub {
             my $self    = shift;
             my $article = shift;
@@ -475,6 +493,17 @@ sub register {
             shift->config('comments_enabled') ? 1 : 0;
         }
     );
+}
+
+sub _parse_tag {
+    my $content_ref = shift;
+    my ($tag, $html) = @_;
+
+    $html ||= $tag;
+
+    my $tags = $$content_ref =~ s{\s*\[$tag\]\s*}{<$html>}xmsg;
+    $tags -= $$content_ref =~ s{\s*\[/$tag\]\s*}{</$html>}xmsg;
+    $$content_ref .= "</$html>" while $tags--;
 }
 
 1;

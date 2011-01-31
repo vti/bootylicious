@@ -280,7 +280,7 @@ __DATA__
           <title><%= $comment->author %> on <%= $comment->article->title %></title>
           <link><%= href_to_comment($comment)->to_abs %></link>
           <description><![CDATA[
-            <%= $comment->content %>
+            <%== render_comment $comment %>
           ]]></description>
           <pubDate><%= date_rss $comment->created %></pubDate>
           <guid><%= href_to_comment($comment)->to_abs %></guid>
@@ -381,7 +381,7 @@ __DATA__
             </div>
 
             <div class="content">
-            <%= $comment->content %>
+            <%== render_comment $comment %>
             </div>
         </div>
         % }
