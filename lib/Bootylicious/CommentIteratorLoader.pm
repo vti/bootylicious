@@ -12,7 +12,7 @@ sub load {
     my $iterator = shift->SUPER::load(@_);
 
     $iterator->elements(
-        [   sort { $a->number <=> $b->number }
+        [   sort { $a->created->epoch <=> $b->created->epoch }
               @{$iterator->elements}
         ]
     );
