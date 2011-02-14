@@ -24,13 +24,13 @@ plugin 'bot_protection';
 get '/' => 'index';
 
 # POST /
-post '/' => sub { shift->render_text('Hello') };
+post '/' => {text => 'Hello'};
 
 # GET /foo
-get '/foo' => sub { shift->render_text('Hello') };
+get '/foo' => {text => 'Hello'};
 
 # GET /helpers
-get '/helpers' => 'helpers';
+get '/helpers';
 
 my $t;
 
@@ -86,9 +86,9 @@ EOF
 __DATA__
 
 @@ index.html.ep
-<%= signed_form_for 'index' => {%>
+<%= signed_form_for 'index' => begin %>
 <%= input_tag 'a', value => 'b' %>
-<%}%>
+<% end %>
 
 @@ helpers.html.ep
 <%= dummy_input %>

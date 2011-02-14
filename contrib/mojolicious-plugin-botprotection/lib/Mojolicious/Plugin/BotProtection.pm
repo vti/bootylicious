@@ -17,14 +17,15 @@ sub register {
     # Dummy input configuration
     my $dummy_input = $conf->{dummy_input} || 'dummy';
 
-    $app->renderer->add_helper(
+    $app->helper(
         dummy_input => sub {
-            shift->helper('input_tag' => $dummy_input => value => '' => style =>
-                  'display:none');
+            shift->input_tag($dummy_input,
+                value => '',
+                style => 'display:none');
         }
     );
 
-    $app->renderer->add_helper(
+    $app->helper(
         signed_form_for => sub {
             my $c    = shift;
             my $name = shift;
@@ -42,9 +43,9 @@ sub register {
             );
 
             my $cb = pop;
-            $c->helper(
-                'tag' => 'form' => action => $url,
-                @_ => sub { $c->helper('dummy_input') . $cb->($c); }
+            $c->tag('form',
+                action => $url, @_,
+                sub { $c->dummy_input . $cb->($c); }
             );
         }
     );
@@ -60,7 +61,7 @@ sub register {
 
             # No GET params within POST are allowed
             return $bot_detected_cb->($c, 'POST with GET')
-              if $c->req->url->query;
+              if $c->req->url->query->to_string;
 
             # Bot filled out a dummy input
             return $bot_detected_cb->($c, 'Dummy input submitted')
