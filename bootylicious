@@ -7,6 +7,7 @@ use lib "$FindBin::Bin/contrib/mojox-validator/lib";
 use lib "$FindBin::Bin/contrib/mojolicious-plugin-botprotection/lib";
 
 use Mojolicious::Lite;
+use Bootylicious::Timestamp;
 
 app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
 
@@ -242,7 +243,10 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_rss->to_abs %></link>
         <description><%= config 'description' %></description>
-        <pubDate><%= date_rss $pager->articles->first->created %></pubDate>
+        % my $first = $pager->articles->first;
+        % my $first_created = $first ? $first->created
+        %   : Bootylicious::Timestamp->new(epoch => 0);
+        <pubDate><%= date_rss $first_created %></pubDate>
         <generator><%= generator %></generator>
         % while (my $article = $pager->articles->next) {
         <item>
@@ -273,7 +277,10 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_comments_rss->to_abs %></link>
         <description><%= config 'description' %></description>
-        <pubDate><%= date_rss $comments->first->created %></pubDate>
+        % my $first = $comments->first;
+        % my $first_created = $first ? $first->created
+        %   : Bootylicious::Timestamp->new(epoch => 0);
+        <pubDate><%= date_rss $first_created %></pubDate>
         <generator><%= generator %></generator>
         % while (my $comment = $comments->next) {
         <item>
