@@ -11,7 +11,7 @@ themes.
     * filesystem-based storage
     * comments
     * tags
-    * RSS (articles and by tag)
+    * RSS (articles, comments and by tag)
     * static pages
     * drafts
     * archive
@@ -32,7 +32,6 @@ themes.
 
     $ git clone http://github.com/vti/bootylicious.git
     $ cd bootylicious
-    $ git submodule update --init
     $ perl bootylicious daemon
     Server available at http://*:3000.
 
@@ -119,3 +118,7 @@ Google Analytics JavaScript code.
 =head3 Bootylicious::Plugin::Search
 
 Basic search.
+
+=head2 Dependencies
+
+Bootylicious depends on Mojolicious only.
