@@ -18,7 +18,7 @@ $pingback = Bootylicious::Pingback->new(
 );
 ok($pingback);
 
-my $path = "$FindBin::Bin/pingback/20101010-foo.md.pingbacks";
+my $path = "$FindBin::Bin/20101010-foo.md.pingbacks";
 unlink $path;
 $pingback->create($path);
 $pingback->create($path);
