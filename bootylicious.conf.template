@@ -51,7 +51,7 @@
 
 %#  Path settings
 %#    "articles_directory"  : "articles",
-%#    "pages_direrctory"    : "pages",
+%#    "pages_directory"     : "pages",
 %#    "drafts_directory"    : "drafts",
 %#    "public_directory"    : "public",
 %#    "templates_directory" : "templates",
