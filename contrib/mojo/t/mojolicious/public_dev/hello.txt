@@ -1,1 +1,0 @@
-Hello Mojo from a development static file!
