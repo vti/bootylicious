@@ -88,7 +88,7 @@ sub register {
     $app->plugin('booty_helpers');
 
     $c->add_parser(
-        pod => sub { $app->renderer->helper->{pod_to_html}->(undef, @_) });
+        pod => sub { $app->renderer->helpers->{pod_to_html}->(undef, @_) });
 
     if (my $theme = $config->{theme}) {
         my $theme_class = join '::' => 'Bootylicious::Theme',

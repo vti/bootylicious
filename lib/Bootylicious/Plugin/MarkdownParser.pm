@@ -12,7 +12,7 @@ sub register {
 
     return unless MARKDOWN;
 
-    $app->renderer->helper->{add_parser}
+    $app->renderer->helpers->{add_parser}
       ->(undef, md => sub { Text::Markdown->new->markdown($_[0]) });
 }
 
