@@ -120,6 +120,19 @@ sub register {
     );
 
     $app->helper(
+        render_page => sub {
+            my $self = shift;
+            my $page = shift;
+
+            my $parser = $self->parsers->{$page->format};
+            $parser ||= sub { $_[0] };
+
+            my $string = $parser->($page->content);
+            return Mojo::ByteStream->new($string);
+        }
+    );
+
+    $app->helper(
         date => sub {
             my $self = shift;
             my $date = shift;

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 49;
+use Test::More tests => 52;
 
 BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin/" }
 
@@ -42,9 +42,13 @@ $t->get_ok('/tags/foo.html')->status_is(200)->content_like(qr/foo/);
 # Article Pages
 $t->get_ok('/articles/2010/10/foo.html')->status_is(200);
 
-# Page
-$t->get_ok('/pages/about.html')->status_is(200)
-  ->content_like(qr/About me/);
+# Page with Markdown
+$t->get_ok('/pages/markdown.html')->status_is(200)
+  ->content_like(qr|<strong>Markdown</strong>|);
+
+# Page with HTML
+$t->get_ok('/pages/html.html')->status_is(200)
+  ->content_like(qr|<p>This is HTML</p>|);
 
 # Draft
 #$t->get_ok('/draft/2010/10/draft.html')->status_is(200)

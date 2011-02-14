@@ -452,7 +452,7 @@ __DATA__
     <h1 class="title">
         <%= $page->title %>
     </h1>
-    <%== $page->content %>
+    <%== render_page $page %>
 </div>
 
 
