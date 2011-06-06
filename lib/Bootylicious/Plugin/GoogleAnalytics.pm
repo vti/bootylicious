@@ -16,7 +16,7 @@ sub register {
 
     $app->plugins->add_hook(
         after_dispatch => sub {
-            my ($self, $c) = @_;
+            my ($c) = @_;
 
             return unless $c->res->code && $c->res->code == 200;
 

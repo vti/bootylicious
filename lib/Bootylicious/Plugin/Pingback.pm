@@ -16,7 +16,7 @@ sub register {
 
     $app->plugins->add_hook(
         after_dispatch => sub {
-            my ($self, $c) = @_;
+            my ($c) = @_;
 
             return unless $c->req->method =~ m/GET|HEAD/;
 

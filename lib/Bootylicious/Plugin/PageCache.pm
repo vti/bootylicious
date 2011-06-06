@@ -46,7 +46,7 @@ sub _cache_file {
 }
 
 sub _cache_hit {
-    my ($self, $c, $conf) = @_;
+    my ($c, $conf) = @_;
 
     return unless $c->req->method eq 'GET';
 
@@ -70,7 +70,7 @@ sub _cache_hit {
 }
 
 sub _cache_response {
-    my ($self, $c, $conf) = @_;
+    my ($c, $conf) = @_;
 
     return unless $c->req->method eq 'GET';
 
