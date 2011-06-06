@@ -43,8 +43,13 @@ $t->get_ok('/tags/foo.html')->status_is(200)->content_like(qr/foo/);
 $t->get_ok('/articles/2010/10/foo.html')->status_is(200);
 
 # Page with Markdown
+SKIP: {
+    skip 'Text::Markdown is required for markdown tests', 3 unless eval { require Text::Markdown; 1; };
+
 $t->get_ok('/pages/markdown.html')->status_is(200)
   ->content_like(qr|<strong>Markdown</strong>|);
+ 
+};
 
 # Page with HTML
 $t->get_ok('/pages/html.html')->status_is(200)
