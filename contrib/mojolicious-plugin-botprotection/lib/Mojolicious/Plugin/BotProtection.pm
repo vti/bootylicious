@@ -52,7 +52,7 @@ sub register {
 
     $app->plugins->add_hook(
         after_static_dispatch => sub {
-            my ($self, $c) = @_;
+            my ($c) = @_;
 
             return if $c->res->code;
 
