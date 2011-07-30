@@ -179,7 +179,7 @@ sub _default {
             'later'               => 'Later',
             'earlier'             => 'Earlier',
             'not-found' => 'The page you are looking for was not found',
-            'error'     => 'Internal error occuried :('
+            'error'     => 'Internal error occurred :('
         },
         template_handler => 'ep',
 
