@@ -314,6 +314,42 @@ sub register {
     );
 
     $app->helper(
+        css => sub {
+            my $self = shift;
+
+            my $string = '';
+
+            my $css_from_config = $self->config('css');
+            $css_from_config = [$css_from_config]
+              unless ref $css_from_config eq 'ARRAY';
+
+            foreach my $css (@$css_from_config) {
+                $string .= $self->stylesheet($css);
+            }
+
+            return Mojo::ByteStream->new($string);
+        }
+    );
+
+    $app->helper(
+        js => sub {
+            my $self = shift;
+
+            my $string = '';
+
+            my $js_from_config = $self->config('js');
+            $js_from_config = [$js_from_config]
+              unless ref $js_from_config eq 'ARRAY';
+
+            foreach my $js (@$js_from_config) {
+                $string .= $self->javascript($js);
+            }
+
+            return Mojo::ByteStream->new($string);
+        }
+    );
+
+    $app->helper(
         href_to_rss => sub {
             my $self = shift;
 

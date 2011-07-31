@@ -505,6 +505,8 @@ __DATA__
         % }
         <meta name="generator" content="<%= generator %>" />
         <%= meta %>
+        <%= js %>
+        <%= css %>
     </head>
     <body>
         <div id="body">
