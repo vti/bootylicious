@@ -18,8 +18,8 @@ sub register {
 
     # Default plugins
     $app->plugin('charset' => {charset => 'utf-8'});
-    $app->plugin('pod_renderer');
-    $app->plugin('tag_helpers');
+    $app->plugin('PODRenderer');
+    $app->plugin('TagHelpers');
     $app->plugin(
         validator => {
             messages => {
@@ -32,7 +32,7 @@ sub register {
     $app->plugin('bot_protection');
 
     $conf->{default} = $self->_default unless exists $conf->{default};
-    my $config = $app->plugin('json_config' => $conf);
+    my $config = $app->plugin('JSONConfig' => $conf);
 
     $app->secret($conf->{secret});
 
