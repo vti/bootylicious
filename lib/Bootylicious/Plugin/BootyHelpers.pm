@@ -16,7 +16,7 @@ sub register {
         render_smart => sub {
             my $self = shift;
 
-            $app->plugins->run_hook(before_render => $self);
+            $app->plugins->emit_hook(before_render => $self);
 
             $self->render(@_) unless $self->res->code;
         }
