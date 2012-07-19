@@ -50,7 +50,7 @@ sub register {
         }
     );
 
-    $app->plugins->add_hook(
+    $app->plugins->on(
         after_static_dispatch => sub {
             my ($c) = @_;
 
