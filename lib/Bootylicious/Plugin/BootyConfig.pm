@@ -64,11 +64,11 @@ sub register {
     $ENV{LC_ALL} = 'C';
 
     # set proper templates base dir, if defined
-    $app->renderer->root($app->home->rel_dir($config->{templates_directory}))
+    push @{$app->renderer->paths}, $app->home->rel_dir($config->{templates_directory})
       if defined $config->{templates_directory};
 
     # set proper public base dir, if defined
-    $app->static->root($app->home->rel_dir($config->{public_directory}))
+    push @{$app->static->paths}, $app->home->rel_dir($config->{public_directory})
       if defined $config->{public_directory};
 
     $app->defaults(title => '', description => '', layout => 'wrapper');

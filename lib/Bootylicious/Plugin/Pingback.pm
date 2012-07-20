@@ -14,7 +14,7 @@ sub register {
 
     $app->routes->route('/pingback')->to(cb => \&_pingback)->name('pingback');
 
-    $app->plugins->add_hook(
+    $app->plugins->on(
         after_dispatch => sub {
             my ($c) = @_;
 
