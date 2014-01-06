@@ -226,7 +226,7 @@ __DATA__
     <li>
         <%= link_to_article $article %>
         <br />
-        <%= include 'article-meta', article => $article;
+        <%= include 'article-meta', article => $article; %>
     </li>
     % }
 
