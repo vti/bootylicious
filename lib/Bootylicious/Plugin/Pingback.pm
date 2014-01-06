@@ -13,6 +13,7 @@ sub register {
     $conf ||= {};
 
     $app->routes->route('/pingback')->to(cb => \&_pingback)->name('pingback');
+    push @{$app->renderer->classes}, __PACKAGE__;
 
     $app->plugins->on(
         after_dispatch => sub {
@@ -47,17 +48,17 @@ sub _pingback {
 
     $self->app->log->debug("Fetching $source_uri...");
 
-    $self->client->get(
+    $self->ua->get(
         $source_uri => sub {
-            my $client = shift;
+            my $tx = pop;
 
             $self->app->log->debug("Fetched $source_uri");
 
             return _render_source_not_found($self)
-              unless $client->tx->res->code && $client->tx->res->code == 200;
+              unless $tx->res->code && $tx->res->code == 200;
 
             return _render_source_invalid($self)
-              unless $client->tx->res->body =~ m{\Q$target_uri\E};
+              unless $tx->res->body =~ m{\Q$target_uri\E};
 
             return _render_pingback_already_registered($self)
               if $article->has_pingback($source_uri);
@@ -66,7 +67,7 @@ sub _pingback {
 
             return _render_success($self);
         }
-    )->start;
+    );
 }
 
 sub _parse_xmlrpc {
@@ -77,10 +78,10 @@ sub _parse_xmlrpc {
     my $dom = Mojo::DOM->new;
     $dom = $dom->parse($self->req->body);
 
-    my $method = $dom->at('methodcall');
+    my $method = $dom->at('methodCall');
     return unless $method;
 
-    my $method_name = $method->at('methodname');
+    my $method_name = $method->at('methodName');
     return unless $method_name->text eq 'pingback.ping';
 
     my ($source_uri, $target_uri) =
@@ -107,7 +108,6 @@ sub _render_success {
     $self->render(
         'success',
         message        => $message,
-        template_class => __PACKAGE__,
         layout         => undef
     );
 }
@@ -148,7 +148,6 @@ sub _render_error {
         'fault',
         code           => $code,
         message        => $message,
-        template_class => __PACKAGE__,
         layout         => undef
     );
 }

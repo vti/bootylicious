@@ -15,7 +15,7 @@ sub register {
     Carp::croak qq/Password and username are required for this plugin to work/
       unless $conf->{username} && $conf->{password};
 
-    $app->routes->route('/admin')->detour(class => 'Bootylicious::Admin', conf => $conf);
+    $app->routes->route('/admin')->detour(namespace => 'Bootylicious::Admin', conf => $conf);
 }
 
 1;

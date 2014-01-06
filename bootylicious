@@ -152,8 +152,6 @@ get '/drafts/:name' => [name => $ALIAS_RE] => sub {
 
 app->start;
 
-1;
-
 __DATA__
 
 @@ index.html.ep
@@ -226,7 +224,7 @@ __DATA__
     <li>
         <%= link_to_article $article %>
         <br />
-        <%= include 'article-meta', article => $article;
+        <%= include 'article-meta', article => $article; %>
     </li>
     % }
 

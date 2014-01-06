@@ -3,7 +3,7 @@ package Bootylicious::Plugin::GoogleAnalytics;
 use strict;
 use warnings;
 
-use base 'Mojo::Base';
+use base 'Mojolicious::Plugin';
 
 use Mojo::ByteStream 'b';
 
@@ -13,8 +13,9 @@ sub register {
     $conf ||= {};
 
     return unless $conf->{urchin};
+    push @{$app->renderer->classes}, __PACKAGE__;
 
-    $app->plugins->add_hook(
+    $app->plugins->on(
         after_dispatch => sub {
             my ($c) = @_;
 
@@ -25,10 +26,10 @@ sub register {
 
             $c->stash(urchin => $conf->{urchin});
 
-            my $ga_script = $c->render_partial(
+            my $ga_script = $c->render(
                 'template',
                 format         => 'html',
-                template_class => __PACKAGE__,
+                partial        => 1
             );
 
             $ga_script = b($ga_script)->encode('UTF-8');

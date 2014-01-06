@@ -24,31 +24,31 @@ app->log->level('fatal');
 
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
-app->helper(config => sub { {articles_directory => 'articles'} });
+app->config({articles_directory => 'articles'});
 
 plugin 'booty_helpers';
 plugin 'model';
 plugin 'pingback';
 
-get '/source_uri_invalid' => sub { shift->render_text('foo') } => 'foo';
+get '/source_uri_invalid' => sub { shift->render(text => 'foo') } => 'foo';
 
 get '/source_uri' => sub {
     my $self = shift;
 
-    $self->render_text('http://localhost:/articles/2010/10/foo.html');
+    $self->render(text => 'http://localhost:/articles/2010/10/foo.html');
 } => 'source';
 
 get '/articles/:year/:month/:name' => sub {
     my $self = shift;
 
-    $self->render_text('foo');
+    $self->render(text => 'foo');
 } => 'article';
 
 use Test::Mojo;
 
 my $t = Test::Mojo->new;
 
-my $port = $t->client->test_server;
+my $url = $t->ua->server->url;
 
 $t->get_ok('/pingback')->status_is(400)->content_like(qr/Bad request/);
 
@@ -96,7 +96,7 @@ $t->post_ok('/pingback' =>
     <methodName>pingback.ping</methodName>
     <params>
         <param><value><string>http://foo</string></value></param>
-        <param><value><string>http://localhost:$port/</string></value></param>
+        <param><value><string>${url}</string></value></param>
     </params>
 </methodCall>
 EOF
@@ -108,7 +108,7 @@ $t->post_ok('/pingback' =>
     <methodName>pingback.ping</methodName>
     <params>
         <param><value><string>http://foo</string></value></param>
-        <param><value><string>http://localhost:$port/articles/2009/12/foo</string></value></param>
+        <param><value><string>${url}articles/2009/12/foo</string></value></param>
     </params>
 </methodCall>
 EOF
@@ -120,7 +120,7 @@ EOF
 #<methodName>pingback.ping</methodName>
 #<params>
 #<param><value><string>http://whathtefuckisgoingonhere123321.com</string></value></param>
-#<param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
+#<param><value><string>${url}articles/2010/10/foo</string></value></param>
 #</params>
 #</methodCall>
 #EOF
@@ -132,7 +132,7 @@ $t->post_ok('/pingback' =>
     <methodName>pingback.ping</methodName>
     <params>
         <param><value><string>/not_found</string></value></param>
-        <param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
+        <param><value><string>${url}articles/2010/10/foo</string></value></param>
     </params>
 </methodCall>
 EOF
@@ -144,7 +144,7 @@ $t->post_ok('/pingback' =>
     <methodName>pingback.ping</methodName>
     <params>
         <param><value><string>/source_uri_invalid</string></value></param>
-        <param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
+        <param><value><string>${url}articles/2010/10/foo</string></value></param>
     </params>
 </methodCall>
 EOF
@@ -157,7 +157,7 @@ $t->post_ok(
     <methodName>pingback.ping</methodName>
     <params>
         <param><value><string>/source_uri</string></value></param>
-        <param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
+        <param><value><string>${url}articles/2010/10/foo</string></value></param>
     </params>
 </methodCall>
 EOF
@@ -169,7 +169,7 @@ $t->post_ok('/pingback' =>
     <methodName>pingback.ping</methodName>
     <params>
         <param><value><string>/source_uri</string></value></param>
-        <param><value><string>http://localhost:$port/articles/2010/10/foo</string></value></param>
+        <param><value><string>${url}articles/2010/10/foo</string></value></param>
     </params>
 </methodCall>
 EOF
@@ -181,7 +181,7 @@ $t->post_ok('/pingback' =>
     <methodName>pingback.ping</methodName>
     <params>
         <param><value><string>/source_uri</string></value></param>
-        <param><value><string>http://localhost:$port/articles/2010/10/foo.html</string></value></param>
+        <param><value><string>${url}articles/2010/10/foo.html</string></value></param>
     </params>
 </methodCall>
 EOF
