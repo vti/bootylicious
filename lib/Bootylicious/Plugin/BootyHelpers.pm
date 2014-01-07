@@ -88,7 +88,7 @@ sub register {
 
             my $content = $comment->content;
 
-            $content = Mojo::ByteStream->new($content)->html_escape;
+            $content = Mojo::ByteStream->new($content)->xml_escape;
 
             _parse_tag(\$content, 'quote' => 'blockquote');
             _parse_tag(\$content, 'code');
