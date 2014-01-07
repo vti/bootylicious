@@ -34,7 +34,7 @@ sub register {
     $conf->{default} = $self->_default unless exists $conf->{default};
     my $config = $app->plugin('JSONConfig' => $conf);
 
-    $app->secrets([$conf->{secret}]);
+    $app->secrets([$config->{secret}]);
 
     # Config access
     $app->helper(

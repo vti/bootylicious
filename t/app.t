@@ -16,6 +16,7 @@ require "$FindBin::Bin/../bootylicious";
 use Test::Mojo;
 
 my $app = app();
+$app->secrets(['secret']);
 
 $app->log->level('debug');
 
