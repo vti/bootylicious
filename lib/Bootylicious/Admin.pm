@@ -16,7 +16,7 @@ get '/' => sub {
     return $self->redirect_to('login') unless $self->is_logged_in;
 } => 'index';
 
-get '/create_article' => sub {
+any [qw/get post/] => '/create_article' => sub {
     my $self = shift;
 
     return unless $self->req->method eq 'POST';

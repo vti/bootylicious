@@ -22,6 +22,7 @@ push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 plugin 'booty_config' => {
     default => {
         articles_directory => 'articles',
+        secret => 'secret',
         plugins => [admin => {username => 'foo', password => 'bar'}]
     }
 };
