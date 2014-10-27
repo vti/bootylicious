@@ -43,6 +43,7 @@ WriteMakefile(
         'File::stat'                         => 0,
         'FindBin'                            => 0,
         'Mojolicious'                        => 1.1,
+        'MojoX::Validator'                   => 0,
         'Time::Local'                        => 0,
         'Time::Piece'                        => 0,
     },

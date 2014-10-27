@@ -29,7 +29,6 @@ sub register {
             }
         }
     );
-    $app->plugin('bot_protection');
 
     $conf->{default} = $self->_default unless exists $conf->{default};
     my $config = $app->plugin('JSONConfig' => $conf);
