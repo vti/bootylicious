@@ -72,7 +72,6 @@ post '/articles/:year/:month/:alias/comment' => sub {
 
     $validator->field('author')->required(1);
     $validator->field('email')->email(1);
-    $validator->field('url')->url(1);
     $validator->field('content')->required(1);
 
     return $self->render('article', article => $article)
@@ -402,7 +401,7 @@ __DATA__
             Please, don't disable them.
             </div>
         </div>
-        %= signed_form_for 'comment' => {year => $article->created->year, month => $article->created->month, alias => $article->name}, method => 'post' => begin
+        %= form_for 'comment' => {year => $article->created->year, month => $article->created->month, alias => $article->name}, method => 'post' => begin
         <label for="author">Name <span class="required">*</span></label><br />
         <%= input_tag 'author', class => 'comment' %><br />
         <%= validator_error 'author' %>

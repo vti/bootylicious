@@ -113,7 +113,7 @@ __DATA__
 % }
 
 @@ login.html.ep
-%= signed_form_for 'login', method => 'post' => begin
+%= form_for 'login', method => 'post' => begin
     <%= input_tag 'username' %><br />
     <%= validator_error 'username' %><br />
     <%= input_tag 'password', type => 'password' %><br />
@@ -123,7 +123,7 @@ __DATA__
 
 
 @@ create-article.html.ep
-%= signed_form_for 'current', method => 'post' => begin
+%= form_for 'current', method => 'post' => begin
     <label for 'name'>Permalink</label><br />
     <%= input_tag 'name' %><br />
     <%= validator_error 'name' %>
@@ -157,7 +157,7 @@ __DATA__
 
 
 @@ article.html.ep
-%= signed_form_for 'current', method => 'post' => begin
+%= form_for 'current', method => 'post' => begin
     <label for 'title'>Title</label><br />
     <%= input_tag 'title', value => $article->title %><br />
     <%= validator_error 'title' %>
