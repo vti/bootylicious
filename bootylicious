@@ -3,6 +3,7 @@
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Mojolicious::Lite;
+use Mojo::Util 'md5_sum';
 use Bootylicious::Timestamp;
 
 app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
@@ -69,15 +70,19 @@ post '/articles/:year/:month/:alias/comment' => sub {
     return $self->render_not_found unless $article && $article->comments_enabled;
 
     my $validator = $self->create_validator;
-
+    my $comment_name = md5_sum($article->created->year, $article->created->month, $article->name);
+    
     $validator->field('author')->required(1);
     $validator->field('email')->email(1);
-    $validator->field('content')->required(1);
+    $validator->field('content')->length(0); # bot protection
+    $validator->field($comment_name)->required(1);
 
     return $self->render('article', article => $article)
       unless $self->validate($validator);
-
-    my $comment = $article->comment(%{$validator->values});
+    
+    my $comment_params = $validator->values;
+    $comment_params->{content} = delete $comment_params->{$comment_name};
+    my $comment = $article->comment(%$comment_params);
 
     return $self->redirect_to($self->href_to_article($article)
           ->fragment('comment-' . $comment->number));
@@ -415,10 +420,13 @@ __DATA__
         <label for="url">Website</label><br />
         <%= input_tag 'url', class => 'comment' %><br />
         <%= validator_error 'url' %>
-
+        
+        % use Mojo::Util 'md5_sum';
+        % my $comment_name = md5_sum($article->created->year, $article->created->month, $article->name);
         <label for="content">Comment <span class="required">*</span></label><br />
-        <%= text_area 'content' %><br />
-        <%= validator_error 'content' %>
+        <%= text_area 'content', class => 'bpr' %>
+        <%= text_area $comment_name %><br />
+        <%= validator_error $comment_name %>
 
         <div class="comment-tags">Paragraphs are created automatically. Available tags: [quote], [code].</div>
 
@@ -560,6 +568,7 @@ span#about {font-style:italic}
 .push {height:6em}
 input.comment, textarea {font-size:150%;width:60%}
 textarea {height:200px}
+textarea.bpr {display: none}
 label {color:#999}
 .required {color:red}
 #pingbacks, #comments, #comment-form {padding:1em 0px}
