@@ -16,3 +16,4 @@ mojo
 ^nytprof\/
 ^nytprof.out$
 .DS_Store
+git-hooks
