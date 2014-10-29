@@ -22,7 +22,6 @@ WriteMakefile(
         : ( META_MERGE => {
                 requires  => {perl => '5.008001'},
                 resources => {
-                    homepage => 'http://getbootylicious.org',
                     license  => 'http://dev.perl.org/licenses/',
                     repository =>
                       'http://github.com/vti/bootylicious/tree/master'
@@ -42,7 +41,7 @@ WriteMakefile(
         'File::Basename'                     => 0,
         'File::stat'                         => 0,
         'FindBin'                            => 0,
-        'Mojolicious'                        => 1.1,
+        'Mojolicious'                        => 4.63,
         'MojoX::Validator'                   => 0,
         'Time::Local'                        => 0,
         'Time::Piece'                        => 0,
