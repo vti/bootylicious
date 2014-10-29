@@ -680,7 +680,11 @@ rkJggg==
 
 __END__
 
-=head1 Bootylicious
+=head1 NAME
+
+Bootylicious - Lightweight blog engine on Mojo steroids!
+
+=head1 DESCRIPTION
 
 Bootylicious is a minimalistic blogging application built on top of
 L<Mojolicious::Lite>. It is easily extendable with plugins, templates and
