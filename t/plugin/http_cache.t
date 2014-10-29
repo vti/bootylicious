@@ -11,10 +11,8 @@ plan tests => 10;
 
 BEGIN {
     use FindBin;
-    $ENV{MOJO_HOME} = "$FindBin::Bin/../";
+    $ENV{MOJO_HOME} = $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/../";
 }
-
-use lib "$FindBin::Bin/../../contrib/mojo/lib";
 
 use Mojolicious::Lite;
 use Mojo::ByteStream 'b';

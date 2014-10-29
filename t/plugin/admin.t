@@ -9,11 +9,7 @@ plan skip_all => 'working sockets required for this test!'
   unless Mojo::IOLoop->new->generate_port;
 plan tests => 18;
 
-BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin"; }
-
-use lib "$FindBin::Bin/../../contrib/mojo/lib";
-use lib "$FindBin::Bin/../../contrib/mojox-validator/lib";
-use lib "$FindBin::Bin/../../contrib/mojolicious-plugin-botprotection/lib";
+BEGIN { require FindBin; $ENV{MOJO_HOME} = $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin"; }
 
 use Mojolicious::Lite;
 

@@ -6,7 +6,6 @@ use warnings;
 use Test::More tests => 3;
 
 use FindBin;
-use lib "$FindBin::Bin/../../contrib/mojo/lib";
 
 use Mojolicious::Lite;
 use Test::Mojo;

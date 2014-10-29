@@ -5,11 +5,7 @@ use warnings;
 
 use Test::More tests => 52;
 
-BEGIN { require FindBin; $ENV{MOJO_HOME} = "$FindBin::Bin/" }
-
-use lib "$FindBin::Bin/../contrib/mojolicious-plugin-botprotection/lib";
-use lib "$FindBin::Bin/../contrib/mojox-validator/lib";
-use lib "$FindBin::Bin/../contrib/mojo/lib";
+BEGIN { require FindBin; $ENV{MOJO_HOME} = $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin/" }
 
 require "$FindBin::Bin/../bootylicious";
 
