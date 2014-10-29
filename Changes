@@ -1,3 +1,15 @@
+2014-10-29  oleg  <oleg@cpan.org>
+	
+	Updates for compatibility with latest Mojolicious
+	
+	Added --create-config command line option
+	
+	New algorithm for bot protection
+	
+	Current directory now is default working directory
+	
+	Allow tags to be non ASCII
+
 2011-02-14  memowe  <mail@memowe.de>
 
     Got rid of the inline Mojolicious distro
