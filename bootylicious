@@ -20,7 +20,7 @@ my $TAG_RE   = qr/[\w\s]+/;
 
 our $VERSION = '1.000000';
 
-if ($ARGV[0] eq '--create-config') {
+if (@ARGV && $ARGV[0] eq '--create-config') {
     if (-e 'bootylicious.conf') {
         die "bootylicious.conf already exists\n";
     }
