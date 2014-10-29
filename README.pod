@@ -28,17 +28,22 @@ themes.
 
 =back
 
-=head2 Famous 5 seconds setup
+=head2 Setup
 
-    $ git clone http://github.com/vti/bootylicious.git
-    $ cd bootylicious
-    $ perl bootylicious daemon
+    $ cpan Bootylicious
+    $ bootylicious daemon
     Server available at http://*:3000.
 
 =head2 Configuration
 
-Copy C<bootylicious.conf.template> to C<bootylicious.conf> and change it to fit your
-needs.
+Create default configuration file
+
+    $ bootylicious --create-config
+
+Then open C<bootylicious.conf> and change it to fit your
+needs. By default C<bootylicious> uses current directory
+as working directory. You can change this with C<BOOTYLICIOUS_HOME>
+environment variable.
 
 =head2 Writing articles
 
@@ -118,7 +123,3 @@ Google Analytics JavaScript code.
 =head3 Bootylicious::Plugin::Search
 
 Basic search.
-
-=head2 Dependencies
-
-Bootylicious depends on Mojolicious only.
