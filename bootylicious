@@ -3,7 +3,8 @@
 use FindBin;
 use lib "$FindBin::Bin/lib";
 use Mojolicious::Lite;
-use Mojo::Util 'md5_sum';
+use Mojo::Util qw(md5_sum spurt);
+use Mojo::Loader;
 use Bootylicious::Timestamp;
 
 app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
@@ -18,6 +19,15 @@ my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
 my $TAG_RE   = qr/[\w\s]+/;
 
 our $VERSION = '1.000000';
+
+if ($ARGV[0] eq '--create-config') {
+    if (-e 'bootylicious.conf') {
+        die "bootylicious.conf already exists\n";
+    }
+    
+    spurt(Mojo::Loader->data(__PACKAGE__, 'bootylicious.conf'), 'bootylicious.conf');
+    exit;
+}
 
 get '/'      => \&index => 'root';
 get '/index' => \&index => 'index';
@@ -601,3 +611,66 @@ rXtuDWtWtQwWiliScFapQJedKxKsVFA0KezVUeMvprcfHDkua6uRzqsylQ2hE2ZPqXAld+/tTfIg
 I56VgNG1SDkuhmIb+3tELCLRTYYpRdVDFpwgCJL2fJfXFufLS4Xl6v3z7zBvXkdqUxjJc8M4tC2C
 fdDoNe62XPaCaOEBVOjbm++YnSphpuSiZAR6CFQS4h//ZJJD7acAAwCdOg/D5ZiZiQAAAABJRU5E
 rkJggg==
+
+@@ bootylicious.conf
+%# Bootylicious configuration
+%#
+%# This configuration is in JSON format, that is preprocessed by Mojo::Template.
+%# Yes, you can use Perl here.
+
+{
+%#  Change this to something not guessable
+%#    "secret" : "Unique string",
+
+%#  Blog description settings
+%#    "author"       : "whoami",
+%#    "email"        : "",
+%#    "title"        : "Just another blog",
+%#    "about"        : "Perl hacker",
+%#    "description"  : "I do not know if I need this",
+
+%#  Article rendering settings
+%#    "cuttag"    : "[cut]",
+%#    "cuttext"   : "Keep reading",
+%#    "pagelimit" : 10,
+%#    "datefmt"   : "%a, %d %b %Y"
+
+%#  Appearence settings
+%#    "menu" : [
+%#        "index",   "/",
+%#        "tags",    "/tags.html",
+%#        "archive", "/articles.html"
+%#    ],
+%#    "footer" : "Powered by <a href=\"http://getbootylicious.org\">Bootylicious</a>",
+%#    "theme"     : "",
+
+%#  Additional HTML tags
+%#    "meta"      : [],
+%#    "css"       : [],
+%#    "js"        : [],
+
+%#  Plugins
+%#    "plugins" : [
+%#        "admin", {"username" : "foo", "password" : "bar"}
+%#        "search",
+%#        "google_analytics", {"urchin" : "UA-12345"},
+%#        "pingback"
+%#    ],
+
+%#  Enabling/disabling comments globbaly
+%#    "comments_enabled" : true,
+
+%#  System settings
+%#    "perl5lib" : "",
+%#    "loglevel" : "error",
+
+%#  Path settings
+%#    "articles_directory"  : "articles",
+%#    "pages_directory"     : "pages",
+%#    "drafts_directory"    : "drafts",
+%#    "public_directory"    : "public",
+%#    "templates_directory" : "templates",
+
+%#  Don't worry about trailing comma
+    "ok" : true
+}
