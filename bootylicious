@@ -21,7 +21,7 @@ plugin 'model';
 my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
 my $TAG_RE   = qr/[\w\s]+/;
 
-our $VERSION = '1.000000';
+our $VERSION = '1.01';
 
 if (@ARGV && $ARGV[0] eq '--create-config') {
     if (-e 'bootylicious.conf') {
