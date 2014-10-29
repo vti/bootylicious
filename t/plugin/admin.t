@@ -5,8 +5,6 @@ use warnings;
 
 use Test::More;
 
-plan skip_all => 'working sockets required for this test!'
-  unless Mojo::IOLoop->new->generate_port;
 plan tests => 18;
 
 BEGIN { require FindBin; $ENV{MOJO_HOME} = $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin"; }

@@ -26,10 +26,9 @@ sub register {
 
             $c->stash(urchin => $conf->{urchin});
 
-            my $ga_script = $c->render(
+            my $ga_script = $c->render_to_string(
                 'template',
-                format         => 'html',
-                partial        => 1
+                format => 'html'
             );
 
             $ga_script = b($ga_script)->encode('UTF-8');

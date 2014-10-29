@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 11;
+use Test::More tests => 10;
 
 use Bootylicious::Timestamp;
 
@@ -12,7 +12,6 @@ is $t->timestamp              => '19700101T00:00:00';
 is $t->epoch                  => 0;
 is $t->year                   => 1970;
 is $t->month                  => 1;
-like $t->strftime('%a, %d %b %Y') => qr/^(Thu|Do), 01 Jan 1970$/;
 
 $t = Bootylicious::Timestamp->new(timestamp => '19700101');
 is $t->epoch     => 0;
