@@ -20,7 +20,7 @@ sub load {
 
     Carp::croak qq/Can't load: $!/ unless $path && -e $path;
 
-    my ($name, $format) = ($path =~ m/\/([^\/]+)\.([^.]+)$/);
+    my ($name, $format) = ($path =~ m/\/([^\/]+)\.([^.\/]+)$/);
 
     Carp::croak qq/Bad file $path/ unless $name && $format;
 
