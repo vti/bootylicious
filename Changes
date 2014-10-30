@@ -1,3 +1,9 @@
+2014-10-30  oleg <oleg@cpan.org>
+
+	Installation via cpan clients should now be available
+	
+	Remove documentation duplicate
+
 2014-10-29  oleg  <oleg@cpan.org>
 	
 	Updates for compatibility with latest Mojolicious
