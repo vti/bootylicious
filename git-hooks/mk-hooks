@@ -1,6 +1,0 @@
-#!/bin/sh
-
-echo "creating pre-commit..."
-ln -s ../../.git-hooks/pre-commit ../.git/hooks/pre-commit || exit
-
-echo "done"
