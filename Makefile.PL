@@ -11,7 +11,7 @@ my $mm = $ExtUtils::MakeMaker::VERSION;
 
 WriteMakefile(
     NAME         => 'Bootylicious',
-    VERSION_FROM => 'bootylicious',
+    VERSION_FROM => 'lib/Bootylicious.pm',
     ABSTRACT     => 'Blog software',
     AUTHOR       => 'Viacheslav Tykhanovskyi <vti@cpan.org>',
 

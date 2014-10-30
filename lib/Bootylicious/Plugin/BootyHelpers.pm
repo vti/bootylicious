@@ -435,7 +435,7 @@ sub register {
         generator => sub {
             my $self = shift;
 
-            return Mojo::ByteStream->new('Bootylicious ' . $main::VERSION);
+            return Mojo::ByteStream->new('Bootylicious ' . $Bootylicious::VERSION);
         }
     );
 
