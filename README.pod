@@ -62,7 +62,7 @@ Article consists of file information and content with meta data.
 
     or
 
-    20101017T14:02:00-article.pod
+    20101017T14:02:00-article.pod  or  20101017T140200-article.pod
 
 Where timestamp tells us when the article was created. Modified time is
 retrieved automatically from C<mtime>. Filename is the article's permalink url.
