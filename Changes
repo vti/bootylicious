@@ -1,3 +1,7 @@
+2014-11-29  oleg <oleg@cpan.org>
+
+	Now works on windows: rt#100527
+
 2014-10-30  oleg <oleg@cpan.org>
 
 	Installation via cpan clients should now be available
