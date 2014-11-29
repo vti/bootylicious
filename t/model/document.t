@@ -5,7 +5,7 @@ use warnings;
 
 use utf8;
 
-use Test::More tests => 29;
+use Test::More tests => 21;
 
 use FindBin;
 
@@ -35,19 +35,6 @@ ok $document->modified;
 is $document->name    => 'foo-bar-baz';
 is $document->format  => 'pod';
 is $document->content => qq/Foo and bar.\n\nAnd buzz!\n/;
-
-$document =
-  Bootylicious::Document->new(
-    path => "$FindBin::Bin/documents/20100601-привет.md");
-ok $document;
-is $document->created->timestamp => '20100601T00:00:00';
-is $document->created->year      => '2010';
-is $document->created->month     => '6';
-ok $document->modified;
-is $document->name   => 'привет';
-is $document->format => 'md';
-is $document->content =>
-  qq/Это все юникод. Ляляля.\nА вот и сказочки конец.\n/;
 
 my $path = "$FindBin::Bin/documents/20101010-foo.md";
 unlink $path;

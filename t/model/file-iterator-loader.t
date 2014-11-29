@@ -5,7 +5,7 @@ use warnings;
 
 use utf8;
 
-use Test::More tests => 7;
+use Test::More tests => 6;
 
 use FindBin;
 
@@ -25,13 +25,10 @@ $files = Bootylicious::FileIteratorLoader->new(
     root          => "$FindBin::Bin/documents",
     filter        => qr/^[^\.]+\.[^\.]+$/
 )->load;
-is $files->size => 4;
+is $files->size => 3;
 
 $file = $files->next;
 is $file->name => 'foo-bar-baz';
-
-$file = $files->next;
-is $file->name => 'привет';
 
 $file = $files->next;
 is $file->name => 'hello';
