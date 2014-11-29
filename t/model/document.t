@@ -26,7 +26,7 @@ ok $@;
 
 $document =
   Bootylicious::Document->new(
-    path => "$FindBin::Bin/documents/20101010T12:13:14-foo-bar-baz.pod");
+    path => "$FindBin::Bin/documents/20101010T121314-foo-bar-baz.pod");
 ok $document;
 is $document->created->timestamp => '20101010T12:13:14';
 is $document->created->year      => '2010';
