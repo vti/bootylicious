@@ -1,3 +1,7 @@
+2014-11-30  oleg <oleg@cpan.org>
+
+	Do not include MYMETA.* files to distribution: rt#100611
+
 2014-11-29  oleg <oleg@cpan.org>
 
 	Now works on windows: rt#100527
