@@ -512,7 +512,7 @@ __DATA__
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
         <%= stylesheet '/styles.css' %>
-        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
+        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss if config 'rss' %>" />
         % if (comments_enabled) {
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %> Comments" href="<%= href_to_comments_rss %>" />
         % }
@@ -526,7 +526,9 @@ __DATA__
             <div id="header">
                 <h1 id="title">
                     <%= link_to_home %>
+                    % if (config 'rss') { 
                     <sup><a href="<%= href_to_rss %>"><img src="/rss.png" alt="RSS" /></a></sup>
+                    % }
                 </h1>
                 <h2 id="description"><%= config 'description' %></h2>
                 % if (my $author = config 'author') {
@@ -674,5 +676,6 @@ rkJggg==
 %#    "templates_directory" : "templates",
 
 %#  Don't worry about trailing comma
-    "ok" : true
+    "ok"  : true,
+	"rss" : true
 }
