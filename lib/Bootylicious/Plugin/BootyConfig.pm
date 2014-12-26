@@ -93,8 +93,8 @@ sub register {
         my $theme_class = join '::' => 'Bootylicious::Theme',
           Mojo::ByteStream->new($theme)->camelize;
 
-        $app->renderer->default_template_class($theme_class);
-        $app->static->default_static_class($theme_class);
+        $app->renderer->classes([$theme_class]);
+        $app->static->classes([$theme_class]);
 
         $app->plugin($theme_class);
     }
