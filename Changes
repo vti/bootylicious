@@ -1,3 +1,9 @@
+2015-01-24  oleg <oleg@cpan.org>
+
+	Ability to disable RSS
+	
+	Fix compatibility with latest Mojolicious
+
 2014-11-30  oleg <oleg@cpan.org>
 
 	Do not include MYMETA.* files to distribution: rt#100611
