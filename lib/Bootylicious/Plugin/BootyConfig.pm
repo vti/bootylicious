@@ -161,6 +161,7 @@ sub _default {
         theme => '',
 
         comments_enabled => 1,
+        rss_enabled => 1,
 
         meta => [],
         css  => [],

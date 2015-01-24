@@ -307,6 +307,7 @@ __DATA__
 
 
 @@ layouts/wrapper.rss.ep
+% die('RSS disabled') unless config 'rss_enabled';
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xml:base="<%= url_for('index')->to_abs %>"
     xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -332,8 +333,10 @@ __DATA__
 % stash title => $tag, description => strings('tag-description', $tag);
 <div class="text">
 <h1><%= strings 'tag' %> <%= $tag %>
+% if (config 'rss_enabled') {
 <sup>
 <%= link_to_tag $tag => { format => 'rss'} => begin %><img src="/rss.png" alt="RSS" /><% end %></sup>
+% }
 </h1>
 <br />
 % while (my $article = $articles->next) {
@@ -512,8 +515,10 @@ __DATA__
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
         <%= stylesheet '/styles.css' %>
-        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss if config 'rss' %>" />
-        % if (comments_enabled) {
+        % if (config 'rss_enabled') {
+        <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
+        % }
+        % if (comments_enabled && config 'rss_enabled') {
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %> Comments" href="<%= href_to_comments_rss %>" />
         % }
         <meta name="generator" content="<%= generator %>" />
@@ -526,7 +531,7 @@ __DATA__
             <div id="header">
                 <h1 id="title">
                     <%= link_to_home %>
-                    % if (config 'rss') { 
+                    % if (config 'rss_enabled') {
                     <sup><a href="<%= href_to_rss %>"><img src="/rss.png" alt="RSS" /></a></sup>
                     % }
                 </h1>
@@ -664,6 +669,9 @@ rkJggg==
 %#  Enabling/disabling comments globbaly
 %#    "comments_enabled" : true,
 
+%#  Enabling/disabling rss
+%#    "rss_enabled" : true,
+
 %#  System settings
 %#    "perl5lib" : "",
 %#    "loglevel" : "error",
@@ -676,6 +684,5 @@ rkJggg==
 %#    "templates_directory" : "templates",
 
 %#  Don't worry about trailing comma
-    "ok"  : true,
-	"rss" : true
+    "ok"  : true
 }
