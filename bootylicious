@@ -65,7 +65,7 @@ get '/articles/:year/:month/:alias' =>
 
     my $article = $self->get_article(@{$self->stash}{qw/year month alias/});
 
-    return $self->render_not_found unless $article;
+    return $self->reply->not_found unless $article;
 
     $self->stash(article => $article);
 
@@ -75,11 +75,11 @@ get '/articles/:year/:month/:alias' =>
 post '/articles/:year/:month/:alias/comment' => sub {
     my $self = shift;
 
-    return $self->render_not_found unless $self->comments_enabled;
+    return $self->reply->not_found unless $self->comments_enabled;
 
     my $article = $self->get_article(@{$self->stash}{qw/year month alias/});
 
-    return $self->render_not_found unless $article && $article->comments_enabled;
+    return $self->reply->not_found unless $article && $article->comments_enabled;
 
     my $validator = $self->create_validator;
     my $comment_name = md5_sum($article->created->year, $article->created->month, $article->name);
@@ -103,7 +103,7 @@ post '/articles/:year/:month/:alias/comment' => sub {
 get '/comments' => sub {
     my $self = shift;
 
-    return $self->render_not_found unless $self->comments_enabled;
+    return $self->reply->not_found unless $self->comments_enabled;
 
     $self->render_smart;
 } => 'comments';
@@ -117,7 +117,7 @@ get '/tags/:tag' => [tag => $TAG_RE] => sub {
 
     my $pager = $self->get_articles_by_tag($tag, timestamp => $timestamp);
 
-    return $self->render_not_found unless $pager->articles->size;
+    return $self->reply->not_found unless $pager->articles->size;
 
     $self->stash(articles => $pager->articles, pager => $pager);
 
@@ -141,7 +141,7 @@ get '/pages/:name' => [name => $ALIAS_RE] => sub {
 
     my $page = $self->get_page($name);
 
-    return $self->render_not_found unless $page;
+    return $self->reply->not_found unless $page;
 
     $self->stash(page => $page);
 
@@ -155,7 +155,7 @@ get '/drafts/:name' => [name => $ALIAS_RE] => sub {
 
     my $draft = $self->get_draft($name);
 
-    return $self->render_not_found unless $draft;
+    return $self->reply->not_found unless $draft;
 
     $self->stash(draft => $draft);
 

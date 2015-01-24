@@ -22,10 +22,10 @@ get '/' => 'index';
 
 my $t = Test::Mojo->new;
 
-$t->get_ok('/')->status_is(200)->content_is(<<"EOF");
-<img class="gravatar" height="40" src="http://www.gravatar.com/avatar/00000000000000000000000000000000?s=40" width="40" />
-<img class="gravatar" height="40" src="http://www.gravatar.com/avatar/b03e2e03fea48f3aee2be87fcc4201a0?s=40" width="40" />
-EOF
+$t->get_ok('/')->status_is(200)->content_like(
+qr!\Q<img class="gravatar" height="40" src="http://www.gravatar.com/avatar/00000000000000000000000000000000?s=40" width="40"\E(?: /)?>
+\Q<img class="gravatar" height="40" src="http://www.gravatar.com/avatar/b03e2e03fea48f3aee2be87fcc4201a0?s=40" width="40"\E(?: /)?>
+!);
 
 __DATA__
 @@ index.html.ep

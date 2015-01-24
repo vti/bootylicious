@@ -44,7 +44,7 @@ get '/:year/:month/:name' => sub {
 
     my $article = $self->get_article(@{$self->stash}{qw/year month name/});
 
-    return $self->render_not_found unless $article;
+    return $self->reply->not_found unless $article;
 
     $self->stash(article => $article);
 
@@ -68,7 +68,7 @@ get '/:year/:month/:name' => sub {
 any [qw/get post/] => '/login' => sub {
     my $self = shift;
 
-    return $self->render_not_found if $self->is_logged_in;
+    return $self->reply->not_found if $self->is_logged_in;
 
     return unless $self->req->method eq 'POST';
 
@@ -96,7 +96,7 @@ any [qw/get post/] => '/login' => sub {
 get '/logout' => sub {
     my $self = shift;
 
-    return $self->render_not_found unless $self->is_logged_in;
+    return $self->reply->not_found unless $self->is_logged_in;
 
     $self->logout;
 
