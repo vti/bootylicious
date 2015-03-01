@@ -7,7 +7,7 @@ use Cwd;
 use lib "$FindBin::Bin/lib";
 use Mojolicious::Lite;
 use Mojo::Util qw(md5_sum spurt);
-use Mojo::Loader;
+use Mojo::Loader qw(data_section);
 use Bootylicious;
 use Bootylicious::Timestamp;
 
@@ -27,7 +27,7 @@ if (@ARGV && $ARGV[0] eq '--create-config') {
         die "bootylicious.conf already exists\n";
     }
     
-    spurt(Mojo::Loader->data(__PACKAGE__, 'bootylicious.conf'), 'bootylicious.conf');
+    spurt(data_section(__PACKAGE__, 'bootylicious.conf'), 'bootylicious.conf');
     exit;
 }
 

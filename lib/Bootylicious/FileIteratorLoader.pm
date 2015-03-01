@@ -11,7 +11,7 @@ __PACKAGE__->attr('root');
 __PACKAGE__->attr('path');
 
 use Mojo::ByteStream;
-use Mojo::Loader;
+use Mojo::Loader qw(load_class);
 use Bootylicious::Iterator;
 
 sub files {
@@ -26,7 +26,7 @@ sub files {
 sub create_element {
     my $self = shift;
 
-    Mojo::Loader->new->load($self->element_class);
+    load_class($self->element_class);
 
     return $self->element_class->new;
 }
