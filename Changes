@@ -1,3 +1,7 @@
+2015-03-03  oleg <oleg@cpan.org>
+
+	Fix compatibility with latest Mojolicious
+
 2015-01-24  oleg <oleg@cpan.org>
 
 	Ability to disable RSS
