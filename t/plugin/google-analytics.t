@@ -10,7 +10,7 @@ use FindBin;
 use Mojolicious::Lite;
 use Test::Mojo;
 
-push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 plugin google_analytics => {urchin => 'foo'};
 
 # Silence

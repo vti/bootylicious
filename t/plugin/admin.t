@@ -11,7 +11,7 @@ BEGIN { require FindBin; $ENV{MOJO_HOME} = $ENV{BOOTYLICIOUS_HOME} = "$FindBin::
 
 use Mojolicious::Lite;
 
-push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config' => {
     default => {

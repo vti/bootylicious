@@ -13,7 +13,7 @@ sub register {
     $conf ||= {};
 
     $app->routes->route('/pingback')->to(cb => \&_pingback)->name('pingback');
-    push @{$app->renderer->classes}, __PACKAGE__;
+    unshift @{$app->renderer->classes}, __PACKAGE__;
 
     $app->plugins->on(
         after_dispatch => sub {

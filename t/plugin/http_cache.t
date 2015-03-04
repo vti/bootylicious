@@ -17,7 +17,7 @@ use Mojo::ByteStream 'b';
 
 app->log->level('fatal');
 
-push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'http_cache';
 

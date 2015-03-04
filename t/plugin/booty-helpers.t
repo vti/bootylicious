@@ -12,7 +12,7 @@ use Test::Mojo;
 
 app->helper(config => sub { {} });
 
-push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 plugin 'booty_helpers';
 
 # Silence

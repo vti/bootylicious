@@ -2,7 +2,7 @@ package Bootylicious::Admin;
 
 use Mojolicious::Lite;
 
-push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config';
 plugin 'model';

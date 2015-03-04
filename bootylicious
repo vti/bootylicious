@@ -13,7 +13,7 @@ use Bootylicious::Timestamp;
 
 app->home->parse($ENV{BOOTYLICIOUS_HOME} || getcwd());
 
-push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
 plugin 'markdown_parser';

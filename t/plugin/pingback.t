@@ -16,7 +16,7 @@ use Mojolicious::Lite;
 
 app->log->level('fatal');
 
-push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
+unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 app->config({articles_directory => 'articles'});
 
