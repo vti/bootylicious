@@ -1,3 +1,7 @@
+2015-03-04  oleg <oleg@cpan.org>
+
+	Prefer Bootylicious namespace to Mojolicious to prevent mess with plugins
+
 2015-03-03  oleg <oleg@cpan.org>
 
 	Fix compatibility with latest Mojolicious
