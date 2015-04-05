@@ -18,7 +18,7 @@ sub register {
 
     # Default plugins
     $app->plugin('charset' => {charset => 'utf-8'});
-    $app->plugin('PODRenderer');
+    $app->plugin('PODRenderer', {no_perldoc => 1});
     $app->plugin('TagHelpers');
     $app->plugin(
         validator => {
