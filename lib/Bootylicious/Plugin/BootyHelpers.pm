@@ -416,7 +416,7 @@ sub register {
         link_to_bootylicious => sub {
             my $self = shift;
 
-            return $self->link_to('http://getbootylicious.org' => title =>
+            return $self->link_to('https://github.com/vti/bootylicious' => title =>
                   'Powered by Bootylicious!' => sub {'Bootylicious'});
         }
     );
@@ -425,7 +425,7 @@ sub register {
         powered_by => sub {
             my $self = shift;
 
-            return $self->link_to('http://getbootylicious.org' =>
+            return $self->link_to('https://github.com/vti/bootylicious' =>
                   sub {'Powered by Bootylicious'});
 
         }

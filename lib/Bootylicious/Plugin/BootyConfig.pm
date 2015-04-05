@@ -157,7 +157,7 @@ sub _default {
             archive => '/articles.html'
         ],
         footer =>
-          'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
+          'Powered by <a href="https://github.com/vti/bootylicious">Bootylicious</a>',
         theme => '',
 
         comments_enabled => 1,
