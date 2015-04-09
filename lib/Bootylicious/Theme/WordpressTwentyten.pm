@@ -73,7 +73,7 @@ __DATA__
         Bookmark the <%= link_to_article $article => begin %>permalink<% end %>.
     </div><!-- .entry-utility -->
 
-    <br />
+    %= include 'article-comments', comments => $article->comments if comments_enabled && $article->comments->size;
 
     <div id="nav-below" class="navigation">
         <div class="nav-previous"><%= link_to_article $article->prev if $article->prev %></div>
@@ -82,6 +82,29 @@ __DATA__
 
 </div><!-- #post-## -->
 
+@@ article-comments.html.ep
+<div id="comments">
+    <h3 id="comments-title">Comments (<%= $comments->size %>)</h3>
+    <ol class="commentlist">
+        % while (my $comment = $comments->next) {
+        <li class="comment even thread-even depth-1 highlander-comment">
+            <div>
+                <div class="comment-author vcard">
+                    <%= gravatar $comment->email %>
+                    <cite class="fn"><%= comment_author $comment %></cite>
+                    <span class="says">says:</span>
+                </div>
+                <div class="comment-meta commentmetadata">
+                    <%= date $comment->created %>
+                </div>
+                <div class="comment-body">
+                    <p><%== render_comment $comment %></p>
+                </div>
+            </div>
+        </li>
+        % }
+    </ol>
+</div>
 
 @@ article-meta.html.ep
     <div class="entry-meta">
@@ -437,6 +460,7 @@ input[type=submit] {
 }
 pre {
 	font-family: "Courier 10 Pitch", Courier, monospace;
+	overflow-x: auto;
 }
 code {
 	font-family: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
@@ -1224,7 +1248,7 @@ h3#comments-title {
 .commentlist ol {
 	list-style: decimal;
 }
-.commentlist .avatar {
+.commentlist .gravatar {
 	position: absolute;
 	top: 4px;
 	left: 0;
