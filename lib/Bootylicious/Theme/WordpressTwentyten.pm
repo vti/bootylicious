@@ -74,6 +74,7 @@ __DATA__
     </div><!-- .entry-utility -->
 
     %= include 'article-comments', comments => $article->comments if comments_enabled && $article->comments->size;
+    %= include 'article-comment-form' if comments_enabled;
 
     <div id="nav-below" class="navigation">
         <div class="nav-previous"><%= link_to_article $article->prev if $article->prev %></div>
@@ -88,7 +89,7 @@ __DATA__
     <ol class="commentlist">
         % while (my $comment = $comments->next) {
         <li class="comment even thread-even depth-1 highlander-comment">
-            <div>
+            <div id="comment-<%= $comment->number %>">
                 <div class="comment-author vcard">
                     <%= gravatar $comment->email %>
                     <cite class="fn"><%= comment_author $comment %></cite>
@@ -104,6 +105,45 @@ __DATA__
         </li>
         % }
     </ol>
+</div>
+
+@@ article-comment-form.html.ep
+<div id="respond" class="comment-respond js">
+% if ($article->comments_enabled) {
+    <h3 class="comment-reply-title" id="reply-title">Add comment</h3>
+    %= form_for 'comment' => {year => $article->created->year, month => $article->created->month, alias => $article->name}, id => 'commentform', class => 'comment-form', method => 'post' => begin
+        <div class="comment-form-field comment-textarea">
+            <div id="comment-form-comment">
+                <label for="author">Name <span class="required">*</span></label><br />
+                <%= input_tag 'author', class => 'comment' %><br />
+                <%= validator_error 'author' %>
+                
+                <label for="email">E-mail</label><br />
+                <%= input_tag 'email', class => 'comment' %>
+                <span class="comment-tip"><%= link_to 'http://gravatar.com' => begin %>Gravatar<% end %>-friendly</span>
+                <br />
+                <%= validator_error 'email' %>
+                
+                <label for="url">Website</label><br />
+                <%= input_tag 'url', class => 'comment' %><br />
+                <%= validator_error 'url' %>
+                
+                % use Mojo::Util 'md5_sum';
+                % my $comment_name = md5_sum($article->created->year, $article->created->month, $article->name);
+                <label for="content">Comment <span class="required">*</span></label><br />
+                <%= text_area 'content', class => 'bpr'%>
+                <%= text_area $comment_name %>
+                <div class="comment-tip">Paragraphs are created automatically. Available tags: [quote], [code].</div>
+                <p class="form-submit" style="display: block;">
+                    <%= submit_button 'Post comment', id => 'comment-submit', class => 'submit' %>
+                </p>
+            </div>
+        </div>
+    % end
+% }
+% else {
+    <h3>Comments for this article has been disabled</h3>
+% }
 </div>
 
 @@ article-meta.html.ep
@@ -764,6 +804,8 @@ div.menu li {
 /* =Content
 -------------------------------------------------------------- */
 
+.error {text-align:left;padding:0;color:red}
+
 #main {
 	clear: both;
 	overflow: hidden;
@@ -1204,6 +1246,13 @@ body.page .edit-link {
 
 /* =Comments
 -------------------------------------------------------------- */
+textarea.bpr {display: none}
+
+.comment-tip {
+	color: #888;
+	font-size: 12px;
+}
+
 #comments {
 	clear: both;
 }
@@ -1370,7 +1419,7 @@ h3#reply-title {
 }
 #respond input {
 	margin: 0 0 9px;
-	width: 98%;
+	width: 40%;
 }
 #respond textarea {
 	width: 98%;
