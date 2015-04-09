@@ -85,7 +85,10 @@ __DATA__
 
 @@ article-meta.html.ep
     <div class="entry-meta">
-        <span class="meta-prep meta-prep-author">Posted on</span> <%= link_to_article $article => {%><span class="entry-date"><%= date $article->created %></span><%}%> <span class="meta-sep">by</span> <span class="author vcard"><%= link_to_author $article->author %></span>
+        <% my $created_title = begin %>
+            <span class="entry-date"><%= date $article->created %></span>
+        <% end %>
+        <span class="meta-prep meta-prep-author">Posted on</span> <%= link_to_article $article => $created_title %> <span class="meta-sep">by</span> <span class="author vcard"><%= link_to_author $article->author %></span>
     </div><!-- .entry-meta -->
 
 
@@ -128,6 +131,17 @@ __DATA__
 </div>
 % }
 
+@@ tags.html.ep
+% stash title => strings('tags'), description => strings('tags-description');
+<div>
+    <h1><%= strings 'tags' %></h1>
+    <div>
+% while (my $tag = $tags->next) {
+        <%= link_to_tag $tag %>
+        <sub>(<%= $tag->count %>)</sub>
+% }
+    </div>
+</div>
 
 @@ tag.html.ep
 % while (my $article = $articles->next) {
@@ -172,7 +186,7 @@ __DATA__
                 <div id="branding" role="banner">
                     <h1 id="site-title">
                         <span>
-                            <%= link_to 'index' => {%><%= config 'title' %><%}%>
+                           <%= link_to 'index' => sub { config 'title' }%>
                         </span>
                     </h1>
                     <div id="site-description"><%= config 'descr' %></div>
@@ -202,7 +216,7 @@ __DATA__
 
                     <%= form_for 'search', method => 'get', id => 'searchform' => begin %>
                     <div><label class="screen-reader-text" for="s">Find:</label>
-                        <%= input 'q', id => 's' %>
+                        <%= input_tag 'q', id => 's' %>
                         <%= submit_button 'Search', id => 'searchsubmit' %>
                     </div>
                     <% end %>
