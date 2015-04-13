@@ -6,11 +6,15 @@ use warnings;
 use Test::More tests => 3;
 use Mojolicious::Lite;
 use Bootylicious;
+use File::Temp;
 
 BEGIN { require FindBin; $ENV{MOJO_HOME} = $ENV{BOOTYLICIOUS_HOME} = "$FindBin::Bin"; }
 unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
-plugin 'booty_config' => {file => "$FindBin::Bin/wordpresstwentyten.conf"};
+my $fh = File::Temp->new();
+syswrite($fh, q!{"secret": "secret","theme": "WordpressTwentyten"}!);
+
+plugin 'booty_config' => {file => $fh};
 plugin 'model';
 
 get '/' => sub {
