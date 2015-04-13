@@ -1,6 +1,14 @@
+2015-13-04  oleg <oleg@cpan.org>
+
+	Fix and finish Wordpress Twentyten theme
+	
+	Allow tag to contain hypen
+	
+	Disable /perldoc route, created by Mojolicious::Plugin::PODRenderer
+
 2015-03-04  oleg <oleg@cpan.org>
 
-	Prefer Bootylicious namespace to Mojolicious to prevent mess with plugins
+	Prefer Bootylicious namespace over Mojolicious to prevent mess with plugins
 
 2015-03-03  oleg <oleg@cpan.org>
 
