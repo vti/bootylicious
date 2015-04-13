@@ -73,6 +73,7 @@ __DATA__
         Bookmark the <%= link_to_article $article => begin %>permalink<% end %>.
     </div><!-- .entry-utility -->
 
+    %= include 'article-pingbacks', pingbacks => $article->pingbacks if $article->pingbacks->size;
     %= include 'article-comments', comments => $article->comments if comments_enabled && $article->comments->size;
     %= include 'article-comment-form' if comments_enabled;
 
@@ -82,6 +83,19 @@ __DATA__
     </div><!-- #nav-below -->
 
 </div><!-- #post-## -->
+
+@@ article-pingbacks.html.ep
+<div id="comments">
+    <h3 id="comments-title">Pingbacks</h3>
+    <ol class="commentlist">
+    % while (my $pingback = $pingbacks->next) {
+        <li>
+            <div class="comment-meta commentmetadata"><%= date $pingback->created %></div>
+            <%= link_to $pingback->source_uri %>
+        </li>
+    % }
+    </ol>
+</div>
 
 @@ article-comments.html.ep
 <div id="comments">
