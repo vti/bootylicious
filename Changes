@@ -1,3 +1,7 @@
+2015-24-04  oleg <oleg@cpan.org>
+
+	Do not try to show author if article has no author
+
 2015-13-04  oleg <oleg@cpan.org>
 
 	Fix and finish Wordpress Twentyten theme
