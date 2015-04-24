@@ -243,7 +243,8 @@ __DATA__
 
 @@ article-meta.html.ep
     <div class="article-meta">
-        <%= date $article->created %> by <%= article_author $article %>
+        % my $author = article_author $article;
+        <%= date $article->created %> <%= $author ? 'by '.$author : '' %>
         <div class="tags"><%= tags_links $article %></div>
     </div>
 

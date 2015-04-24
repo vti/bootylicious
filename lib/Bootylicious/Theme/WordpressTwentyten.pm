@@ -165,7 +165,10 @@ __DATA__
         <% my $created_title = begin %>
             <span class="entry-date"><%= date $article->created %></span>
         <% end %>
-        <span class="meta-prep meta-prep-author">Posted on</span> <%= link_to_article $article => $created_title %> <span class="meta-sep">by</span> <span class="author vcard"><%= link_to_author $article->author %></span>
+        <span class="meta-prep meta-prep-author">Posted on</span> <%= link_to_article $article => $created_title %>
+        % if ($article->author) {
+            <span class="meta-sep">by</span> <span class="author vcard"><%= link_to_author $article->author %></span>
+        % }
     </div><!-- .entry-meta -->
 
 
