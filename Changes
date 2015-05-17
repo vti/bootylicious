@@ -1,3 +1,7 @@
+2015-17-05  oleg <oleg@cpan.org>
+
+	Move documentation to Bootylicious.pod to make metacpan happy: #rt104058
+
 2015-24-04  oleg <oleg@cpan.org>
 
 	Do not try to show author if article has no author
