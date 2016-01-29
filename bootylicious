@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-package main;
-
 use FindBin;
 use Cwd;
 use lib "$FindBin::Bin/lib";
