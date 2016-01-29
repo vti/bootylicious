@@ -1,3 +1,7 @@
+2016-29-01  oleg <oleg@cpan.org>
+
+	Allow bootylicious script to be mounted with Mojolicious::Plugin::Mount
+
 2015-17-05  oleg <oleg@cpan.org>
 
 	Move documentation to Bootylicious.pod to make metacpan happy: #rt104058
