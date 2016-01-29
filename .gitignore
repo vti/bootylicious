@@ -7,8 +7,6 @@ Makefile*
 !Makefile.PL
 META.yml
 MYMETA.*
-MANIFEST*
-!MANIFEST.SKIP
 pm_to_blib
 nytprof*
 articles
