@@ -1,3 +1,7 @@
+2016-10-08  oleg <oleg@cpan.org>
+
+	Fix compatibility with Mojolicious 7.0 (#rt116605)
+
 2016-29-01  oleg <oleg@cpan.org>
 
 	Fix #rt104058 again
