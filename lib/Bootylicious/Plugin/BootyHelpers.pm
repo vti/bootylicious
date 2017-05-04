@@ -280,7 +280,7 @@ sub register {
         my $option = $config->{"${name}_directory"} || '';
         $app->helper(
             "${name}_root" => sub {
-                ($option =~ m/^\//) ? $option : $app->home->rel_dir($option);
+                ($option =~ m/^\//) ? $option : $app->home->rel_file($option);
             }
         );
     }

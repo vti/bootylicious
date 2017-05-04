@@ -4,12 +4,14 @@ use FindBin;
 use Cwd;
 use lib "$FindBin::Bin/lib";
 use Mojolicious::Lite;
-use Mojo::Util qw(md5_sum spurt);
+use Mojo::Util qw(md5_sum);
+use Mojo::File qw(path);
+use Mojo::Home;
 use Mojo::Loader qw(data_section);
 use Bootylicious;
 use Bootylicious::Timestamp;
 
-app->home->parse($ENV{BOOTYLICIOUS_HOME} || getcwd());
+app->home(Mojo::Home->new($ENV{BOOTYLICIOUS_HOME} || getcwd()));
 
 unshift @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
@@ -25,7 +27,7 @@ if (@ARGV && $ARGV[0] eq '--create-config') {
         die "bootylicious.conf already exists\n";
     }
     
-    spurt(data_section(__PACKAGE__, 'bootylicious.conf'), 'bootylicious.conf');
+    path('bootylicious.conf')->spurt(data_section(__PACKAGE__, 'bootylicious.conf'));
     exit;
 }
 
