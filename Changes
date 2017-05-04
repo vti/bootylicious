@@ -1,3 +1,7 @@
+2017-05-05  oleg <oleg@cpan.org>
+
+	Fixes for newest Mojolicious which introduced Mojo::File (#rt121391)
+
 2016-10-08  oleg <oleg@cpan.org>
 
 	Fix compatibility with Mojolicious 7.0 (#rt116605)
